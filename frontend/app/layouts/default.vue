@@ -5,11 +5,11 @@
       <div class="header-left">
         <button class="brand" @click="navigateTo('/')">
           <div class="brand-mark">
-            <img v-if="showBrandImage" :src="brandLogo" alt="火宝短剧" class="brand-logo" @error="showBrandImage = false" />
+            <img v-if="showBrandImage" :src="brandLogo" :alt="t('common.title')" class="brand-logo" @error="showBrandImage = false" />
             <span v-else class="brand-fallback">火</span>
           </div>
           <div class="brand-text">
-            <span class="brand-name">火宝短剧</span>
+            <span class="brand-name">{{ t('common.title') }}</span>
             <span class="brand-sub">Huobao Shorts</span>
           </div>
         </button>
@@ -77,9 +77,11 @@ async function checkAiConfigs() {
   try {
     const configs = await aiConfigAPI.list()
     const labels = SERVICE_TYPE_LABELS.value
-    missingConfigLabels.value = Object.entries(labels)
-      .filter(([type]) => !configs.some(c => c.service_type === type && c.is_active))
-      .map(([, label]) => label)
+    // โมเดลข้อความ (Text) เป็นบริการจำเป็นพื้นฐานสำหรับ Agent ทำงาน
+    const requiredTypes = ['text']
+    missingConfigLabels.value = requiredTypes
+      .filter(type => !configs.some(c => c.service_type === type && c.is_active))
+      .map(type => labels[type])
   } catch { /* 配置检查失败不阻塞页面 */ }
 }
 

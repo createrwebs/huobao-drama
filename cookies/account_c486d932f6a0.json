@@ -1,0 +1,190 @@
+{
+  "project_id": "8e455b2e-95dd-4d01-994a-db0b847117ef",
+  "at": "AFfZSpgyZZN8PJV2zBcoo_qAYe73:1791375178681",
+  "fsid": "-2568993142293693621",
+  "fingerprint": {
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "sec_ch_ua": "\"Chromium\";v=\"154\", \"Google Chrome\";v=\"154\", \"Not A(Brand\";v=\"99\"",
+    "platform": "\"macOS\"",
+    "language": "en-US",
+    "mobile": "?0"
+  },
+  "cookies": [
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902516,
+      "name": "APISID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "storeId": "0",
+      "value": "cuJmYnHbNgHPUzQC/Ag3atgza0zuLhKzqn"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902454,
+      "httpOnly": true,
+      "name": "HSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "storeId": "0",
+      "value": "Ah8qTWXIF1bEx5xtp"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902555,
+      "name": "SAPISID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "PUxTycU7EUUfEtS6/AsxQe3ZBFNDjSkaSf"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.90225,
+      "name": "SID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "storeId": "0",
+      "value": "g.a000Cgl1DTUoulqHPXvpQsV3dOxI-c4UxvwXgh73q2VmOMcYi5yeCVFqp1XPUem7o9aJNwzTNgACgYKAWcSARASFQHGX2MiIk6olhubdnG93RcGNL6yJRoVAUF8yKr__GPY-QBm4NRio3FzzF5X0076"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902485,
+      "httpOnly": true,
+      "name": "SSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "Awe188l1Oh6b4H0a8"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902284,
+      "httpOnly": true,
+      "name": "__Secure-1PSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "g.a000Cgl1DTUoulqHPXvpQsV3dOxI-c4UxvwXgh73q2VmOMcYi5yeUdIw-by_VKEUwmw6vKm0QwACgYKAW0SARASFQHGX2MiQgN64bNoOQ8E6nFbJE2hXRoVAUF8yKo00dQTZT2tBSM1cWuUVoYI0076"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1822911666.112403,
+      "httpOnly": true,
+      "name": "__Secure-1PSIDTS",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "sidts-CjYBkldj_64JSv4ilj322qy0iEme2fHZ-xJHVuyk3KAzgYCb_yJONEYdSg4H1QmSJ2sOhpoHBB4QAA"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1823908535.902319,
+      "httpOnly": true,
+      "name": "__Secure-3PSID",
+      "path": "/",
+      "sameSite": "no_restriction",
+      "secure": true,
+      "storeId": "0",
+      "value": "g.a000Cgl1DTUoulqHPXvpQsV3dOxI-c4UxvwXgh73q2VmOMcYi5yeAQqM8Xxw61BzSGDfZLhHKQACgYKAZESARASFQHGX2MitFMz2DHpKn5wBCME8iJz0RoVAUF8yKru4GFl6YjKSTzVsFFz2IHp0076"
+    },
+    {
+      "domain": ".google.com",
+      "expirationDate": 1822911666.112492,
+      "httpOnly": true,
+      "name": "__Secure-3PSIDTS",
+      "path": "/",
+      "sameSite": "no_restriction",
+      "secure": true,
+      "storeId": "0",
+      "value": "sidts-CjYBkldj_64JSv4ilj322qy0iEme2fHZ-xJHVuyk3KAzgYCb_yJONEYdSg4H1QmSJ2sOhpoHBB4QAA"
+    },
+    {
+      "domain": "accounts.google.com",
+      "expirationDate": 1818734841.00123,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "ACCOUNT_CHOOSER",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "AFx_qI5aH-DW9_AfPZFOnXJbePJySpm15Tw7ipJ9HFwts5Ey0WHu40pRG4YgdEQTUjB5GjbD6E9eWC96fyhmM4qyuwJIGbfoFWvH-tvxLYnry7JRUTAB-zOZcmyHJ3XdeLvKxbCBI4sZ"
+    },
+    {
+      "domain": "accounts.google.com",
+      "expirationDate": 1825932292.892495,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "LSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "o.drive.google.com|o.flow.google.com|o.mail.google.com|o.play.google.com|s.TH|s.youtube:g.a000Cgl1DYa1eynjCd1-ZuPaEF1xWMwAh3aZd9W3k-mCFZI3RqF_2vXdxFbGBbf0ZyuZpRkhnAACgYKAe4SARASFQHGX2MiphqOByAKLap78ESj2yvX2BoVAUF8yKpxRplIqEK93mmh8DNKaD5s0076"
+    },
+    {
+      "domain": "accounts.google.com",
+      "expirationDate": 1820360017.01496,
+      "hostOnly": true,
+      "name": "LSOLH",
+      "path": "/",
+      "sameSite": "no_restriction",
+      "secure": true,
+      "storeId": "0",
+      "value": "_SVI_EKC4y-DQ3ZYDGBAiP01BRURIZl9xelBLbGlLN09WTlBIdVFmM1lBTkFrTWtSUUwxMjNlSlRRb1ZRNUxvNDQtc21kMzA2ZmZGVUc2cw_:29813748:e615"
+    },
+    {
+      "domain": "accounts.google.com",
+      "expirationDate": 1825932292.892564,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "__Host-1PLSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "o.drive.google.com|o.flow.google.com|o.mail.google.com|o.play.google.com|s.TH|s.youtube:g.a000Cgl1DYa1eynjCd1-ZuPaEF1xWMwAh3aZd9W3k-mCFZI3RqF_H3DM94OUybaWUfgH6Du_xgACgYKAdMSARASFQHGX2MiG0Erid9BIjDw9wIqV8d_EBoVAUF8yKpQc5ZX84yEQWRJZtRCR7Mu0076"
+    },
+    {
+      "domain": "accounts.google.com",
+      "expirationDate": 1825932292.892624,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "__Host-3PLSID",
+      "path": "/",
+      "sameSite": "no_restriction",
+      "secure": true,
+      "storeId": "0",
+      "value": "o.drive.google.com|o.flow.google.com|o.mail.google.com|o.play.google.com|s.TH|s.youtube:g.a000Cgl1DYa1eynjCd1-ZuPaEF1xWMwAh3aZd9W3k-mCFZI3RqF__R0IzlJP10b-SLKImEUWbQACgYKAa0SARASFQHGX2MildvNO4qAswpr_xf5-1SDOBoVAUF8yKoyAPdxCbJj2acTSi-IhnSM0076"
+    },
+    {
+      "domain": "flow.google.com",
+      "expirationDate": 1825932292.967516,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "OSID",
+      "path": "/",
+      "sameSite": "unspecified",
+      "secure": true,
+      "storeId": "0",
+      "value": "g.a000DQl1DezFjOQ3qFbX-L9cZSt22b2pCRBuln7u5AbvgwPsdTF5cDHyqvcJnc7Wu4O6KPA6QQACgYKAfESARASFQHGX2MiE3-KQHPNVSyYW6a6QGd2zhoVAUF8yKrljoQm-iehX_vbm3IeCS4D0076"
+    },
+    {
+      "domain": "flow.google.com",
+      "expirationDate": 1825932292.967592,
+      "hostOnly": true,
+      "httpOnly": true,
+      "name": "__Secure-OSID",
+      "path": "/",
+      "sameSite": "no_restriction",
+      "secure": true,
+      "storeId": "0",
+      "value": "g.a000DQl1DezFjOQ3qFbX-L9cZSt22b2pCRBuln7u5AbvgwPsdTF5oHrn8dd1NBiiPz2MXq8mTgACgYKAdgSARASFQHGX2MiU_iLa7ZX2s8yi5IVpBA9mRoVAUF8yKrvRU_GJvsxeJwhjXDxo5ZO0076"
+    }
+  ]
+}

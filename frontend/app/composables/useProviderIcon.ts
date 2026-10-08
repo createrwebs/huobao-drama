@@ -21,6 +21,7 @@ const FILENAMES: Record<string, string> = {
   vidu: 'vidu-color.png',
   ollama: 'ollama.png',
   midjourney: 'midjourney.png',
+  google_flow: 'gemini-color.png',
 }
 
 /** provider → 当前主题下的图标 URL；未知厂商返回 undefined（调用方回退字母徽标） */

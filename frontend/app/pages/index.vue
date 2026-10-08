@@ -206,7 +206,7 @@ import { dramaAPI, stylePresetAPI } from '~/composables/useApi'
 import BaseSelect from '~/components/BaseSelect.vue'
 import { startTour, autoTour } from '~/composables/useTour'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 
 const dramas = ref([])
 const loading = ref(false)
@@ -223,8 +223,15 @@ const dramaToDelete = ref(null)
 const deletingDrama = ref(false)
 const form = ref({ title: '', style: '', aspect_ratio: '16:9' })
 const stylePresets = ref([])
-const styleSelectOptions = computed(() => stylePresets.value.map(p => ({ label: p.name, value: p.value })))
-const selectedStyleDesc = computed(() => stylePresets.value.find(p => p.value === form.value.style)?.description || '')
+const styleSelectOptions = computed(() => stylePresets.value.map(p => ({
+  label: (te && te(`settings.styles.presetNames.${p.value}`)) ? t(`settings.styles.presetNames.${p.value}`) : p.name,
+  value: p.value
+})))
+const selectedStyleDesc = computed(() => {
+  const p = stylePresets.value.find(p => p.value === form.value.style)
+  if (!p) return ''
+  return (te && te(`settings.styles.presetDescs.${p.value}`)) ? t(`settings.styles.presetDescs.${p.value}`) : (p.description || '')
+})
 // 常量数组 label 渲染时求值（语言切换即时生效），value 为逻辑值
 const aspectRatioOptions = computed(() => ([
   { label: t('index.ratio.landscape'), value: '16:9' },
@@ -263,8 +270,28 @@ async function setDramaStatus(d, status) {
   }
 }
 
-function styleLabel(key) {
-  return stylePresets.value.find(p => p.value === key)?.name || key || ''
+const LEGACY_STYLE_MAP = {
+  '3D 动画': '3d',
+  '日系动漫': 'anime',
+  '吉卜力手绘': 'ghibli',
+  '水彩绘本': 'watercolor',
+  '美式漫画': 'comic',
+  '国风玄幻 2.5D': 'guofeng',
+  '国风玄幻2.5D': 'guofeng',
+  '韩系条漫': 'webtoon',
+  '黑白条漫': 'noir',
+  '黑白漫画': 'noir',
+  'live': 'ultra_realistic_cinematic',
+  '真人写实': 'ultra_realistic_cinematic',
+}
+
+function styleLabel(rawKey) {
+  const key = LEGACY_STYLE_MAP[rawKey] || rawKey
+  const p = stylePresets.value.find(p => p.value === key || p.name === rawKey)
+  if (p) {
+    return (te && te(`settings.styles.presetNames.${p.value}`)) ? t(`settings.styles.presetNames.${p.value}`) : (p.name || key || '')
+  }
+  return (te && te(`settings.styles.presetNames.${key}`)) ? t(`settings.styles.presetNames.${key}`) : (key || '')
 }
 
 // 封面：单色灰阶 + 首字符（状态色只以小圆点出现，封面保持中性）

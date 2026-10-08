@@ -4,7 +4,7 @@ import { db, getInsertId, schema } from '../db/index.js'
 import { success, created, badRequest, now } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
 import { generateImage } from '../services/generation.js'
-import { getDramaStylePrompt } from '../services/style-preset.js'
+import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../services/style-preset.js'
 import { ensureCharacterFinalPrompt } from '../services/final-prompt.js'
 import { logTaskError, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
@@ -43,13 +43,12 @@ function characterImagePrompt(char: typeof schema.characters.$inferSelect, style
   return [
     stylePrompt || '',
     char.name,
-    char.appearance || char.description || '人物立绘',
+    char.appearance || char.description || '',
     char.styling || '',
-    '16:9 横版角色定妆照',
-    '半身角色海报构图',
-    '正面',
-    '高质量',
-    '白色背景',
+    'character reference sheet, left frontal face close-up and right three equal-height full-body views of the same character: front, 90-degree side, back',
+    'neutral A-pose, identical face hairstyle and clothing across views, entire body including feet visible',
+    'high quality',
+    'white background',
   ].filter(Boolean).join(', ')
 }
 
@@ -90,7 +89,8 @@ app.post('/:id/generate-image', async (c) => {
 
   const stylePrompt = await getDramaStylePrompt(char.dramaId)
   const finalPrompt = await ensureCharacterFinalPrompt(char, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
-  const prompt = finalPrompt || characterImagePrompt(char, stylePrompt)
+  const basePrompt = finalPrompt || characterImagePrompt(char, stylePrompt)
+  const prompt = await applyDramaStyleToPrompt(basePrompt, char.dramaId)
   try {
     logTaskStart('CharacterImage', 'generate', { characterId: id, episodeId: ep.id, dramaId: char.dramaId })
     const genId = await generateImage({ characterId: id, dramaId: char.dramaId, prompt, model: body.model, size: CHARACTER_IMAGE_SIZE, configId: body.config_id ?? ep.imageConfigId ?? undefined })
@@ -136,7 +136,8 @@ app.post('/batch-generate-images', async (c) => {
     const [char] = await db.select().from(schema.characters).where(eq(schema.characters.id, cid))
     if (!char) continue
     const finalPrompt = await ensureCharacterFinalPrompt(char, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
-    const prompt = finalPrompt || characterImagePrompt(char, stylePrompt)
+    const basePrompt = finalPrompt || characterImagePrompt(char, stylePrompt)
+    const prompt = await applyDramaStyleToPrompt(basePrompt, ep.dramaId)
     try {
       const genId = await generateImage({ characterId: cid, dramaId: char.dramaId, prompt, model: body.model, size: CHARACTER_IMAGE_SIZE, configId: body.config_id ?? ep.imageConfigId ?? undefined })
       results.push(genId)

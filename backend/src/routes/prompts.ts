@@ -12,8 +12,10 @@ import { loadAgentPromptFile, serializePromptFile, promptFilePath } from '../age
 const app = new Hono()
 const fsm = () => skillsManagerWorkspace.filesystem!
 
+import { CONTENT_LANGUAGES } from '../services/app-settings.js'
+
 const checkType = (type: string) => validAgentTypes.includes(type)
-const LANGS = ['zh', 'en', 'ja', 'ko']
+const LANGS: readonly string[] = CONTENT_LANGUAGES
 const normalizeLang = (v?: string) => (v && LANGS.includes(v) ? v : 'zh')
 
 // GET /prompts — 列出全部 Agent 的 prompt 状态（基础版口径；name/model 只属于基础版）

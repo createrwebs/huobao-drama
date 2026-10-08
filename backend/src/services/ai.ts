@@ -5,6 +5,7 @@ import { db, schema } from '../db/index.js'
 import { eq } from 'drizzle-orm'
 import { logTaskProgress, logTaskWarn } from '../utils/task-logger.js'
 import { joinProviderUrl } from './adapters/url.js'
+import { getContentLanguage } from './app-settings.js'
 
 export type ServiceType = 'text' | 'image' | 'video'
 
@@ -29,9 +30,9 @@ export function parseConfigTemperature(settingsRaw: string | null | undefined): 
 }
 
 export const officialProviders: Record<ServiceType, readonly string[]> = {
-  text: ['openai', 'gemini', 'volcengine'],
-  image: ['openai', 'gemini', 'volcengine'],
-  video: ['volcengine', 'minimax', 'aliyun'],
+  text: ['openai', 'gemini', 'volcengine', 'antigravity'],
+  image: ['openai', 'gemini', 'volcengine', 'google_flow'],
+  video: ['volcengine', 'minimax', 'aliyun', 'google_flow'],
 }
 
 export function isOfficialProvider(serviceType?: string | null, provider?: string | null): boolean {
@@ -42,8 +43,8 @@ export function isOfficialProvider(serviceType?: string | null, provider?: strin
 export function getTextProviderBaseUrl(config: AIConfig) {
   const provider = config.provider.toLowerCase()
 
-  if (provider === 'openai') {
-    return joinProviderUrl(config.baseUrl, '/v1', '')
+  if (provider === 'openai' || provider === 'antigravity') {
+    return joinProviderUrl(config.baseUrl || 'http://127.0.0.1:8317', '/v1', '')
   }
 
   if (provider === 'gemini') {
@@ -97,7 +98,15 @@ export async function getActiveConfig(serviceType: ServiceType): Promise<AIConfi
 
 export async function getTextConfig(): Promise<AIConfig> {
   const config = await getActiveConfig('text')
-  if (!config) throw new Error('未配置文本模型，请先到「设置」页添加并启用 AI 服务')
+  if (!config) {
+    const lang = getContentLanguage()
+    const msg = lang === 'th'
+      ? 'ยังไม่ได้ตั้งค่าโมเดลข้อความ (Text AI) กรุณาไปที่หน้า «ตั้งค่า» เพื่อเพิ่มและเปิดใช้งานบริการ AI (เช่น Gemini หรือ OpenAI)'
+      : (lang === 'en'
+        ? 'Text model not configured. Please go to Settings to add and enable an AI service (e.g. Gemini or OpenAI).'
+        : '未配置文本模型，请先到「设置」页添加并启用 AI 服务')
+    throw new Error(msg)
+  }
   return config
 }
 

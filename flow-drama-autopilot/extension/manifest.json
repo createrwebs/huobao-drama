@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Google Flow Drama Auto-Pilot",
+  "version": "1.0.0",
+  "description": "ระบบควบคุมและสร้างคลิปละครสั้นอัตโนมัติบน Google Flow พร้อมจัดการ Character Reference",
+  "permissions": [
+    "storage",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://flow.google.com/*",
+    "https://labs.google/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://flow.google.com/*",
+        "https://labs.google/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

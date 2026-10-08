@@ -4,7 +4,7 @@ import { db, schema } from '../db/index.js'
 import { success, created, badRequest } from '../utils/response.js'
 import { generateImage, generateVideo } from '../services/generation.js'
 import { getActiveConfig, getConfigById } from '../services/ai.js'
-import { getDramaStylePrompt } from '../services/style-preset.js'
+import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../services/style-preset.js'
 import { logTaskError, logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
 const app = new Hono()
@@ -151,12 +151,18 @@ app.post('/', async (c) => {
     })
     logTaskPayload('TaskAPI', 'request body', body)
 
-    // 视频生成时把项目视觉风格词注入提示词最前方（与图片侧的自动注入保持一致口径）
+    // 视频与图片生成时把项目视觉风格词注入提示词最前方（保持全局风格一致）
+    const targetDramaId = body.drama_id ?? storyboardDramaId ?? null
+
     let videoPrompt = videoBody?.prompt
     if (type === 'video' && String(videoPrompt || '').trim()) {
-      const dramaId = body.drama_id ?? storyboardDramaId ?? null
-      const stylePrompt = await getDramaStylePrompt(dramaId)
-      if (stylePrompt) videoPrompt = `${stylePrompt}，\n${videoPrompt}`
+      const { getAllKnownStylePrompts, stripStylePrefix } = await import('../services/style-preset.js')
+      videoPrompt = stripStylePrefix(String(videoPrompt), await getAllKnownStylePrompts())
+    }
+
+    let imagePrompt = body.prompt
+    if (type === 'image' && String(imagePrompt || '').trim() && targetDramaId) {
+      imagePrompt = await applyDramaStyleToPrompt(imagePrompt, targetDramaId)
     }
 
     const id = type === 'image'
@@ -165,7 +171,7 @@ app.post('/', async (c) => {
         dramaId: body.drama_id,
         sceneId: body.scene_id,
         characterId: body.character_id,
-        prompt: body.prompt,
+        prompt: imagePrompt,
         model: body.model,
         size: body.size,
         referenceImages: body.reference_images,

@@ -1,0 +1,32 @@
+{
+  "title": "ละครสั้น: ตำรวจสืบสวนตามล่าคนร้ายในคืนฝนตก",
+  "characters": [
+    {
+      "tag": "@Danai",
+      "description": "Thai male detective, 35 years old, sharp jawline, short black messy hair, wearing beige long trench coat and wet dark trousers, intense observant eyes, cinematic realism"
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": 1,
+      "character": "@Danai",
+      "prompt": "@Danai walking alone down a dark rain-soaked Bangkok alley at midnight, neon reflection in puddles, cinematic slow-motion camera tracking front view, 4k photorealistic",
+      "dialogue": "คืนนี้... มีบางอย่างผิดปกติเกิดขึ้นในเงามืด",
+      "duration": 5
+    },
+    {
+      "scene_id": 2,
+      "character": "@Danai",
+      "prompt": "Extreme close-up of @Danai finding a glowing encrypted microchip on the wet pavement, dynamic cinematic lighting, rain dripping from his hair",
+      "dialogue": "นี่มัน... หลักฐานชิ้นสำคัญที่ทุกคนตามหา",
+      "duration": 5
+    },
+    {
+      "scene_id": 3,
+      "character": "@Danai",
+      "prompt": "@Danai looking back abruptly as black car headlights suddenly shine directly on him, dramatic volumetric light, cinematic action movie frame",
+      "dialogue": "พวกมันมาถึงแล้ว!",
+      "duration": 5
+    }
+  ]
+}

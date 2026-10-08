@@ -13,7 +13,7 @@ import { z } from 'zod'
 import { db, schema } from '../../db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from '../../utils/response.js'
-import { getDramaStylePrompt } from '../../services/style-preset.js'
+import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../../services/style-preset.js'
 import { getDramaId } from '../context.js'
 
 // ─── 角色提示词 ───────────────────────────────────────
@@ -56,8 +56,7 @@ const saveCharacterFinalPrompt = createTool({
       .where(eq(schema.characters.id, character_id))
     if (!c) return { error: 'Character not found' }
 
-    const stylePrompt = await getDramaStylePrompt(dramaId)
-    const finalPrompt = stylePrompt ? `${stylePrompt}, ${prompt}` : prompt
+    const finalPrompt = await applyDramaStyleToPrompt(prompt, dramaId)
     await db.update(schema.characters)
       .set({ finalPrompt, updatedAt: now() })
       .where(eq(schema.characters.id, character_id))
@@ -110,8 +109,7 @@ const saveSceneFinalPrompt = createTool({
       .where(eq(schema.scenes.id, scene_id))
     if (!s) return { error: 'Scene not found' }
 
-    const stylePrompt = await getDramaStylePrompt(dramaId)
-    const finalPrompt = stylePrompt ? `${stylePrompt}, ${prompt}` : prompt
+    const finalPrompt = await applyDramaStyleToPrompt(prompt, dramaId)
     await db.update(schema.scenes)
       .set({ finalPrompt, updatedAt: now() })
       .where(eq(schema.scenes.id, scene_id))
@@ -163,8 +161,7 @@ const savePropFinalPrompt = createTool({
       .where(eq(schema.props.id, prop_id))
     if (!p) return { error: 'Prop not found' }
 
-    const stylePrompt = await getDramaStylePrompt(dramaId)
-    const finalPrompt = stylePrompt ? `${stylePrompt}, ${prompt}` : prompt
+    const finalPrompt = await applyDramaStyleToPrompt(prompt, dramaId)
     await db.update(schema.props)
       .set({ finalPrompt, updatedAt: now() })
       .where(eq(schema.props.id, prop_id))

@@ -5,6 +5,7 @@ import { success, notFound, created, badRequest, now } from '../utils/response.j
 import { toSnakeCase } from '../utils/transform.js'
 import { joinProviderUrl } from '../services/adapters/url.js'
 import { isOfficialProvider, parseConfigTemperature } from '../services/ai.js'
+import { getContentLanguage } from '../services/app-settings.js'
 import { redactUrl, logTaskError, logTaskProgress, logTaskSuccess } from '../utils/task-logger.js'
 
 const app = new Hono()
@@ -50,7 +51,7 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
     // 探针统一走 generateContent:文本运行时(AI SDK)走的就是它,官方与中转站都支持;
     // interactions 端点很多中转站未配置,探它会误报 500。
     // 用最小合法请求体而非空体——空体在部分中转站会触发上游认证失败的误报
-    const modelName = m || 'gemini-3.1-pro-preview'
+    const modelName = m || 'gemini-3.8-flash'
     const url = new URL(joinProviderUrl(baseUrl, '/v1beta', `/models/${modelName}:generateContent`))
     if (apiKey) url.searchParams.set('key', apiKey)
     return {
@@ -104,6 +105,24 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
         'X-DashScope-Async': 'enable',
       },
       body: {},
+    }
+  }
+
+  if (p === 'google_flow') {
+    return {
+      method: 'GET',
+      url: joinProviderUrl(baseUrl, '', '/status'),
+      headers: {},
+      body: undefined,
+    }
+  }
+
+  if (p === 'antigravity') {
+    return {
+      method: 'GET',
+      url: joinProviderUrl(baseUrl, '/v1', '/models'),
+      headers: bearerHeaders(apiKey || 'huobao-antigravity'),
+      body: undefined,
     }
   }
 
@@ -195,7 +214,26 @@ app.post('/test', async (c) => {
       body: probe.body ? JSON.stringify(probe.body) : undefined,
     })
     const text = await resp.text()
-    const reachable = [200, 204, 400, 401, 403].includes(resp.status)
+    const reachable = [200, 204, 400, 401, 402, 403, 429].includes(resp.status)
+    const lang = getContentLanguage()
+
+    let probeMessage = ''
+    if (resp.ok) {
+      probeMessage = lang === 'th' ? 'เชื่อมต่อสำเร็จ การยืนยันตัวตนและเส้นทางถูกต้อง' : '端点可访问，认证与路径基本正常'
+    } else if (resp.status === 402 || /prepayment.*depleted|credits are depleted/i.test(text)) {
+      probeMessage = lang === 'th'
+        ? 'เครดิต API หมด (Prepayment credits depleted) กรุณาตรวจสอบยอดเงินใน Google AI Studio หรือสร้าง API Key ในโปรเจกต์ Free Tier'
+        : 'API 预付款额度已耗尽 (402 Prepayment Depleted)，请在 Google AI Studio 检查账单或创建免费项目 Key'
+    } else if (resp.status === 401 || resp.status === 403) {
+      probeMessage = lang === 'th' ? 'การยืนยันตัวตนล้มเหลว กรุณาตรวจสอบ API Key' : '认证失败，请检查 API Key'
+    } else if (resp.status === 429) {
+      probeMessage = lang === 'th' ? 'คำขอมากเกินไปหรือโควต้าไม่เพียงพอ (Rate Limit)' : '请求过于频繁或配额耗尽 (Rate Limit)'
+    } else if (resp.status === 400) {
+      probeMessage = lang === 'th' ? 'เซิร์ฟเวอร์ตอบกลับแล้ว แต่พารามิเตอร์ไม่ถูกต้อง' : '端点已响应，请根据状态码判断认证或路径是否正确'
+    } else {
+      probeMessage = lang === 'th' ? 'เซิร์ฟเวอร์ไม่ตอบสนองตามที่คาดไว้ กรุณาตรวจสอบ Base URL' : '端点未按预期响应，请检查 Base URL 和代理前缀'
+    }
+
     const payload = {
       ok: resp.ok,
       reachable,
@@ -203,9 +241,7 @@ app.post('/test', async (c) => {
       status_text: resp.statusText,
       method: probe.method,
       url: probeUrl,
-      message: reachable
-        ? (resp.ok ? '端点可访问，认证与路径基本正常' : '端点已响应，请根据状态码判断认证或路径是否正确')
-        : '端点未按预期响应，请检查 Base URL 和代理前缀',
+      message: probeMessage,
       response_preview: text.slice(0, 240),
     }
     if (reachable) {

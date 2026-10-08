@@ -3,6 +3,7 @@ import { and, eq, isNull, like, desc } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
 import { success, badRequest, notFound, created, now } from '../utils/response.js'
 import { toSnakeCase, toSnakeCaseArray } from '../utils/transform.js'
+import { syncDramaAssetStylePrompts } from '../services/style-preset.js'
 
 const app = new Hono()
 
@@ -124,6 +125,9 @@ app.put('/:id', async (c) => {
   if (body.tags !== undefined) updates.tags = JSON.stringify(body.tags)
   if (body.metadata !== undefined) updates.metadata = body.metadata
   await db.update(schema.dramas).set(updates).where(eq(schema.dramas.id, id))
+  if (body.style !== undefined) {
+    await syncDramaAssetStylePrompts(id, body.style)
+  }
   return success(c)
 })
 

@@ -6,7 +6,7 @@ import { toSnakeCase } from '../utils/transform.js'
 
 const app = new Hono()
 
-const VALUE_PATTERN = /^[a-z0-9][a-z0-9-]*$/
+const VALUE_PATTERN = /^[a-z0-9][a-z0-9_-]*$/
 
 // GET /style-presets — 默认只返回启用项，?all=1 返回全部
 app.get('/', async (c) => {
@@ -22,7 +22,7 @@ app.post('/', async (c) => {
   const body = await c.req.json()
   if (!body.name?.trim()) return badRequest(c, '风格名称必填')
   if (!body.value?.trim()) return badRequest(c, '风格 key 必填')
-  if (!VALUE_PATTERN.test(body.value.trim())) return badRequest(c, '风格 key 仅支持小写字母、数字、中划线')
+  if (!VALUE_PATTERN.test(body.value.trim())) return badRequest(c, '风格 key 仅支持小写字母、数字、中划线与下划线')
   if (!body.prompt?.trim()) return badRequest(c, '提示词片段必填')
 
   const value = body.value.trim()

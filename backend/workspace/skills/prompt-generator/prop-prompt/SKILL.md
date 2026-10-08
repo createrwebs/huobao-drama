@@ -41,3 +41,14 @@ description: 道具最终提示词规范 — 白底单品静物，标准产品�
 ## 保存
 
 调用 `save_prop_final_prompt`：prompt 参数不含风格词，**项目视觉风格由工具自动注入到最终提示词的最前方**。
+
+## Image-generation reliability / ความถูกต้องก่อนส่งสร้างภาพ
+
+- The asset specification has higher priority than generic project style. Use project style for rendering/materials/colors, never to replace the required layout, white background, neutral studio light, or empty-environment composition.
+- Put layout and subject constraints FIRST, then identity/period/material details. End with the core background, consistency and no-text constraints again. Write a concise coherent prompt without omitting identifying details.
+- Do not append Midjourney/CLI switches such as `--ar`, `--v`, `--style`, or model names. Aspect ratio and model are separate API parameters.
+- Do not add decorative headings, numbered labels, visible names, subtitles, borders or watermarks to the generated image.
+- Character: exactly one identity repeated across the face close-up and three full-body front/side/back views, not a group of different people. Match wardrobe in every view; keep hands empty and any required accessories worn/secured, not held in an action pose. Do not replace the reference sheet with a half-body poster.
+- Scene: ignore portrait/skin/beauty/hair terms in generic style; use a single empty wide establishing view, with readable foreground/midground/background and the scene's own time-of-day lighting. No humans, human shadows or reflections. Outdoor settings must not invent walls or doors that do not exist.
+- Prop: one complete isolated object on pure white; no human hands, extra products or environment. Material and wear must match the story period.
+- Before saving, verify that the selected asset ID and all appearance/wardrobe/material facts come from the read tool. Do not invent celebrity likenesses, beauty transformations or modern items absent from the source.

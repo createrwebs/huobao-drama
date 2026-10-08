@@ -22,21 +22,24 @@ import { getContentLanguageFromRC } from './context.js'
 // Default prompts (used when workspace/prompts/<type>.md 文件缺失时兜底)
 export const DEFAULT_PROMPTS: Record<string, { name: string; instructions: string }> = {
   script_rewriter: {
-    name: '剧本改写',
-    instructions: `你是专业编剧，擅长将小说改编为短剧剧本。
+    name: '剧本改写与创作',
+    instructions: `你是专业短剧编剧，擅长根据剧情梗概、指示、小说原作或前集剧情，创作与改写格式化短剧剧本。
 
 工作流程：
-1. 调用 read_episode_script 读取原始内容
-2. 根据读取到的内容，自己进行改写（输出格式化剧本格式）
-3. 调用 save_script 保存改写后的完整剧本
+1. 首先调用 read_episode_script 读取当前集信息、剧集总设定（总梗概、人物列表）以及前一集的剧情与结尾
+2. 结合用户在消息中提出的指示/要求/特定情节，创作或改写本集格式化剧本
+3. 必须保持剧情连续性（Continuity）：
+   - 如果当前集是第 2 集或之后（episode_number > 1），必须紧密承接上一集（previous_episode）的故事结局与冲突，不要凭空重启剧情或忽略已有情节
+   - 出场人物与性格必须与人物列表（characters）及设定保持高度一致
+4. 调用 save_script 保存本集的完整剧本
 
 格式化剧本格式：
 - 场景头：## S编号 | 内景/外景 · 地点 | 时间段
-- 动作描写：自然段落，不包含镜头语言
+- 动作描写：自然段落，生动具体，不包含镜头术语
 - 对白：角色名：（状态/表情）台词内容
-- 每个场景 30-60 秒内容
+- 每集包含 3-6 个场景，每个场景 30-60 秒内容，节奏紧凑，结尾留有悬念或情绪转折
 
-注意：你必须自己完成改写工作，不要只返回指令。读取内容后直接输出改写结果并保存。`,
+注意：你必须自己完成剧本创作与改写，并实际调用 save_script 保存，不要只返回回复文本。输出语言严格遵循本次会话指令指定的目标语言。`,
   },
   extractor: {
     name: '角色场景提取',
@@ -104,9 +107,10 @@ export const DEFAULT_PROMPTS: Record<string, { name: string; instructions: strin
 - 台词下限：段落时长 ≥ 段内台词与旁白总字数（写在 description 中的部分）÷ 4.5字/秒 + 2秒表演余量，装不下的台词拆到下一个段落
 
 video_prompt 规则（硬约束）：
+- 第一行必须是信息头：详细说明出场人物外貌、装束及场景环境（如：出场人物：@角色名 (性别、年龄、体貌特征与发型肤色、服装装束)，...；场景：@场景名 (地理环境、时代建筑、光照色调与氛围)），基于 read_storyboard_context 的 appearance 与 styling，让视频生成模型（如 Google Flow / Veo）具有完整人物上下文，严禁仅写裸名
 - 按 3 秒为一段、每段单独一行换行分隔；description 的每个【镜头N】映射为 1-2 个连续 3 秒段（顺序一致、不遗漏、不新增子镜头），切镜点对齐【镜头N】结构
 - 每段先写画面（谁+动作+景别/角度），再写该段时间内的台词/旁白——台词从 description 对应【镜头N】内提取，不要创作 description 之外的新台词
-- 提到场景用 @场景名、提到角色用 @角色名，名字必须与 read_storyboard_context 返回的列表完全一致（用于挂接参考素材图片）
+- 提到场景用 @场景名、提到角色用 @角色名，名字必须与 read_storyboard_context 返回的列表完全一致
 - 氛围、光线描述取自该段 atmosphere
 - 一个段落内允许切镜（换景别/角度/对象），但不跨场景
 - 用户消息中会告知本次视频模型，按该模型的特性与时长限制调整写法；未告知时按通用视频模型写法
@@ -140,8 +144,10 @@ video_prompt 规则（硬约束）：
 
 工作流程：
 1. 调用 read_storyboard_context 读取该分镜的 description（含【镜头N】子镜头与台词/旁白）、atmosphere、duration 及绑定的场景/角色
-2. 据此生成 video_prompt：按 3 秒为一段、每段单独一行换行分隔；description 的每个【镜头N】映射为 1-2 个连续 3 秒段（顺序一致、不遗漏、不新增子镜头），台词/旁白从对应【镜头N】内的「角色名说：「…」」「旁白：…」提取，不要创作 description 之外的新台词；提到场景用 @场景名、提到角色用 @角色名（名字必须与列表完全一致）；氛围光线取自 atmosphere。一个分镜段落内允许切镜（换景别/角度/对象），段与段之间可以是不同镜头，但不跨场景；切镜点对齐分镜 description 的【镜头N】结构
-3. 生成时会自动把 @名字 替换为对应参考图片标记（如 @小明 → @图片1小明），因此名字必须精确匹配场景/角色列表，不要缩写或加额外符号
+2. 据此生成 video_prompt：
+   - 第一行必须是信息头：详细说明出场人物外貌、装束及场景环境（如：出场人物：@角色名 (性别、年龄、体貌特征与发型肤色、服装装束)，...；场景：@场景名 (地理环境、时代建筑、光照色调与氛围)），基于 read_storyboard_context 的 appearance 与 styling 写入括号中，确保视频模型拥有完整人物与场景上下文
+   - 之后按 3 秒为一段、每段单独一行换行分隔；description 的每个【镜头N】映射为 1-2 个连续 3 秒段（顺序一致、不遗漏、不新增子镜头），台词/旁白从对应【镜头N】内的「角色名说：「…」」「旁白：…」提取，不要创作 description 之外的新台词；提到场景用 @场景名、提到角色用 @角色名（名字必须与列表完全一致）；氛围光线取自 atmosphere。一个分镜段落内允许切镜（换景别/角度/对象），段与段之间可以是不同镜头，但不跨场景；切镜点对齐分镜 description 的【镜头N】结构
+3. 生成时 @名字 精确匹配场景/角色列表，不要缩写或加额外符号
 4. 调用 update_storyboard 保存时参数只传两个键：storyboard_id 和 video_prompt。不要回传该分镜的其他任何字段（title、description、scene_id 等一律不传）
 
 通用规范：
@@ -291,6 +297,52 @@ function createMaxTokensFetch(providerName: string, inner?: typeof fetch): typeo
   }
 }
 
+/**
+ * 模型限额/冷却自动回退机制
+ * 当 Antigravity 或代理服务商报 429、model_cooldown 或 RESOURCE_EXHAUSTED 时，
+ * 自动换用备选可用模型重试，避免任务中断报错
+ */
+function createModelFallbackFetch(providerName: string, inner?: typeof fetch): typeof fetch {
+  const base = inner || fetch
+  return async (input: any, init?: any) => {
+    let resp = await base(input, init)
+    if (!resp.ok && (resp.status === 429 || resp.status === 400 || resp.status === 500)) {
+      try {
+        const text = await resp.clone().text()
+        const isCooldownOrRateLimit = /model_cooldown|cooling down|RESOURCE_EXHAUSTED|quota reached|rate limit/i.test(text)
+        if (isCooldownOrRateLimit && init?.body && typeof init.body === 'string') {
+          const body = JSON.parse(init.body)
+          const requestedModel = body.model
+          // 备选降级候选队列（Lite / Claude 额度充裕且支持 Tool Calling）
+          const fallbackCandidates = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'claude-sonnet-4-6']
+          for (const fallbackModel of fallbackCandidates) {
+            if (fallbackModel === requestedModel) continue
+            try {
+              body.model = fallbackModel
+              const newInit = { ...init, body: JSON.stringify(body) }
+              const fallbackResp = await base(input, newInit)
+              if (fallbackResp.ok) {
+                console.log(`[AIConfig] Fallback model ${fallbackModel} succeeded after ${requestedModel} hit quota/cooldown`)
+                logTaskProgress('AIConfig', 'model-fallback-applied', {
+                  from: requestedModel,
+                  to: fallbackModel,
+                  status: fallbackResp.status,
+                })
+                return fallbackResp
+              }
+            } catch {
+              // 继续尝试下一个候选
+            }
+          }
+        }
+      } catch {
+        /* 解析失败则返回原始响应 */
+      }
+    }
+    return resp
+  }
+}
+
 async function getModel(fileModel: string | undefined, modelOverride?: string, textConfigId?: number) {
   // 请求可指定文本配置（含其 provider/baseUrl/apiKey），否则回退到当前启用配置
   const textConfig = (textConfigId ? await getConfigById(textConfigId) : null) || await getTextConfig()
@@ -309,14 +361,15 @@ async function getModel(fileModel: string | undefined, modelOverride?: string, t
     })
   }
 
-  // 叠加请求补丁：thinking-off（非官方端点）+ 配置温度 + 输出上限（非官方 OpenAI）
+  // 叠加请求补丁：thinking-off（非官方端点）+ 配置温度 + 输出上限 + 模型额度耗尽自动降级
   const thinkingOffFetch = createThinkingOffFetch(providerName, resolvedBaseURL)
   const tempFetch = temperature !== null
     ? createTemperatureFetch(providerName, temperature, thinkingOffFetch)
     : thinkingOffFetch
-  const fetchImpl = isOfficialOpenAIHost(resolvedBaseURL)
+  const maxTokensFetch = isOfficialOpenAIHost(resolvedBaseURL)
     ? tempFetch
     : createMaxTokensFetch(providerName, tempFetch)
+  const fetchImpl = createModelFallbackFetch(providerName, maxTokensFetch)
 
   if (providerName === 'gemini') {
     const googleProvider = createGoogleGenerativeAI({

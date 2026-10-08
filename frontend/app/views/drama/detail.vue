@@ -9,7 +9,18 @@
       </button>
       <div class="head-info">
         <h1 class="page-title">{{ drama.title }}</h1>
-        <span v-if="drama.style" class="tag tag-accent">{{ drama.style }}</span>
+        <button
+          v-if="drama.style"
+          type="button"
+          class="tag tag-accent style-switch-tag"
+          :title="t('settings.styles.title')"
+          @click="openStyleDialog"
+        >
+          <span>{{ styleLabel(drama.style) }}</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
         <div class="page-meta">
           <span class="meta-item">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -173,15 +184,35 @@
 
     <!-- 素材库 -->
     <div v-else-if="activeTab === 'assets'" class="assets-wrap">
-      <div class="seg asset-filter">
-        <button
-          v-for="t in assetTabs"
-          :key="t.value"
-          type="button"
-          class="seg-item"
-          :class="{ on: assetTab === t.value }"
-          @click="assetTab = t.value"
-        >{{ t.label }}</button>
+      <div class="asset-toolbar-row">
+        <div class="seg asset-filter">
+          <button
+            v-for="t in assetTabs"
+            :key="t.value"
+            type="button"
+            class="seg-item"
+            :class="{ on: assetTab === t.value }"
+            @click="assetTab = t.value"
+          >{{ t.label }}</button>
+        </div>
+
+        <div v-if="dramaCharRefs && dramaCharRefs.ready_characters > 0" class="flow-ref-sync-group">
+          <span class="flow-ref-status-tag" :class="{ 'is-synced': dramaCharRefs.all_synced }">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            {{ dramaCharRefs.all_synced ? 'Google Flow: พร้อม (' + dramaCharRefs.synced_characters + '/' + dramaCharRefs.ready_characters + ')' : 'Flow: ซิงค์แล้ว ' + dramaCharRefs.synced_characters + '/' + dramaCharRefs.ready_characters }}
+          </span>
+          <button
+            type="button"
+            class="btn btn-sm"
+            :class="dramaCharRefs.all_synced ? 'btn-ghost' : 'btn-primary'"
+            :disabled="syncingFlowCharRefs"
+            @click="syncDramaCharacterRefsToFlow(true)"
+          >
+            <span v-if="syncingFlowCharRefs" class="ring-spinner sm"></span>
+            <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            {{ dramaCharRefs.all_synced ? 'ซิงค์ Flow ใหม่ (ส่งครั้งเดียว)' : 'ส่งตัวละครอ้างอิงไปยัง Flow (ส่งครั้งเดียว)' }}
+          </button>
+        </div>
       </div>
 
       <!-- 全部素材为空 -->
@@ -550,6 +581,30 @@
         </div>
       </div>
     </div>
+    <!-- 切换项目视觉风格弹窗 -->
+    <div v-if="styleDialog" class="dialog-mask" @click.self="styleDialog = false">
+      <div class="dialog ep-dialog">
+        <div class="dialog-head">
+          <div class="dialog-title">{{ t('settings.styles.title') }}</div>
+          <button class="btn btn-icon btn-sm btn-ghost ml-auto dialog-close" @click="styleDialog = false">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <label class="field">
+            <span class="field-label">{{ t('settings.styles.title') }}</span>
+            <BaseSelect v-model="selectedStyleValue" :options="styleOptions" />
+            <span class="field-hint" v-if="selectedStyleDescription">{{ selectedStyleDescription }}</span>
+          </label>
+        </div>
+        <div class="dialog-foot">
+          <button class="btn" @click="styleDialog = false">{{ t('common.cancel') }}</button>
+          <button class="btn btn-primary" :disabled="savingStyle" @click="confirmChangeStyle">
+            {{ savingStyle ? t('common.saving') : t('common.confirm') }}
+          </button>
+        </div>
+      </div>
+    </div>
     <ConfirmDialog
       :open="!!episodeToDelete"
       :title="t('detail.ep.deleteTitle')"
@@ -565,10 +620,33 @@
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { dramaAPI, episodeAPI, characterAPI, sceneAPI, propAPI, uploadAPI } from '~/composables/useApi'
+import { dramaAPI, episodeAPI, characterAPI, sceneAPI, propAPI, uploadAPI, stylePresetAPI, flowBridgeAPI } from '~/composables/useApi'
 import BaseSelect from '~/components/BaseSelect.vue'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
+
+const LEGACY_STYLE_MAP = {
+  '3D 动画': '3d',
+  '日系动漫': 'anime',
+  '吉卜力手绘': 'ghibli',
+  '水彩绘本': 'watercolor',
+  '美式漫画': 'comic',
+  '国风玄幻 2.5D': 'guofeng',
+  '国风玄幻2.5D': 'guofeng',
+  '韩系条漫': 'webtoon',
+  '黑白条漫': 'noir',
+  '黑白漫画': 'noir',
+  'live': 'ultra_realistic_cinematic',
+  '真人写实': 'ultra_realistic_cinematic',
+}
+
+function styleLabel(val) {
+  if (!val) return ''
+  const mapped = LEGACY_STYLE_MAP[val] || val
+  const key = `settings.styles.presetNames.${mapped}`
+  if (te && te(key)) return t(key)
+  return val
+}
 
 const route = useRoute()
 const drama = ref(null)
@@ -578,6 +656,44 @@ const creatingEpisode = ref(false)
 const newEpisodeTitle = ref('')
 const episodeToDelete = ref(null)
 const deletingEpisode = ref(false)
+
+// 风格切换弹窗
+const styleDialog = ref(false)
+const savingStyle = ref(false)
+const selectedStyleValue = ref('')
+const stylePresets = ref([])
+
+const styleOptions = computed(() => stylePresets.value.map(p => ({
+  label: (te && te(`settings.styles.presetNames.${p.value}`)) ? t(`settings.styles.presetNames.${p.value}`) : p.name,
+  value: p.value,
+})))
+
+const selectedStyleDescription = computed(() => {
+  const p = stylePresets.value.find(x => x.value === selectedStyleValue.value)
+  if (!p) return ''
+  return (te && te(`settings.styles.presetDescs.${p.value}`)) ? t(`settings.styles.presetDescs.${p.value}`) : (p.description || '')
+})
+
+function openStyleDialog() {
+  selectedStyleValue.value = drama.value?.style || 'ultra_realistic_cinematic'
+  styleDialog.value = true
+}
+
+async function confirmChangeStyle() {
+  if (!selectedStyleValue.value) return
+  savingStyle.value = true
+  try {
+    await dramaAPI.update(dramaId, { style: selectedStyleValue.value })
+    if (drama.value) drama.value.style = selectedStyleValue.value
+    toast.success(t('settings.styles.title') + ': ' + styleLabel(selectedStyleValue.value))
+    styleDialog.value = false
+    await load()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    savingStyle.value = false
+  }
+}
 
 // 视频分辨率：创建集时固定（持久化到 episodes.resolution），集卡片上可修改
 const resolutionOptions = computed(() => ([
@@ -641,7 +757,12 @@ async function setEpisodeStatus(ep, status) {
 
 async function load() {
   try {
-    drama.value = await dramaAPI.get(dramaId)
+    const [d, presets] = await Promise.all([
+      dramaAPI.get(dramaId),
+      stylePresetAPI.list(),
+    ])
+    drama.value = d
+    stylePresets.value = presets || []
   } catch (e) {
     toastError(e)
   }
@@ -787,8 +908,43 @@ async function pollMaterial(m) {
   toast.info(t('detail.mat.genTimeout', { kind: m.kind, name: m.name }))
 }
 
+// ===== Google Flow Character References =====
+const dramaCharRefs = ref(null)
+const syncingFlowCharRefs = ref(false)
+
+async function loadDramaCharacterRefs() {
+  if (!dramaId) return
+  try {
+    const res = await flowBridgeAPI.getCharacterRefs(dramaId)
+    if (res) dramaCharRefs.value = res
+  } catch (err) {
+    console.warn('[Detail] Failed to load character refs:', err)
+  }
+}
+
+async function syncDramaCharacterRefsToFlow(force = false) {
+  if (!dramaId) return
+  syncingFlowCharRefs.value = true
+  try {
+    const res = await flowBridgeAPI.syncCharacterRefs({
+      drama_id: dramaId,
+      force,
+    })
+    if (res) {
+      dramaCharRefs.value = res
+      toast.success(res.msg || 'ซิงค์ตัวละครอ้างอิงไปยัง Google Flow เรียบร้อยแล้ว')
+    }
+  } catch (err) {
+    console.error('[Detail] Error syncing character refs:', err)
+    toast.error(err.message || 'ซิงค์ตัวละครอ้างอิงล้มเหลว')
+  } finally {
+    syncingFlowCharRefs.value = false
+  }
+}
+
 function switchToAssets() {
   activeTab.value = 'assets'
+  loadDramaCharacterRefs()
 }
 
 /* ===== 素材图片手动上传（角色形象 / 场景图 / 道具图） ===== */
@@ -914,7 +1070,10 @@ async function saveEdit() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadDramaCharacterRefs()
+})
 </script>
 
 <style scoped>
@@ -1181,7 +1340,35 @@ onMounted(load)
 }
 
 /* ===== 素材库 ===== */
-.asset-filter { margin-bottom: 16px; }
+.asset-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.asset-filter { margin-bottom: 0; }
+.flow-ref-sync-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow-ref-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+}
+.flow-ref-status-tag.is-synced {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
 
 .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; align-items: stretch; }
 .character-asset-grid {
@@ -1623,5 +1810,24 @@ onMounted(load)
   .ep-actions { opacity: 1; } /* 移动端始终显示操作按钮 */
   .dialog-foot { flex-wrap: wrap; gap: 10px; }
   .dialog-foot-copy { display: none; }
+}
+
+.style-switch-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid var(--accent-border, rgba(99, 102, 241, 0.3));
+  background: var(--accent-subtle, rgba(99, 102, 241, 0.1));
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #6366f1);
+  transition: all 0.2s ease;
+}
+.style-switch-tag:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
 }
 </style>

@@ -9,18 +9,22 @@ From a single storyboard segment's description (containing the 【镜头N】 sub
 
 ## Format
 
-The **first line of the `video_prompt` is the header**: first introduce which characters and scene appear in this video, then follow with the time segments. Characters and scenes are always referenced with @ (during generation they are replaced with the corresponding reference-image markers, so the video model first locks onto "who" and "where").
+The **first line of the `video_prompt` is the header**: it MUST provide detailed visual context (character appearance, styling/clothing, and scene environment) so that AI video models (such as Google Flow / Veo) clearly understand characters' identities, looks, and the setting across shots:
+- **Characters**: `@CharacterName (gender, age, facial features, hair, skin tone, clothing/styling)` derived from `appearance` and `styling` in `read_storyboard_context`
+- **Scene**: `@SceneName (environment, architectural style, era, lighting, atmosphere)` derived from `lighting` and `prompt` in `read_storyboard_context`
+- **Props**: when a prop is featured or used, append `; Props: @PropName (material, look)`
 
 ```
-Characters: @Xiaoming, @Xiaohong; Scene: @Coffee Shop.
+Characters: @Xiaoming (28-year-old Asian male, slender build, short black hair, wearing a white shirt and black trousers), @Xiaohong (24-year-old young woman, wavy long hair, delicate features, wearing a cream French dress); Scene: @Coffee Shop (contemporary minimalist wooden cafe, warm morning sunlight streaming through floor-to-ceiling windows).
 0-3s: @Coffee Shop, close shot, static camera; @Xiaoming looks down at his phone, fingers repeatedly tapping the table, expression anxious.
 3-6s: Cut to a wide shot of the doorway; the doorbell rings as @Xiaohong pushes the door open and walks in, bringing in a gust of cold air.
 6-9s: Cut back to a medium shot; @Xiaohong walks over with a smile and sits down across from Xiaoming; Xiaoming says: "You finally made it."
 ```
 
 Header rules:
+- Characters MUST include descriptive appearance and styling in parentheses; never output bare names without visual context
 - Only list the characters who actually appear in this storyboard segment and the bound scene — do not list those who do not appear
-- When a prop has a notable appearance, it may be appended to the header (e.g. `; Props: @Letter`)
+- When a prop has a notable appearance, it may be appended to the header (e.g. `; Props: @Letter (vintage wax-sealed kraft envelope)`)
 - The header is its own line, ending with a period, followed by the time segments
 
 Split into 3-second segments, each segment on its own line separated by newlines, with time ranges continuous and adjoining (no overlaps, no gaps).

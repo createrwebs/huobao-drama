@@ -6,6 +6,7 @@
  * - legacy:false 必须显式，否则 global.locale 不是 ref 无法运行时切换
  */
 import { createI18n } from 'vue-i18n'
+import th from '../locales/th.json'
 import zh from '../locales/zh.json'
 import en from '../locales/en.json'
 import ja from '../locales/ja.json'
@@ -13,9 +14,10 @@ import ko from '../locales/ko.json'
 
 export const LOCALE_STORAGE_KEY = 'huobao:locale'
 
-export type UiLocale = 'zh' | 'en' | 'ja' | 'ko'
+export type UiLocale = 'th' | 'zh' | 'en' | 'ja' | 'ko'
 
 export const UI_LOCALES: Array<{ value: UiLocale; label: string }> = [
+  { value: 'th', label: 'ไทย' },
   { value: 'zh', label: '中文' },
   { value: 'en', label: 'English' },
   { value: 'ja', label: '日本語' },
@@ -27,7 +29,7 @@ export function readStoredLocale(): UiLocale {
     const v = localStorage.getItem(LOCALE_STORAGE_KEY)
     if (v && UI_LOCALES.some(l => l.value === v)) return v as UiLocale
   } catch { /* localStorage 不可用时回退默认 */ }
-  return 'zh'
+  return 'th'
 }
 
 export function persistLocale(locale: UiLocale) {
@@ -39,8 +41,8 @@ export function persistLocale(locale: UiLocale) {
 export const i18n = createI18n({
   legacy: false,
   locale: readStoredLocale(),
-  fallbackLocale: 'zh',
-  messages: { zh, en, ja, ko },
+  fallbackLocale: 'th',
+  messages: { th, zh, en, ja, ko },
   missingWarn: false,
   fallbackWarn: false,
 })

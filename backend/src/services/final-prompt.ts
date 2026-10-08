@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from '../db/index.js'
 import { mastra } from '../mastra/index.js'
 import { buildAgentRequestContext } from '../agents/context.js'
+import { getContentLanguage } from '../services/app-settings.js'
 import { logTaskError, logTaskProgress } from '../utils/task-logger.js'
 
 type CharacterRow = typeof schema.characters.$inferSelect
@@ -36,8 +37,11 @@ export async function ensureCharacterFinalPrompt(char: CharacterRow, episodeId: 
   if (char.finalPrompt && !force) return char.finalPrompt
   try {
     logTaskProgress('FinalPrompt', 'character-generate', { characterId: char.id, episodeId })
-    await runPromptAgent(episodeId, char.dramaId,
-      `为角色「${char.name}」(character_id=${char.id}) 生成三视图最终提示词，并调用 save_character_final_prompt 保存。`, opts)
+    const lang = getContentLanguage()
+    const msg = lang === 'th'
+      ? `สร้างพร้อมท์สุดท้ายสามมุมมองสำหรับตัวละคร "${char.name}" (character_id=${char.id}) และเรียกใช้ save_character_final_prompt เพื่อบันทึก`
+      : `为角色「${char.name}」(character_id=${char.id}) 生成三视图最终提示词，并调用 save_character_final_prompt 保存。`
+    await runPromptAgent(episodeId, char.dramaId, msg, opts)
     const [fresh] = await db.select().from(schema.characters).where(eq(schema.characters.id, char.id))
     return fresh?.finalPrompt || ''
   } catch (err: any) {
@@ -50,9 +54,11 @@ export async function ensureCharacterFinalPrompt(char: CharacterRow, episodeId: 
 export async function ensureSceneFinalPrompt(scene: SceneRow, episodeId: number, force = false, opts?: PromptAgentOptions): Promise<string> {
   if (scene.finalPrompt && !force) return scene.finalPrompt
   try {
-    logTaskProgress('FinalPrompt', 'scene-generate', { sceneId: scene.id, episodeId })
-    await runPromptAgent(episodeId, scene.dramaId,
-      `为场景「${scene.location}」(scene_id=${scene.id}) 生成固定视角（前景/中景/后景）最终提示词，并调用 save_scene_final_prompt 保存。注意：这是无人物空镜——场景图中不能出现任何的人（含背影、剪影、倒影、照片里的人），即使场景描述提到人物活动也必须剔除，只保留场景本身。`, opts)
+    const lang = getContentLanguage()
+    const msg = lang === 'th'
+      ? `สร้างพร้อมท์สุดท้ายมุมมองคงที่ (ฉากหน้า/ฉากกลาง/ฉากหลัง) สำหรับฉาก "${scene.location}" (scene_id=${scene.id}) และเรียกใช้ save_scene_final_prompt เพื่อบันทึก ข้อสังเกต: นี่คือช็อตว่างเปล่าไร้ผู้คน — ภาพฉากต้องไม่มีมนุษย์ปรากฏอย่างเด็ดขาด (รวมถึงด้านหลัง เงา ภาพสะท้อน หรือคนในรูป) แม้คำอธิบายฉากจะกล่าวถึงกิจกรรมของคนก็ต้องตัดออก เหลือเพียงตัวฉากเท่านั้น`
+      : `为场景「${scene.location}」(scene_id=${scene.id}) 生成固定视角（前景/中景/后景）最终提示词，并调用 save_scene_final_prompt 保存。注意：这是无人物空镜——场景图中不能出现任何的人（含背影、剪影、倒影、照片里的人），即使场景描述提到人物活动也必须剔除，只保留场景本身。`
+    await runPromptAgent(episodeId, scene.dramaId, msg, opts)
     const [fresh] = await db.select().from(schema.scenes).where(eq(schema.scenes.id, scene.id))
     return fresh?.finalPrompt || ''
   } catch (err: any) {
@@ -66,8 +72,11 @@ export async function ensurePropFinalPrompt(prop: PropRow, episodeId: number, fo
   if (prop.finalPrompt && !force) return prop.finalPrompt
   try {
     logTaskProgress('FinalPrompt', 'prop-generate', { propId: prop.id, episodeId })
-    await runPromptAgent(episodeId, prop.dramaId,
-      `为道具「${prop.name}」(prop_id=${prop.id}) 生成白底单品最终提示词，并调用 save_prop_final_prompt 保存。`, opts)
+    const lang = getContentLanguage()
+    const msg = lang === 'th'
+      ? `สร้างพร้อมท์สุดท้ายสินค้าเดี่ยวพื้นหลังขาวสำหรับอุปกรณ์ "${prop.name}" (prop_id=${prop.id}) และเรียกใช้ save_prop_final_prompt เพื่อบันทึก`
+      : `为道具「${prop.name}」(prop_id=${prop.id}) 生成白底单品最终提示词，并调用 save_prop_final_prompt 保存。`
+    await runPromptAgent(episodeId, prop.dramaId, msg, opts)
     const [fresh] = await db.select().from(schema.props).where(eq(schema.props.id, prop.id))
     return fresh?.finalPrompt || ''
   } catch (err: any) {

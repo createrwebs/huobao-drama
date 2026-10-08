@@ -10,6 +10,8 @@ import { downloadFile, fetchImageAsCompressedDataUrl, generateImageThumb, readIm
 import { extractVideoPoster } from '../utils/video-poster.js'
 import { getImageAdapter, getVideoAdapter } from './adapters/registry'
 import type { AIConfig } from './adapters/types'
+import { enrichStoryboardVideoPrompt } from './video-prompts.js'
+import { prepareAssetImagePrompt } from './asset-image-prompt.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess, logTaskWarn, redactUrl } from '../utils/task-logger.js'
 
 type TaskType = 'image' | 'video'
@@ -73,7 +75,7 @@ export async function generateImage(params: GenerateImageParams): Promise<number
     sceneId: params.sceneId,
     characterId: params.characterId,
     propId: params.propId,
-    prompt: params.prompt,
+    prompt: prepareAssetImagePrompt(params.prompt, params.characterId ? 'character' : params.sceneId ? 'scene' : params.propId ? 'prop' : undefined),
     model: params.model || config.model,
   }, {
     size: params.size || '1920x1080',
@@ -208,20 +210,26 @@ async function processTask(id: number, config: AIConfig) {
     if (type === 'image') {
       const adapter = getImageAdapter(config.provider)
       const resolvedReferenceImages = await normalizeReferenceImages(params.referenceImages)
+      let effectivePrompt = record.prompt || ''
+      if (resolvedReferenceImages.length > 0 && !effectivePrompt.includes('Maintain 100% facial likeness')) {
+        effectivePrompt = `Do not change the reference facial features. Maintain 100% facial likeness, original facial proportions, skin tone, natural lip shape, and eye shape. ${effectivePrompt}`.trim()
+      }
       ;({ url, method, headers, body } = adapter.buildGenerateRequest(config, {
         id: record.id,
         model: record.model,
-        prompt: record.prompt,
+        prompt: effectivePrompt,
         size: params.size,
         frameType: params.frameType,
         referenceImages: resolvedReferenceImages.length ? JSON.stringify(resolvedReferenceImages) : null,
       }))
     } else {
       const adapter = getVideoAdapter(config.provider)
-      const resolvedImageUrl = await normalizeVideoReferenceUrl(params.imageUrl)
-      const resolvedFirstFrameUrl = await normalizeVideoReferenceUrl(params.firstFrameUrl)
-      const resolvedLastFrameUrl = await normalizeVideoReferenceUrl(params.lastFrameUrl)
-      const resolvedReferenceImageUrls = await normalizeVideoReferenceUrls(params.referenceImageUrls)
+      const effectivePrompt = await enrichStoryboardVideoPrompt(record.prompt || '', record.storyboardId)
+      const isGoogleFlow = config.provider === 'google_flow'
+      const resolvedImageUrl = isGoogleFlow ? (params.imageUrl ?? null) : await normalizeVideoReferenceUrl(params.imageUrl)
+      const resolvedFirstFrameUrl = isGoogleFlow ? (params.firstFrameUrl ?? null) : await normalizeVideoReferenceUrl(params.firstFrameUrl)
+      const resolvedLastFrameUrl = isGoogleFlow ? (params.lastFrameUrl ?? null) : await normalizeVideoReferenceUrl(params.lastFrameUrl)
+      const resolvedReferenceImageUrls = isGoogleFlow ? (params.referenceImageUrls ?? []) : await normalizeVideoReferenceUrls(params.referenceImageUrls)
       // 参考视频/音频文件较大，不适合 dataURL 内联，需解析为公网可访问 URL
       const resolvedReferenceVideoUrls = resolvePublicMediaUrls(params.referenceVideoUrls, 'video')
       const resolvedReferenceAudioUrls = resolvePublicMediaUrls(params.referenceAudioUrls, 'audio')
@@ -229,7 +237,7 @@ async function processTask(id: number, config: AIConfig) {
       ;({ url, method, headers, body } = adapter.buildGenerateRequest(config, {
         id: record.id,
         model: record.model,
-        prompt: record.prompt,
+        prompt: effectivePrompt,
         referenceMode: params.referenceMode,
         imageUrl: resolvedImageUrl,
         firstFrameUrl: resolvedFirstFrameUrl,
@@ -246,6 +254,7 @@ async function processTask(id: number, config: AIConfig) {
         seed: params.seed,
         promptExtend: params.promptExtend,
         watermark: params.watermark,
+        storyboardId: record.storyboardId,
       }))
     }
 
@@ -313,7 +322,14 @@ async function processTask(id: number, config: AIConfig) {
     await markPolling(id, taskId)
     pollTask(record, config, taskId!)
   } catch (err: any) {
-    await failTask(id, err.message)
+    const causeMsg = err?.cause?.message || err?.cause?.code || ''
+    let msg = err?.message || 'Generation failed'
+    if (msg === 'fetch failed') {
+      msg = causeMsg
+        ? `การเชื่อมต่อบริการสร้างสื่อใช้เวลานานเกินกำหนดหรือขัดข้อง (${causeMsg}) กรุณาลองใหม่อีกครั้ง`
+        : 'การเชื่อมต่อบริการสร้างสื่อใช้เวลานานเกินกำหนดหรือขัดข้อง (fetch failed) กรุณาลองใหม่อีกครั้ง'
+    }
+    await failTask(id, msg)
   }
 }
 

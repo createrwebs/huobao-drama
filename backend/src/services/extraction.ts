@@ -5,6 +5,7 @@
  */
 import { mastra } from '../mastra/index.js'
 import { buildAgentRequestContext } from '../agents/context.js'
+import { getContentLanguage } from '../services/app-settings.js'
 import { logTaskError, logTaskProgress, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
 export type ExtractTarget = 'characters' | 'scenes' | 'props'
@@ -27,6 +28,12 @@ const EXTRACT_MESSAGES: Record<ExtractTarget, string> = {
   props: '请从本集剧本中提取关键道具——必须同时满足：① 直接推动剧情（出现/交接/损坏/发现会引发情节转折，如凶器、信物、关键文件、定情礼物、证据）；② 值得单独生成白底单品图（分镜会给它特写或反复出现）。判定三问任一答"否"即放弃：删掉它剧情依然成立吗？它只是随手使用的日常物品（手机、筷子、水杯）吗？它是场景陈设（桌椅、灯具）吗？宁可少提不要多提，一集通常 0-3 个，超过 3 个只保留最重要的 3 个，没有就一个都不提取（save_dedup_props 传空数组）。description 只记录物品外貌。先用 read_existing_props 读取已有道具去重，再用 save_dedup_props 保存。本次只提取道具，不要提取角色和场景。',
 }
 
+const EXTRACT_MESSAGES_TH: Record<ExtractTarget, string> = {
+  characters: 'โปรดสกัดข้อมูลตัวละครทั้งหมดจากบทของตอนนี้ (รูปลักษณ์ต้องผสานนิสัยใจคอและรวมถึงสไตล์/การแต่งกาย) ก่อนอื่นให้ใช้ read_existing_characters เพื่ออ่านตัวละครเดิมของโปรเจกต์ หากมีชื่อเดียวกันหรือใกล้เคียงให้ใช้ตัวละครเดิมซ้ำ ห้ามสร้างซ้ำซ้อน จากนั้นใช้ save_dedup_characters เพื่อบันทึก ครั้งนี้สกัดเฉพาะตัวละครเท่านั้น ไม่ต้องสกัดฉากและอุปกรณ์',
+  scenes: 'โปรดสกัดข้อมูลฉากทั้งหมดจากบทของตอนนี้ (สถานที่ เวลา แสง ฯลฯ) ก่อนอื่นให้ใช้ read_existing_scenes เพื่ออ่านฉากเดิมและตัดความซ้ำซ้อน จากนั้นใช้ save_dedup_scenes เพื่อบันทึก ครั้งนี้สกัดเฉพาะฉากเท่านั้น ไม่ต้องสกัดตัวละครและอุปกรณ์',
+  props: 'โปรดสกัดอุปกรณ์ประกอบฉากสำคัญจากบทของตอนนี้ — ต้องผ่านเงื่อนไข: ① ผลักดันพล็อตเรื่องโดยตรง (การปรากฏตัว ส่งมอบ เสียหาย หรือค้นพบทำให้เกิดจุดเปลี่ยน เช่น อาวุธ ของแทนใจ เอกสารสำคัญ ของขวัญ หลักฐาน); ② คุ้มค่าที่จะสร้างภาพเดี่ยวพื้นหลังขาว (สตอรี่บอร์ดจะโคลสอัพหรือปรากฏซ้ำ) คำถามตรวจสอบ: ตัดทิ้งแล้วเรื่องยังดำเนินต่อได้ไหม? เป็นของใช้ประจำวันทั่วไปไหม? เป็นของประดับฉากไหม? หากใช่ข้อใดข้อหนึ่งให้ตัดทิ้ง สกัดน้อยดีกว่าสกัดมาก ตอนหนึ่งปกติมี 0-3 ชิ้น หากเกินให้เก็บเฉพาะ 3 ชิ้นที่สำคัญที่สุด หากไม่มีเลยไม่ต้องสกัด (ส่งอาร์เรย์ว่างให้ save_dedup_props) description บันทึกเฉพาะรูปลักษณ์ทางกายภาพเท่านั้น ใช้ read_existing_props ก่อน แล้วบันทึกด้วย save_dedup_props ครั้งนี้สกัดเฉพาะอุปกรณ์เท่านั้น',
+}
+
 /** 启动异步提取任务（立即返回）；同集同类型已在运行时返回 false；可指定文本模型覆盖 */
 export function startExtraction(episodeId: number, dramaId: number, target: ExtractTarget, opts: { model?: string; configId?: number } = {}): boolean {
   const key = keyOf(episodeId, target)
@@ -45,7 +52,9 @@ export function startExtraction(episodeId: number, dramaId: number, target: Extr
       modelOverride: opts.model || undefined,
       textConfigId: opts.configId || undefined,
     })
-    return agent.generate([{ role: 'user', content: EXTRACT_MESSAGES[target] }], {
+    const lang = getContentLanguage()
+    const promptMsg = lang === 'th' ? EXTRACT_MESSAGES_TH[target] : EXTRACT_MESSAGES[target]
+    return agent.generate([{ role: 'user', content: promptMsg }], {
       maxSteps: 20,
       requestContext,
       // 逐步打印 Agent 进展：调用了哪些工具、输出了什么

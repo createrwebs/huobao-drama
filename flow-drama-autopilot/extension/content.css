@@ -1,0 +1,234 @@
+/* Google Flow Drama Auto-Pilot Floating UI Styles */
+#fap-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 420px;
+  max-width: 90vw;
+  background: rgba(22, 24, 29, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #f1f3f4;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Google Sans", sans-serif;
+  z-index: 9999999;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#fap-container.fap-minimized {
+  width: 220px;
+  height: 48px;
+}
+
+#fap-container.fap-minimized #fap-body {
+  display: none;
+}
+
+.fap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: grab;
+  user-select: none;
+}
+
+.fap-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #fff;
+}
+
+.fap-title-badge {
+  background: linear-gradient(135deg, #1a73e8, #8ab4f8);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fap-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.fap-icon-btn {
+  background: transparent;
+  border: none;
+  color: #9aa0a6;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.2s, color 0.2s;
+}
+
+.fap-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+#fap-body {
+  padding: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fap-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #bdc1c6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fap-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111318;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px;
+  color: #e8eaed;
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, Monaco, monospace;
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.fap-textarea:focus {
+  border-color: #8ab4f8;
+}
+
+.fap-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.fap-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fap-btn-primary {
+  background: linear-gradient(135deg, #1a73e8, #1557b0);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+}
+
+.fap-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1b66ca, #104895);
+  box-shadow: 0 6px 16px rgba(26, 115, 232, 0.4);
+}
+
+.fap-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaed;
+}
+
+.fap-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.fap-btn-danger {
+  background: #d93025;
+  color: #fff;
+}
+
+.fap-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.fap-status-card {
+  background: #181b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fap-status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.fap-status-val {
+  font-weight: 600;
+  color: #8ab4f8;
+}
+
+.fap-progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fap-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #1a73e8, #34a853);
+  transition: width 0.3s ease;
+}
+
+.fap-log-box {
+  background: #0d0f12;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #9aa0a6;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.fap-log-item {
+  margin-bottom: 4px;
+}
+
+.fap-log-item.success { color: #81c995; }
+.fap-log-item.info { color: #8ab4f8; }
+.fap-log-item.warn { color: #fdd663; }
+.fap-log-item.error { color: #f28b82; }

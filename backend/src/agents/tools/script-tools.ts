@@ -60,15 +60,21 @@ ${source}`,
 
 const saveScript = createTool({
   id: 'save_script',
-  description: 'Save the rewritten screenplay content to the current episode.',
+  description: 'Save the formatted screenplay content to the current episode.',
   inputSchema: z.object({
     content: z.string().describe('The formatted screenplay content to save'),
+    synopsis: z.string().optional().describe('Brief summary or outline of this episode to save as raw content if empty'),
   }),
-  execute: async ({ content }, context) => {
+  execute: async ({ content, synopsis }, context) => {
     const episodeId = getEpisodeId(context?.requestContext)
     if (!episodeId) return { error: 'Missing episodeId in request context' }
+    const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, episodeId))
+    const updates: any = { scriptContent: content, updatedAt: now() }
+    if (!ep?.content && (synopsis || content)) {
+      updates.content = synopsis || content.slice(0, 500)
+    }
     await db.update(schema.episodes)
-      .set({ scriptContent: content, updatedAt: now() })
+      .set(updates)
       .where(eq(schema.episodes.id, episodeId))
 
     return { message: `Script saved`, word_count: content.length }

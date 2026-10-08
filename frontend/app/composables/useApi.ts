@@ -14,7 +14,7 @@ async function req<T = any>(method: string, path: string, body?: any): Promise<T
 
     if (!resp.ok || (json.code && json.code >= 400)) {
       console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888', json.message || '')
-      throw new Error(json.message || `${resp.status}`)
+      throw new Error(json.message || json.msg || json.error?.message || `${resp.status}`)
     }
 
     console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#66bb6a', 'color:#66bb6a;font-weight:bold', 'color:#888')
@@ -134,6 +134,18 @@ export const aiConfigAPI = {
   update: (id: number, d: any) => api.put(`/ai-configs/${id}`, d),
   del: (id: number) => api.del(`/ai-configs/${id}`),
   test: (d: any) => api.post('/ai-configs/test', d),
+}
+
+export const flowBridgeAPI = {
+  status: (refresh = false) => api.get(`/flow-bridge/status${refresh ? '?refresh=1' : ''}`),
+  accounts: () => api.get('/flow-bridge/accounts'),
+  switchAccount: (account_id: string) => api.post('/flow-bridge/accounts/switch', { account_id }),
+  importAccount: (data: any) => api.post('/flow-bridge/accounts/import', data),
+  deleteAccount: (id: string) => api.del(`/flow-bridge/accounts/${id}`),
+  recentVideos: () => api.get('/flow-bridge/recent-videos'),
+  applyToStoryboard: (data: { storyboard_id: number; filename?: string; file_path?: string; video_url?: string; prompt?: string }) => api.post('/flow-bridge/apply-to-storyboard', data),
+  getCharacterRefs: (dramaId: number) => api.get(`/flow-bridge/character-refs/${dramaId}`),
+  syncCharacterRefs: (data: { drama_id: number; force?: boolean; character_ids?: number[] }) => api.post('/flow-bridge/sync-character-refs', data),
 }
 
 // lang 缺省/为 zh 时读写基础版（不带 query，保持原请求形态）

@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
 import { success, created, badRequest, now } from '../utils/response.js'
 import { generateImage } from '../services/generation.js'
-import { getDramaStylePrompt } from '../services/style-preset.js'
+import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../services/style-preset.js'
 import { ensureSceneFinalPrompt } from '../services/final-prompt.js'
 import { logTaskError, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
@@ -76,14 +76,15 @@ app.post('/:id/generate-image', async (c) => {
   const stylePrompt = await getDramaStylePrompt(scene.dramaId)
   const finalPrompt = await ensureSceneFinalPrompt(scene, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
   // 回退拼接也要守住无人物约束：场景描述(prompt)可能含人物活动，直接拼会让人混进图里
-  const prompt = finalPrompt || [
+  const basePrompt = finalPrompt || [
     stylePrompt || '',
     scene.location,
     scene.time || '',
-    scene.prompt || '高质量场景',
-    scene.lighting || '电影感光影',
-    '画面中没有任何人物，空场景，只有场景本身',
+    scene.prompt || '',
+    scene.lighting || 'cinematic lighting',
+    'empty scene, no people, wide establishing shot, high quality',
   ].filter(Boolean).join(', ')
+  const prompt = await applyDramaStyleToPrompt(basePrompt, scene.dramaId)
   try {
     logTaskStart('SceneImage', 'generate', { sceneId: id, episodeId: ep.id, dramaId: scene.dramaId, location: scene.location })
     await db.update(schema.scenes).set({ status: 'processing', updatedAt: now() }).where(eq(schema.scenes.id, id))

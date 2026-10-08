@@ -52,6 +52,7 @@ Dialogue that does not fit must be moved to the next segment; cramming unperform
 11. **Scene binding**: if it can be matched to an existing scene, `scene_id` must be filled in
 12. **Character binding**: fill in `character_ids`, binding 0 to multiple characters involved in this segment
 13. **Prop binding**: fill in `prop_ids`, binding 0 to multiple key props appearing in this segment
+14. **Video prompt `video_prompt`**: the first line must be the header, detailing character appearance, styling, and scene environment in parentheses (e.g. Characters: @Name (gender, age, facial features, hair, clothing), ...; Scene: @Scene (environment, era, lighting, mood)), derived from `read_storyboard_context`, ensuring AI video models (like Google Flow / Veo) have complete visual context across shots
 
 ## Scene Binding Rules
 

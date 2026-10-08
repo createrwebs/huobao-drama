@@ -81,47 +81,337 @@
           <section class="card quick-card">
             <div class="quick-card-head">
               <div class="setup-title">{{ t('settings.ai.quickTitle') }}</div>
-              <span class="tag tag-accent">{{ t('settings.ai.recommended') }}</span>
-            </div>
-            <p class="setup-desc">
-              {{ t('settings.ai.quickDesc') }}
-              <a class="huobao-site-link" :href="huobaoSiteUrl" target="_blank" rel="noopener noreferrer">
-                {{ t('settings.ai.getKey') }}
-                <ExternalLink :size="12" :stroke-width="1.8" />
-              </a>
-            </p>
-            <div class="huobao-quick-row">
-              <input v-model="huobaoApiKey" class="input" type="password" placeholder="Huobao API Key" />
-              <div class="lang-picker">
+              <div class="lang-picker ml-auto">
                 <button
                   type="button"
-                  :class="['lang-option', { on: huobaoRegion === 'cn' }]"
-                  @click="huobaoRegion = 'cn'"
-                >{{ t('settings.ai.regionCn') }}</button>
+                  :class="['lang-option', { on: quickProviderTab === 'antigravity' }]"
+                  @click="quickProviderTab = 'antigravity'"
+                >
+                  <img v-if="providerIconUrl('antigravity')" :src="providerIconUrl('antigravity')" class="quick-tab-icon" alt="" />
+                  {{ t('settings.ai.tabAntigravity') }}
+                </button>
                 <button
                   type="button"
-                  :class="['lang-option', { on: huobaoRegion === 'com' }]"
-                  @click="huobaoRegion = 'com'"
-                >{{ t('settings.ai.regionCom') }}</button>
+                  :class="['lang-option', { on: quickProviderTab === 'flow' }]"
+                  @click="quickProviderTab = 'flow'"
+                >
+                  <img v-if="providerIconUrl('google_flow')" :src="providerIconUrl('google_flow')" class="quick-tab-icon" alt="" />
+                  {{ t('settings.ai.tabFlow') }}
+                </button>
+                <button
+                  type="button"
+                  :class="['lang-option', { on: quickProviderTab === 'gemini' }]"
+                  @click="quickProviderTab = 'gemini'"
+                >
+                  <img v-if="providerIconUrl('gemini')" :src="providerIconUrl('gemini')" class="quick-tab-icon" alt="" />
+                  {{ t('settings.ai.tabGemini') }}
+                </button>
+                <button
+                  type="button"
+                  :class="['lang-option', { on: quickProviderTab === 'openai' }]"
+                  @click="quickProviderTab = 'openai'"
+                >
+                  <img v-if="providerIconUrl('openai')" :src="providerIconUrl('openai')" class="quick-tab-icon" alt="" />
+                  {{ t('settings.ai.tabOpenai') }}
+                </button>
+                <button
+                  type="button"
+                  :class="['lang-option', { on: quickProviderTab === 'firemux' }]"
+                  @click="quickProviderTab = 'firemux'"
+                >
+                  <img v-if="providerIconUrl('firemux')" :src="providerIconUrl('firemux')" class="quick-tab-icon" alt="" />
+                  {{ t('settings.ai.tabFiremux') }}
+                </button>
               </div>
-              <button class="btn btn-primary" :disabled="huobaoSaving" @click="applyHuobaoQuickConfig">
-                <Loader2 v-if="huobaoSaving" :size="13" class="animate-spin" />
-                <Sparkles v-else :size="13" />
-                {{ t('settings.ai.applyQuick') }}
-              </button>
             </div>
-            <div class="huobao-quick-models">
-              <div v-for="q in huobaoQuickConfigs" :key="q.name" class="hqm-row">
-                <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
-                <span class="hqm-provider">
-                  <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
-                  {{ q.provider }}
-                </span>
-                <span class="hqm-models mono">
-                  <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
-                    {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+
+            <!-- Google Antigravity Quick Setup (Free Text / Gemini Models) -->
+            <div v-if="quickProviderTab === 'antigravity'">
+              <p class="setup-desc">
+                {{ t('settings.ai.antigravityQuickDesc') }}
+              </p>
+              <div class="flow-status-banner mb-3 p-3 rounded border flex items-center justify-between" :style="antigravityStatus?.available ? 'border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.08);' : 'border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08);'">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full" :style="antigravityStatus?.available ? 'background: #10b981;' : 'background: #f59e0b;'"></span>
+                  <span v-if="antigravityChecking" class="text-xs">{{ t('settings.ai.antigravityStatusChecking') }}</span>
+                  <span v-else-if="antigravityStatus?.available" class="text-xs font-medium" style="color: #10b981;">
+                    {{ t('settings.ai.antigravityStatusConnected') }}
                   </span>
-                </span>
+                  <span v-else class="text-xs" style="color: #f59e0b;">
+                    {{ t('settings.ai.antigravityStatusDisconnected') }}
+                  </span>
+                </div>
+                <button class="btn btn-ghost btn-xs" :disabled="antigravityChecking" @click="refreshAntigravityStatus">
+                  <RefreshCw :size="12" :class="{ 'animate-spin': antigravityChecking }" />
+                  {{ t('settings.ai.test') }}
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button class="btn btn-primary" :disabled="antigravitySaving" @click="applyAntigravityQuickConfig">
+                  <Loader2 v-if="antigravitySaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyAntigravity') }}
+                </button>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in antigravityQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Flow Quick Setup (Google One Session) -->
+            <div v-else-if="quickProviderTab === 'flow'">
+              <p class="setup-desc">
+                {{ t('settings.ai.flowQuickDesc') }}
+              </p>
+              <div class="flow-status-banner mb-3 p-3 rounded border flex items-center justify-between" :style="flowStatus?.available ? 'border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.08);' : 'border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08);'">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full" :style="flowStatus?.available ? 'background: #10b981;' : 'background: #f59e0b;'"></span>
+                  <span v-if="flowChecking" class="text-xs">{{ t('settings.ai.flowStatusChecking') }}</span>
+                  <span v-else-if="flowStatus?.available" class="text-xs font-medium" style="color: #10b981;">
+                    {{ t('settings.ai.flowStatusConnected', { accounts: flowStatus.activeAccounts, credits: flowStatus.totalCredits ?? '--' }) }}
+                  </span>
+                  <span v-else class="text-xs" style="color: #f59e0b;">
+                    {{ t('settings.ai.flowStatusDisconnected') }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button class="btn btn-ghost btn-xs" :disabled="flowChecking" @click="refreshFlowStatus(true)">
+                    <RefreshCw :size="12" :class="{ 'animate-spin': flowChecking }" />
+                    {{ t('settings.ai.test') }}
+                  </button>
+                  <button class="btn btn-outline btn-xs" @click="openFlowImportModal">
+                    <Plus :size="12" />
+                    {{ t('settings.ai.flowImportBtn') }}
+                  </button>
+                </div>
+              </div>
+
+              <p v-if="flowStatus?.lastError" class="text-xs text-danger mb-3" role="alert">{{ flowStatus.lastError }}</p>
+
+              <!-- Google Flow Accounts List & Switcher -->
+              <div class="flow-accounts-section mb-3">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-semibold text-muted flex items-center gap-1.5">
+                    <Layers :size="13" />
+                    {{ t('settings.ai.flowAccountsTitle') }} ({{ flowAccounts.length }})
+                  </span>
+                </div>
+
+                <div v-if="flowAccounts.length === 0" class="p-3 text-center text-xs text-muted border rounded" style="border-style: dashed;">
+                  {{ t('settings.ai.flowNoAccounts') }}
+                </div>
+
+                <div v-else class="flex flex-col gap-2">
+                  <div
+                    v-for="acc in flowAccounts"
+                    :key="acc.id"
+                    class="p-2.5 rounded border flex items-center justify-between"
+                    :style="acc.is_active ? 'border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.06);' : 'border-color: var(--border); background: var(--bg-1);'"
+                  >
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="flex items-center gap-1.5 shrink-0">
+                        <span
+                          class="w-2.5 h-2.5 rounded-full inline-block"
+                          :style="acc.is_active ? 'background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);' : 'background: #94a3b8;'"
+                        ></span>
+                        <span
+                          class="text-xs font-semibold"
+                          :style="acc.is_active ? 'color: #10b981;' : 'color: var(--text-2);'"
+                        >
+                          {{ acc.is_active ? t('settings.ai.flowActiveBadge') : t('settings.ai.flowStandbyBadge') }}
+                        </span>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="font-mono text-xs font-bold">{{ acc.id }}</span>
+                          <span v-if="acc.credits !== null && acc.credits !== undefined" class="tag tag-accent text-xs">
+                            {{ acc.credits }} credits
+                          </span>
+                          <span v-else class="tag text-xs" style="opacity: 0.6;">
+                            -- credits
+                          </span>
+                          <span v-if="acc.cookies_count" class="text-xs font-mono" style="font-size: 10px; color: var(--text-2);">
+                            ({{ acc.cookies_count }} cookies)
+                          </span>
+                        </div>
+                        <div class="text-xs font-mono truncate" style="font-size: 11px; color: var(--text-2); max-width: 320px;" :title="acc.project_id">
+                          Project: {{ acc.project_id || 'N/A' }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <button
+                        v-if="!acc.is_active"
+                        class="btn btn-outline btn-xs"
+                        :disabled="flowSwitchingId !== null || flowChecking"
+                        @click="handleSwitchFlowAccount(acc)"
+                      >
+                        <Loader2 v-if="flowSwitchingId === acc.id" :size="12" class="animate-spin" />
+                        <Check v-else :size="12" />
+                        {{ t('settings.ai.flowSwitchAccount') }}
+                      </button>
+                      <button
+                        class="btn btn-ghost btn-xs text-danger hover:bg-danger/10"
+                        :title="t('common.delete')"
+                        @click="handleDeleteFlowAccount(acc)"
+                      >
+                        <Trash2 :size="12" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button class="btn btn-primary" :disabled="flowSaving" @click="applyFlowQuickConfig('native')">
+                  <Loader2 v-if="flowSaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyFlowNative') }}
+                </button>
+                <button class="btn btn-ghost" :disabled="flowSaving" @click="applyFlowQuickConfig('proxy')">
+                  <Layers :size="13" />
+                  {{ t('settings.ai.applyFlowProxy') }}
+                </button>
+              </div>
+              <div class="text-xs text-muted mb-3" style="font-size: 11px; opacity: 0.85;">
+                <p class="mb-1"><strong>{{ t('settings.ai.flowMethod1Desc') }}</strong></p>
+                <p><strong>{{ t('settings.ai.flowMethod2Desc') }}</strong></p>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in flowQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Gemini Quick Setup (Default & Free) -->
+            <div v-else-if="quickProviderTab === 'gemini'">
+              <p class="setup-desc">
+                {{ t('settings.ai.geminiQuickDesc') }}
+                <a class="huobao-site-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">
+                  {{ t('settings.ai.getGeminiKey') }}
+                  <ExternalLink :size="12" :stroke-width="1.8" />
+                </a>
+              </p>
+              <div class="huobao-quick-row">
+                <input v-model="geminiApiKey" class="input" type="password" placeholder="Google Gemini API Key (AIzaSy...)" />
+                <button class="btn btn-primary" :disabled="geminiSaving" @click="applyGeminiQuickConfig">
+                  <Loader2 v-if="geminiSaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyGemini') }}
+                </button>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in geminiQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- OpenAI Quick Setup -->
+            <div v-else-if="quickProviderTab === 'openai'">
+              <p class="setup-desc">
+                {{ t('settings.ai.openaiQuickDesc') }}
+                <a class="huobao-site-link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">
+                  {{ t('settings.ai.getOpenaiKey') }}
+                  <ExternalLink :size="12" :stroke-width="1.8" />
+                </a>
+              </p>
+              <div class="huobao-quick-row">
+                <input v-model="openaiApiKey" class="input" type="password" placeholder="OpenAI API Key (sk-...)" />
+                <button class="btn btn-primary" :disabled="openaiSaving" @click="applyOpenaiQuickConfig">
+                  <Loader2 v-if="openaiSaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyOpenai') }}
+                </button>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in openaiQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Firemux Relay Quick Setup -->
+            <div v-else-if="quickProviderTab === 'firemux'">
+              <p class="setup-desc">
+                {{ t('settings.ai.quickDesc') }}
+                <a class="huobao-site-link" :href="huobaoSiteUrl" target="_blank" rel="noopener noreferrer">
+                  {{ t('settings.ai.getKey') }}
+                  <ExternalLink :size="12" :stroke-width="1.8" />
+                </a>
+              </p>
+              <div class="huobao-quick-row">
+                <input v-model="huobaoApiKey" class="input" type="password" placeholder="Huobao API Key" />
+                <div class="lang-picker">
+                  <button
+                    type="button"
+                    :class="['lang-option', { on: huobaoRegion === 'cn' }]"
+                    @click="huobaoRegion = 'cn'"
+                  >{{ t('settings.ai.regionCn') }}</button>
+                  <button
+                    type="button"
+                    :class="['lang-option', { on: huobaoRegion === 'com' }]"
+                    @click="huobaoRegion = 'com'"
+                  >{{ t('settings.ai.regionCom') }}</button>
+                </div>
+                <button class="btn btn-primary" :disabled="huobaoSaving" @click="applyHuobaoQuickConfig">
+                  <Loader2 v-if="huobaoSaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyQuick') }}
+                </button>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in huobaoQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -208,12 +498,12 @@
               <div class="provider-badge style-badge"><Palette :size="15" /></div>
               <div class="config-main">
                 <div class="config-line">
-                  <span class="config-name">{{ p.name }}</span>
+                  <span class="config-name">{{ styleName(p) }}</span>
                   <span class="tag mono">{{ p.value }}</span>
                   <span v-if="!p.is_active" class="tag">{{ t('settings.common.disabled') }}</span>
                 </div>
                 <div class="config-sub mono truncate">{{ p.prompt }}</div>
-                <div v-if="p.description" class="config-sub truncate">{{ p.description }}</div>
+                <div v-if="styleDesc(p)" class="config-sub truncate">{{ styleDesc(p) }}</div>
               </div>
               <label class="config-switch">
                 <input type="checkbox" class="sr-only" :checked="p.is_active" @change="toggleStyle(p)">
@@ -680,16 +970,70 @@
       @confirm="confirmDelSkill"
       @cancel="skillToDelete = null"
     />
+    <!-- Flow Cookie Import Dialog -->
+    <div v-if="showFlowImportModal" class="overlay" @click.self="showFlowImportModal = false">
+      <div class="dialog" style="max-width: 600px; width: 95%;">
+        <div class="dialog-head">
+          <div>
+            <div class="dialog-title">{{ t('settings.ai.flowImportTitle') }}</div>
+            <div class="dialog-sub">{{ t('settings.ai.flowImportDesc') }}</div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-xs ml-auto" @click="showFlowImportModal = false">
+            <X :size="14" />
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div class="field mb-2">
+            <label class="field-label">JSON Session Data</label>
+            <textarea
+              v-model="flowImportJson"
+              class="input font-mono text-xs"
+              rows="12"
+              :placeholder="t('settings.ai.flowImportPlaceholder')"
+              style="line-height: 1.4; resize: vertical; width: 100%; white-space: pre;"
+            ></textarea>
+            <p class="text-xs text-muted mt-1.5" style="font-size: 11px; opacity: 0.85;">
+              💡 รองรับ Session JSON จาก Chrome DevTools / Cookie Editor (มี <code>project_id</code>, <code>cookies</code>, <code>at</code>, <code>fsid</code>)
+            </p>
+          </div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-ghost" :disabled="flowImporting" @click="showFlowImportModal = false">
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            :disabled="flowImporting || !flowImportJson.trim()"
+            @click="handleImportFlowAccount"
+          >
+            <Loader2 v-if="flowImporting" :size="13" class="animate-spin" />
+            <Check v-else :size="13" />
+            {{ t('settings.ai.flowImportSubmit') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow Account Delete Confirm Dialog -->
+    <ConfirmDialog
+      :open="!!flowAccountToDelete"
+      :title="t('settings.ai.flowDeleteConfirm')"
+      :message="flowAccountToDelete ? `ID: ${flowAccountToDelete.id} (${flowAccountToDelete.project_id || flowAccountToDelete.filename})` : ''"
+      :loading="flowDeleting"
+      @confirm="confirmDeleteFlowAccount"
+      @cancel="flowAccountToDelete = null"
+    />
   </div>
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X, Layers } from 'lucide-vue-next'
 import BaseSelect from '~/components/BaseSelect.vue'
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { aiConfigAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
+import { aiConfigAPI, flowBridgeAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
 import { useDesktopBridge } from '~/composables/useDesktopBridge'
 import { useMigrateState } from '~/composables/useMigrateState'
 import { useTheme } from '~/composables/useTheme'
@@ -697,7 +1041,7 @@ import { providerIconUrl } from '~/composables/useProviderIcon'
 import { startTour, autoTour } from '~/composables/useTour'
 import { confirmUnifiedLanguage } from '~/composables/useUnifiedLanguage'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 
 const showBrandImage = ref(true)
 const tab = ref('ai')
@@ -716,6 +1060,24 @@ const cfgDialog = ref(false)
 const cfgEditId = ref(null)
 const cfgTesting = ref(false)
 const cfgTestResult = ref(null)
+const quickProviderTab = ref('flow')
+const flowStatus = ref(null)
+const flowChecking = ref(false)
+const flowSaving = ref(false)
+const flowAccounts = ref([])
+const flowSwitchingId = ref(null)
+const showFlowImportModal = ref(false)
+const flowImportJson = ref('')
+const flowImporting = ref(false)
+const flowAccountToDelete = ref(null)
+const flowDeleting = ref(false)
+const antigravitySaving = ref(false)
+const antigravityStatus = ref(null)
+const antigravityChecking = ref(false)
+const geminiApiKey = ref('')
+const geminiSaving = ref(false)
+const openaiApiKey = ref('')
+const openaiSaving = ref(false)
 const huobaoApiKey = ref('')
 const huobaoSaving = ref(false)
 // 火宝节点选择：默认跟随界面语言（中文→国内 .cn，其他→国外 .com），一键配置与取 Key 链接共用
@@ -749,38 +1111,65 @@ const serviceTypes = computed(() => [
   { type: 'image', label: t('common.serviceType.image') },
   { type: 'video', label: t('common.serviceType.video') },
 ])
-const providers = ['gemini', 'openai', 'volcengine', 'minimax', 'aliyun']
+const providers = ['antigravity', 'gemini', 'openai', 'google_flow', 'volcengine', 'minimax', 'aliyun']
 const providerSelectOptions = computed(() => providers.map(p => ({ label: p, value: p })))
 const serviceMeta = computed(() => ({
   text: { label: t('common.serviceType.text'), desc: t('settings.ai.meta.text') },
   image: { label: t('common.serviceType.image'), desc: t('settings.ai.meta.image') },
   video: { label: t('common.serviceType.video'), desc: t('settings.ai.meta.video') },
 }))
-const providerPresets = {
+const providerPresets = computed(() => ({
   text: {
-    gemini: { label: 'Gemini 官方', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'] },
-    openai: { label: 'OpenAI 官方', baseUrl: 'https://api.openai.com', models: ['deepseek-v4-pro', 'gpt-5.6-terra'] },
+    antigravity: { label: t('settings.ai.presets.antigravityOfficial'), baseUrl: 'http://127.0.0.1:8317', models: ['gemini-3.8-flash-high', 'gemini-3.7-flash-high', 'gemini-3.6-flash-high', 'gemini-3.1-flash-lite', 'gemini-pro-agent', 'claude-sonnet-4-6'] },
+    gemini: { label: t('settings.ai.presets.geminiOfficial'), baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'] },
+    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['gpt-4o', 'gpt-4o-mini'] },
   },
   image: {
-    gemini: { label: 'Gemini 官方', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro-image', 'gemini-3.1-flash-image'] },
-    openai: { label: 'OpenAI 官方', baseUrl: 'https://api.openai.com', models: ['gpt-image-2'] },
+    google_flow: { label: t('settings.ai.presets.flowOfficial'), baseUrl: 'http://127.0.0.1:5679/api/v1/flow-bridge', models: ['gem_pix_2', 'narwhal'] },
+    gemini: { label: t('settings.ai.presets.geminiOfficial'), baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro-image', 'imagen-3.0-generate-002'] },
+    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['dall-e-3', 'gpt-image-2'] },
   },
   video: {
-    aliyun: { label: '阿里云百炼 Wan 3.0', baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
-    volcengine: { label: 'Seedance 2.0 官方', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
-    minimax: { label: 'MiniMax H3 官方', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
+    google_flow: { label: t('settings.ai.presets.flowOfficial'), baseUrl: 'http://127.0.0.1:5679/api/v1/flow-bridge', models: ['veo-4s-360p', 'veo-8s-720p', 'veo'] },
+    aliyun: { label: t('settings.ai.presets.aliyunWan'), baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
+    volcengine: { label: t('settings.ai.presets.seedanceOfficial'), baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
+    minimax: { label: t('settings.ai.presets.minimaxOfficial'), baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
   },
-}
+}))
+
+const flowQuickConfigs = computed(() => [
+  { service_type: 'image', provider: 'google_flow', name: 'Google Flow Image (Imagen 3)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: ['gem_pix_2', 'narwhal'], priority: 150 },
+  { service_type: 'video', provider: 'google_flow', name: 'Google Flow Video (Veo)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: ['veo-4s-360p', 'veo-8s-720p', 'veo'], priority: 150 },
+])
+
+const flowProxyQuickConfigs = computed(() => [
+  { service_type: 'image', provider: 'openai', name: 'Google Flow (OpenAI Proxy)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: ['gem_pix_2', 'narwhal'], priority: 140 },
+  { service_type: 'video', provider: 'google_flow', name: 'Google Flow Video (Veo)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: ['veo-4s-360p', 'veo-8s-720p', 'veo'], priority: 140 },
+])
+
+const antigravityQuickConfigs = computed(() => [
+  { service_type: 'text', provider: 'antigravity', name: 'Google Antigravity (Gemini ฟรี)', base_url: 'http://127.0.0.1:8317', model: ['gemini-3.8-flash-high', 'gemini-3.7-flash-high', 'gemini-3.6-flash-high', 'gemini-3.1-flash-lite', 'gemini-pro-agent', 'claude-sonnet-4-6'], priority: 150 },
+])
+
+const geminiQuickConfigs = computed(() => [
+  { service_type: 'text', provider: 'gemini', name: 'Google Gemini (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'], priority: 102 },
+  { service_type: 'image', provider: 'gemini', name: 'Google Gemini Image (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: ['gemini-3-pro-image', 'imagen-3.0-generate-002'], priority: 102 },
+])
+
+const openaiQuickConfigs = computed(() => [
+  { service_type: 'text', provider: 'openai', name: 'OpenAI (ทางการ)', base_url: 'https://api.openai.com', model: ['gpt-4o', 'gpt-4o-mini'], priority: 101 },
+  { service_type: 'image', provider: 'openai', name: 'OpenAI DALL-E (ทางการ)', base_url: 'https://api.openai.com', model: ['dall-e-3', 'gpt-image-2'], priority: 101 },
+])
 const huobaoQuickConfigs = computed(() => {
   const base = huobaoSiteUrl.value
   return [
-    { service_type: 'text', provider: 'gemini', name: '火宝文本服务 · Gemini', base_url: base, model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
-    { service_type: 'text', provider: 'openai', name: '火宝文本服务 · OpenAI', base_url: base, model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
-    { service_type: 'image', provider: 'openai', name: '火宝图片服务 · OpenAI', base_url: base, model: ['gpt-image-2'], priority: 99 },
-    { service_type: 'image', provider: 'gemini', name: '火宝图片服务 · Gemini', base_url: base, model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
-    { service_type: 'video', provider: 'aliyun', name: '火宝视频服务 · Wan 3.0', base_url: `${base}/qwen`, model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
-    { service_type: 'video', provider: 'volcengine', name: '火宝视频服务 · Seedance', base_url: `${base}/volcengine`, model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
-    { service_type: 'video', provider: 'minimax', name: '火宝视频服务 · MiniMax', base_url: `${base}/minimax`, model: ['MiniMax-H3'], priority: 98 },
+    { service_type: 'text', provider: 'gemini', name: `${t('settings.ai.quickServiceText')} · Gemini`, base_url: base, model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
+    { service_type: 'text', provider: 'openai', name: `${t('settings.ai.quickServiceText')} · OpenAI`, base_url: base, model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
+    { service_type: 'image', provider: 'openai', name: `${t('settings.ai.quickServiceImage')} · OpenAI`, base_url: base, model: ['gpt-image-2'], priority: 99 },
+    { service_type: 'image', provider: 'gemini', name: `${t('settings.ai.quickServiceImage')} · Gemini`, base_url: base, model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
+    { service_type: 'video', provider: 'aliyun', name: `${t('settings.ai.quickServiceVideo')} · Wan 3.0`, base_url: `${base}/qwen`, model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
+    { service_type: 'video', provider: 'volcengine', name: `${t('settings.ai.quickServiceVideo')} · Seedance`, base_url: `${base}/volcengine`, model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
+    { service_type: 'video', provider: 'minimax', name: `${t('settings.ai.quickServiceVideo')} · MiniMax`, base_url: `${base}/minimax`, model: ['MiniMax-H3'], priority: 98 },
   ]
 })
 
@@ -788,16 +1177,15 @@ function byType(t) { return cfgs.value.filter(c => c.service_type === t) }
 function countActive(t) { return byType(t).filter(c => c.is_active).length }
 function fmtModel(m) { return Array.isArray(m) ? m.join(', ') : m || '—' }
 function presetsByType(type) {
-  const group = providerPresets[type] || {}
+  const group = providerPresets.value[type] || {}
   return Object.entries(group).map(([provider, preset]) => ({ provider, ...preset }))
 }
 function applyProviderPreset(type, provider) {
-  const preset = providerPresets[type]?.[provider]
+  const preset = providerPresets.value[type]?.[provider]
   if (!preset) return
   cfgForm.provider = provider
   cfgForm.base_url = preset.baseUrl
   cfgForm.models = [...preset.models]
-  // 配置名持久化进 DB：用 provider 英文 + 服务类型英文标识拼，不随界面语言漂移
   cfgForm.name = `${preset.label}-${type}`
 }
 
@@ -837,6 +1225,210 @@ async function setDefaultModel(type, c, m) {
 }
 async function toggleCfg(c) { await aiConfigAPI.update(c.id, { is_active: !c.is_active }); loadCfgs() }
 async function delCfg(id) { await aiConfigAPI.del(id); toast.success(t('index.deleted')); loadCfgs() }
+
+async function refreshAntigravityStatus() {
+  antigravityChecking.value = true
+  try {
+    const res = await aiConfigAPI.test({
+      service_type: 'text',
+      provider: 'antigravity',
+      base_url: 'http://127.0.0.1:8317',
+      api_key: 'huobao-antigravity',
+      model: 'gemini-3.8-flash-high',
+    })
+    antigravityStatus.value = {
+      available: !!(res?.ok || res?.data?.ok || res?.reachable || res?.data?.reachable),
+    }
+  } catch (e) {
+    antigravityStatus.value = { available: false }
+  } finally {
+    antigravityChecking.value = false
+  }
+}
+
+async function applyAntigravityQuickConfig() {
+  antigravitySaving.value = true
+  try {
+    for (const preset of antigravityQuickConfigs.value) {
+      const payload = { ...preset, api_key: 'huobao-antigravity', is_active: true }
+      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
+      if (existing) await aiConfigAPI.update(existing.id, payload)
+      else await aiConfigAPI.create(payload)
+    }
+    toast.success(t('settings.ai.antigravityQuickApplied'))
+    await loadCfgs()
+    await refreshAntigravityStatus()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    antigravitySaving.value = false
+  }
+}
+
+async function loadFlowAccounts() {
+  try {
+    const res = await flowBridgeAPI.accounts()
+    const list = res?.data ?? res
+    if (Array.isArray(list)) {
+      flowAccounts.value = list
+    }
+  } catch (e) {
+    console.warn('Failed to load flow accounts', e)
+  }
+}
+
+async function refreshFlowStatus(forceRefresh = false) {
+  flowChecking.value = true
+  try {
+    const res = await flowBridgeAPI.status(forceRefresh)
+    flowStatus.value = (res && typeof res === 'object' && 'available' in res) ? res : (res?.data ?? res)
+    if (Array.isArray(flowStatus.value?.accounts)) flowAccounts.value = flowStatus.value.accounts
+    else await loadFlowAccounts()
+  } catch (e) {
+    flowStatus.value = { available: false, activeAccounts: 0, totalCredits: 0, lastError: e?.message || String(e) }
+  } finally {
+    flowChecking.value = false
+  }
+}
+
+async function handleSwitchFlowAccount(acc) {
+  if (!acc || acc.is_active || flowSwitchingId.value !== null || flowChecking.value) return
+  flowSwitchingId.value = acc.id
+  try {
+    const res = await flowBridgeAPI.switchAccount(acc.id)
+    if (res?.success || res?.code === 0 || res?.data?.success) {
+      toast.success(t('settings.ai.flowSwitchSuccess'))
+      if (Array.isArray(res?.accounts)) flowAccounts.value = res.accounts
+      await refreshFlowStatus(true)
+    } else {
+      toast.error(res?.msg || 'Failed to switch account')
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    flowSwitchingId.value = null
+  }
+}
+
+function openFlowImportModal() {
+  flowImportJson.value = ''
+  showFlowImportModal.value = true
+}
+
+async function handleImportFlowAccount() {
+  const raw = flowImportJson.value.trim()
+  if (!raw) return
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    toast.error('JSON ไม่ถูกต้อง กรุณาตรวจสอบรูปแบบ')
+    return
+  }
+  flowImporting.value = true
+  try {
+    const res = await flowBridgeAPI.importAccount(parsed)
+    if (res?.success || res?.code === 0 || res?.data?.success) {
+      toast.success(t('settings.ai.flowImportSuccess'))
+      showFlowImportModal.value = false
+      flowImportJson.value = ''
+      await refreshFlowStatus(true)
+    } else {
+      toast.error(res?.msg || 'นำเข้า Cookie ล้มเหลว')
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    flowImporting.value = false
+  }
+}
+
+function handleDeleteFlowAccount(acc) {
+  flowAccountToDelete.value = acc
+}
+
+async function confirmDeleteFlowAccount() {
+  if (!flowAccountToDelete.value) return
+  flowDeleting.value = true
+  try {
+    const id = flowAccountToDelete.value.id || flowAccountToDelete.value.filename
+    const res = await flowBridgeAPI.deleteAccount(id)
+    if (res?.success || res?.code === 0 || res?.data?.success) {
+      toast.success(t('settings.ai.flowDeleteSuccess'))
+      flowAccountToDelete.value = null
+      await refreshFlowStatus(false)
+      await loadFlowAccounts()
+    } else {
+      toast.error(res?.msg || 'Delete account failed')
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    flowDeleting.value = false
+  }
+}
+
+async function applyFlowQuickConfig(mode = 'native') {
+  flowSaving.value = true
+  try {
+    const configs = mode === 'native' ? flowQuickConfigs.value : flowProxyQuickConfigs.value
+    for (const preset of configs) {
+      const payload = { ...preset, api_key: 'flow', is_active: true }
+      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
+      if (existing) await aiConfigAPI.update(existing.id, payload)
+      else await aiConfigAPI.create(payload)
+    }
+    toast.success(t('settings.ai.flowQuickApplied'))
+    await loadCfgs()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    flowSaving.value = false
+  }
+}
+
+async function applyGeminiQuickConfig() {
+  const apiKey = geminiApiKey.value.trim()
+  if (!apiKey) { toast.warning(t('settings.ai.geminiApiKeyRequired')); return }
+  geminiSaving.value = true
+  try {
+    for (const preset of geminiQuickConfigs.value) {
+      const payload = { ...preset, api_key: apiKey, is_active: true }
+      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
+      if (existing) await aiConfigAPI.update(existing.id, payload)
+      else await aiConfigAPI.create(payload)
+    }
+    toast.success(t('settings.ai.geminiQuickApplied'))
+    geminiApiKey.value = ''
+    await loadCfgs()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    geminiSaving.value = false
+  }
+}
+
+async function applyOpenaiQuickConfig() {
+  const apiKey = openaiApiKey.value.trim()
+  if (!apiKey) { toast.warning(t('settings.ai.openaiApiKeyRequired')); return }
+  openaiSaving.value = true
+  try {
+    for (const preset of openaiQuickConfigs.value) {
+      const payload = { ...preset, api_key: apiKey, is_active: true }
+      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
+      if (existing) await aiConfigAPI.update(existing.id, payload)
+      else await aiConfigAPI.create(payload)
+    }
+    toast.success(t('settings.ai.openaiQuickApplied'))
+    openaiApiKey.value = ''
+    await loadCfgs()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    openaiSaving.value = false
+  }
+}
+
 async function applyHuobaoQuickConfig() {
   const apiKey = huobaoApiKey.value.trim()
   if (!apiKey) { toast.warning(t('settings.ai.apiKeyRequired')); return }
@@ -1006,8 +1598,9 @@ const selectedAgentLabel = computed(() => agentDefs.value.find(a => a.type === s
 const selectedAgentIcon = computed(() => agentDefs.value.find(a => a.type === selectedAgent.value)?.icon || '')
 
 // ===== 通用：AI 内容语言（全局设置，与界面语言相互独立） =====
-const contentLanguage = ref('zh')
+const contentLanguage = ref('th')
 const contentLangOptions = [
+  { value: 'th', label: 'ไทย', shortLabel: 'ไทย' },
   { value: 'zh', label: '中文', shortLabel: '中文' },
   { value: 'en', label: 'English', shortLabel: 'EN' },
   { value: 'ja', label: '日本語', shortLabel: '日本語' },
@@ -1036,7 +1629,7 @@ const themeOptions = computed(() => [
 
 async function loadContentLanguage() {
   try {
-    const lang = (await settingsAPI.contentLanguage())?.language || 'zh'
+    const lang = (await settingsAPI.contentLanguage())?.language || 'th'
     contentLanguage.value = lang
     editLang.value = lang  // Agent 编辑器默认跟随内容语言
   } catch { /* 保持默认 */ }
@@ -1154,6 +1747,18 @@ async function loadStylePresets() {
   try { stylePresets.value = await stylePresetAPI.list(true) } catch (e) { toastError(e) }
 }
 
+function styleName(p) {
+  if (!p) return ''
+  const k = `settings.styles.presetNames.${p.value}`
+  return te(k) ? t(k) : (p.name || p.value)
+}
+
+function styleDesc(p) {
+  if (!p) return ''
+  const k = `settings.styles.presetDescs.${p.value}`
+  return te(k) ? t(k) : (p.description || '')
+}
+
 async function toggleStyle(p) {
   try {
     await stylePresetAPI.update(p.id, { is_active: !p.is_active })
@@ -1223,7 +1828,20 @@ async function saveStyle() {
   } catch (e) { toastError(e) }
 }
 
-onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets() })
+onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets(); refreshFlowStatus(); refreshAntigravityStatus() })
+
+// Read cached bridge account data only; never trigger live balance probes on a timer.
+let flowAccountPoll = null
+onMounted(() => {
+  flowAccountPoll = setInterval(() => {
+    if (!document.hidden && !flowChecking.value && flowSwitchingId.value === null && !flowImporting.value && !flowDeleting.value) {
+      refreshFlowStatus(false)
+    }
+  }, 5000)
+})
+onBeforeUnmount(() => {
+  if (flowAccountPoll !== null) clearInterval(flowAccountPoll)
+})
 
 // ===== 应用内引导（设置页）：快捷配置 + 手动模板两步 =====
 const SETTINGS_TOUR = [
@@ -1444,12 +2062,22 @@ onBeforeUnmount(stopUsagePoll)
   color: var(--accent); text-decoration: none;
   font-weight: 600; white-space: nowrap;
 }
-.huobao-site-link:hover { text-decoration: underline; }
+.quick-tab-icon {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+  margin-right: 5px;
+  display: inline-block;
+  vertical-align: -1px;
+}
 .huobao-quick-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  display: flex;
   gap: 10px;
   align-items: center;
+}
+.huobao-quick-row .input {
+  flex: 1;
+  min-width: 0;
 }
 .huobao-quick-models {
   margin-top: 14px;

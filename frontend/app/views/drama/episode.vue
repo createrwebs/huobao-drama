@@ -283,6 +283,43 @@
                 </button>
               </div>
             </div>
+
+            <!-- Google Flow Character Reference Sync Status (Assets Tab) -->
+            <div v-if="flowCharRefs && flowCharRefs.ready_characters > 0" class="flow-char-ref-bar">
+              <div class="flow-ref-info">
+                <span class="flow-ref-badge" :class="{ 'is-synced': flowCharRefs.all_synced }">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  {{ flowCharRefs.all_synced ? t('episode.vid.flowRefReady') : t('episode.vid.flowRefIncomplete') }}
+                </span>
+                <span class="flow-ref-stat mono">
+                  {{ t('episode.vid.flowRefCharCount', { synced: flowCharRefs.synced_characters, ready: flowCharRefs.ready_characters }) }}
+                </span>
+                <div class="flow-ref-avatars">
+                  <div
+                    v-for="char in (flowCharRefs.characters || []).filter(c => c.is_ready)"
+                    :key="char.id"
+                    class="flow-ref-char-chip"
+                    :class="{ 'synced': char.is_synced }"
+                    :title="`${char.name} (${char.is_synced ? 'ซิงค์แล้ว ' + (char.flow_media_id || '') : 'ยังไม่ซิงค์'})`"
+                  >
+                    <img v-if="char.image_url" :src="'/' + char.image_url.replace(/^\//, '')" class="flow-ref-avatar" />
+                    <span class="flow-ref-name">{{ char.ref_tag }}</span>
+                    <span class="flow-ref-check">{{ char.is_synced ? '✓' : '•' }}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-xs flow-sync-btn"
+                :class="{ 'btn-primary': !flowCharRefs.all_synced, 'btn-ghost': flowCharRefs.all_synced }"
+                :disabled="flowCharSyncing || flowCharRefs.ready_characters === 0"
+                @click="syncFlowCharacterRefs(true)"
+              >
+                <Loader2 v-if="flowCharSyncing" :size="11" class="animate-spin" />
+                <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                {{ flowCharRefs.all_synced ? t('episode.vid.flowRefResyncBtn') : t('episode.vid.flowRefSyncBtn') }}
+              </button>
+            </div>
             <div v-if="extractingTargets.length && !chars.length && !scenes.length && !propItems.length" class="step-loading">
               <Loader2 :size="24" class="animate-spin" style="color:var(--accent)" />
               <div class="loading-text">{{ t('episode.prod.extractingTypes', { types: extractingLabels }) }}</div>
@@ -511,6 +548,43 @@
                 </button>
               </div>
             </div>
+
+            <!-- Google Flow Character Reference Sync Status -->
+            <div v-if="flowCharRefs && flowCharRefs.ready_characters > 0" class="flow-char-ref-bar">
+              <div class="flow-ref-info">
+                <span class="flow-ref-badge" :class="{ 'is-synced': flowCharRefs.all_synced }">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  {{ flowCharRefs.all_synced ? t('episode.vid.flowRefReady') : t('episode.vid.flowRefIncomplete') }}
+                </span>
+                <span class="flow-ref-stat mono">
+                  {{ t('episode.vid.flowRefCharCount', { synced: flowCharRefs.synced_characters, ready: flowCharRefs.ready_characters }) }}
+                </span>
+                <div class="flow-ref-avatars">
+                  <div
+                    v-for="char in (flowCharRefs.characters || []).filter(c => c.is_ready)"
+                    :key="char.id"
+                    class="flow-ref-char-chip"
+                    :class="{ 'synced': char.is_synced }"
+                    :title="`${char.name} (${char.is_synced ? 'ซิงค์แล้ว ' + (char.flow_media_id || '') : 'ยังไม่ซิงค์'})`"
+                  >
+                    <img v-if="char.image_url" :src="'/' + char.image_url.replace(/^\//, '')" class="flow-ref-avatar" />
+                    <span class="flow-ref-name">{{ char.ref_tag }}</span>
+                    <span class="flow-ref-check">{{ char.is_synced ? '✓' : '•' }}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-xs flow-sync-btn"
+                :class="{ 'btn-primary': !flowCharRefs.all_synced, 'btn-ghost': flowCharRefs.all_synced }"
+                :disabled="flowCharSyncing || flowCharRefs.ready_characters === 0"
+                @click="syncFlowCharacterRefs(true)"
+              >
+                <Loader2 v-if="flowCharSyncing" :size="11" class="animate-spin" />
+                <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                {{ flowCharRefs.all_synced ? t('episode.vid.flowRefResyncBtn') : t('episode.vid.flowRefSyncBtn') }}
+              </button>
+            </div>
             <div v-if="!sbs.length" class="step-empty video-task-empty-state">
               <div class="empty-visual">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="2.5"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/></svg>
@@ -701,6 +775,15 @@
                   <span v-if="selectedSb.duration" class="video-player-sub">{{ selectedSb.duration }}s</span>
                 </div>
                 <button
+                  type="button"
+                  class="btn btn-sm"
+                  :title="t('episode.vid.importVideo')"
+                  @click="openVideoImportModal(selectedSb)"
+                >
+                  <Upload :size="11" />
+                  {{ t('episode.vid.importVideo') }}
+                </button>
+                <button
                   v-if="previewVideoUrl"
                   class="btn btn-sm btn-primary"
                   @click="setAsMainVideo"
@@ -734,13 +817,22 @@
                     <div class="video-player-empty-title">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGenerating') : t('episode.vid.emptyNoVideo') }}</div>
                     <div class="video-player-empty-desc">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGeneratingDesc') : t('episode.vid.emptyNoVideoDesc') }}</div>
                   </div>
-                  <button
-                    v-if="videoTaskState(selectedSb) !== 'pending'"
-                    class="btn btn-primary btn-sm video-player-empty-action"
-                    @click="genVid(selectedSb)"
-                  >
-                    {{ t('episode.vid.generateVideo') }}
-                  </button>
+                  <div v-if="videoTaskState(selectedSb) !== 'pending'" class="flex gap-2">
+                    <button
+                      class="btn btn-primary btn-sm video-player-empty-action"
+                      @click="genVid(selectedSb)"
+                    >
+                      {{ t('episode.vid.generateVideo') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm video-player-empty-action"
+                      @click="openVideoImportModal(selectedSb)"
+                    >
+                      <Upload :size="12" />
+                      {{ t('episode.vid.importVideo') }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </aside>
@@ -927,6 +1019,15 @@
                 <span class="export-section-title">{{ t('episode.export.shotAssets') }}</span>
                 <span class="dim" style="font-size:11px">{{ t('episode.export.shotStat', { done: shotVidCount, total: sbs.length, selected: exportSelectedReadyIds.length }) }}</span>
                 <div class="ml-auto flex gap-1">
+                  <button
+                    class="btn btn-sm"
+                    :disabled="!sbs.length"
+                    :title="t('episode.vid.importVideo')"
+                    @click="openVideoImportModal(selectedSb || sbs[0])"
+                  >
+                    <Upload :size="11" />
+                    {{ t('episode.vid.importVideo') }}
+                  </button>
                   <button class="btn btn-sm" :disabled="!exportReadyIds.length" @click="toggleSelectAllExport">
                     {{ exportSelectedReadyIds.length === exportReadyIds.length && exportReadyIds.length ? t('episode.export.clearSelection') : t('episode.export.selectAllReady') }}
                   </button>
@@ -960,8 +1061,16 @@
                       playsinline
                       tabindex="-1"
                     />
-                    <div v-else class="exp-thumb-empty">
+                    <div
+                      v-else
+                      class="exp-thumb-empty cursor-pointer"
+                      :title="t('episode.vid.importVideo')"
+                      @click.stop="openVideoImportModal(sb)"
+                    >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                      <span class="exp-thumb-empty-label" style="font-size:10px; margin-top:3px; opacity:0.8; display:flex; align-items:center; gap:2px;">
+                        <Upload :size="10" /> {{ t('episode.vid.importVideo') }}
+                      </span>
                     </div>
                     <span class="exp-thumb-index">#{{ String(i+1).padStart(2,'0') }}</span>
                     <span v-if="sb.duration" class="exp-thumb-duration">{{ sb.duration }}s</span>
@@ -973,6 +1082,15 @@
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg>
                     </span>
+                    <button
+                      v-if="hasVid(sb)"
+                      type="button"
+                      class="exp-replace-vid-btn"
+                      :title="t('episode.vid.replaceVideo')"
+                      @click.stop="openVideoImportModal(sb)"
+                    >
+                      <Upload :size="11" />
+                    </button>
                     <span v-if="hasVid(sb)" :class="['exp-check', isExportSelected(sb.id) && 'on']">
                       <svg v-if="isExportSelected(sb.id)" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     </span>
@@ -1414,6 +1532,202 @@
         </div>
       </div>
 
+      <!-- ===== VIDEO IMPORT MODAL ===== -->
+      <div v-if="showVideoImportModal" class="overlay" @click.self="showVideoImportModal = false">
+        <div class="dialog video-import-dialog" style="max-width: 680px; width: 95%;">
+          <header class="dialog-head">
+            <div class="flex items-center gap-3">
+              <div>
+                <div class="dialog-title flex items-center gap-2">
+                  <Upload :size="16" />
+                  <span>{{ t('episode.vid.importTitle', { n: shotNumberOf(importTargetSb) }) }}</span>
+                </div>
+                <div class="dialog-sub flex items-center gap-2 mt-1">
+                  <span>{{ t('episode.vid.targetShot') }}:</span>
+                  <select
+                    :value="importTargetSb?.id"
+                    class="select select-xs font-mono text-xs"
+                    style="min-width: 140px; max-width: 280px; padding: 2px 6px; height: 24px;"
+                    @change="e => { const found = sbs.find(s => s.id === Number(e.target.value)); if (found) importTargetSb = found }"
+                  >
+                    <option v-for="(s, idx) in sbs" :key="s.id" :value="s.id">
+                      #{{ String(idx + 1).padStart(2, '0') }} - {{ s.title || s.description?.slice(0, 25) || ('Shot ' + (idx + 1)) }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-icon ml-auto" @click="showVideoImportModal = false">
+              <X :size="14" />
+            </button>
+          </header>
+
+          <div class="dialog-body" style="padding-top: 10px;">
+            <!-- Tabs: Google Flow Recent / Upload File / URL -->
+            <div class="flex gap-2 border-b mb-3 pb-2" style="border-color: var(--border);">
+              <button
+                type="button"
+                :class="['btn btn-sm', importVideoTab === 'flow' ? 'btn-primary' : 'btn-ghost']"
+                @click="importVideoTab = 'flow'"
+              >
+                <Sparkles :size="13" />
+                {{ t('episode.vid.tabFlowRecent') }}
+              </button>
+              <button
+                type="button"
+                :class="['btn btn-sm', importVideoTab === 'upload' ? 'btn-primary' : 'btn-ghost']"
+                @click="importVideoTab = 'upload'"
+              >
+                <Upload :size="13" />
+                {{ t('episode.vid.tabUploadFile') }}
+              </button>
+              <button
+                type="button"
+                :class="['btn btn-sm', importVideoTab === 'url' ? 'btn-primary' : 'btn-ghost']"
+                @click="importVideoTab = 'url'"
+              >
+                {{ t('episode.vid.tabUrl') }}
+              </button>
+            </div>
+
+            <!-- TAB 1: Google Flow Recent Videos -->
+            <div v-if="importVideoTab === 'flow'" class="flow-recent-tab">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-muted" style="font-size: 11px;">
+                  {{ t('episode.vid.flowRecentDesc') }}
+                </span>
+                <button class="btn btn-ghost btn-xs" :disabled="loadingRecentFlowVideos" @click="loadFlowRecentVideos">
+                  <RefreshCw :size="12" :class="{ 'animate-spin': loadingRecentFlowVideos }" />
+                  {{ t('common.refresh') }}
+                </button>
+              </div>
+
+              <div v-if="loadingRecentFlowVideos" class="p-6 text-center text-xs text-muted">
+                <Loader2 :size="20" class="animate-spin mx-auto mb-2" />
+                {{ t('common.loading') }}
+              </div>
+
+              <div v-else-if="!flowRecentVideos.length" class="p-6 text-center text-xs text-muted border rounded" style="border-style: dashed;">
+                {{ t('episode.vid.noRecentFlowVideos') }}
+              </div>
+
+              <div v-else class="flow-videos-grid flex flex-col gap-2" style="max-height: 280px; overflow-y: auto;">
+                <div
+                  v-for="v in flowRecentVideos"
+                  :key="v.filename"
+                  :class="['flow-video-item p-2.5 rounded border flex items-center justify-between gap-3 cursor-pointer transition-all', selectedRecentFlowVideo?.filename === v.filename ? 'border-primary' : '']"
+                  :style="selectedRecentFlowVideo?.filename === v.filename ? 'border-color: #10b981; background: rgba(16, 185, 129, 0.06);' : 'border-color: var(--border); background: var(--bg-1);'"
+                  @click="selectedRecentFlowVideo = v"
+                >
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="flow-video-thumb-preview relative w-16 h-12 bg-black rounded overflow-hidden shrink-0 flex items-center justify-center">
+                      <video
+                        :src="v.url"
+                        preload="metadata"
+                        muted
+                        playsinline
+                        style="width: 100%; height: 100%; object-fit: cover;"
+                      />
+                      <span class="absolute text-white/80"><Play :size="12" /></span>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-mono font-bold truncate">{{ v.filename }}</div>
+                      <div class="text-xs text-muted flex items-center gap-2 mt-0.5">
+                        <span class="tag tag-accent text-xs" style="font-size: 10px;">{{ v.sizeFormatted }}</span>
+                        <span class="font-mono" style="font-size: 10px;">{{ formatHistoryTime(v.created_at) }}</span>
+                      </div>
+                      <div v-if="v.prompt" class="text-xs text-muted truncate mt-1" style="font-size: 11px; max-width: 380px;" :title="v.prompt">
+                        {{ v.prompt }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-xs"
+                      :disabled="applyingFlowVideo"
+                      @click.stop="handleApplyRecentFlowVideo(v)"
+                    >
+                      <Loader2 v-if="applyingFlowVideo && selectedRecentFlowVideo?.filename === v.filename" :size="12" class="animate-spin" />
+                      <Check v-else :size="12" />
+                      {{ t('episode.vid.useThisVideo') }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selected Video Player Preview -->
+              <div v-if="selectedRecentFlowVideo" class="mt-3 p-2 bg-black/40 rounded border flex flex-col items-center">
+                <video
+                  :key="selectedRecentFlowVideo.url"
+                  :src="selectedRecentFlowVideo.url"
+                  controls
+                  autoplay
+                  playsinline
+                  style="max-height: 180px; width: 100%; object-fit: contain; border-radius: 4px;"
+                />
+              </div>
+            </div>
+
+            <!-- TAB 2: Upload File -->
+            <div v-else-if="importVideoTab === 'upload'" class="upload-file-tab">
+              <div
+                class="video-dropzone p-8 border rounded text-center cursor-pointer transition-all hover:border-primary"
+                style="border-style: dashed; background: var(--bg-1);"
+                @click="videoFileInput?.click()"
+                @dragover.prevent
+                @drop.prevent="handleVideoDrop"
+              >
+                <input
+                  ref="videoFileInput"
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime"
+                  style="display: none;"
+                  @change="handleVideoFileSelect"
+                />
+                <Upload :size="32" class="mx-auto text-muted mb-2" />
+                <div class="text-xs font-semibold mb-1">
+                  {{ uploadingVideoFile ? t('episode.vid.uploadingVideo') : t('episode.vid.dropOrClick') }}
+                </div>
+                <div class="text-xs text-muted" style="font-size: 11px;">
+                  MP4, WebM, MOV (สูงสุด 200MB)
+                </div>
+                <Loader2 v-if="uploadingVideoFile" :size="20" class="animate-spin mx-auto mt-3" />
+              </div>
+            </div>
+
+            <!-- TAB 3: Enter URL / Path -->
+            <div v-else-if="importVideoTab === 'url'" class="url-tab">
+              <div class="field">
+                <label class="field-label">{{ t('episode.vid.urlLabel') }}</label>
+                <input
+                  v-model="customVideoUrl"
+                  type="text"
+                  class="input font-mono text-xs"
+                  :placeholder="t('episode.vid.urlPlaceholder')"
+                />
+                <p class="text-xs text-muted mt-1" style="font-size: 11px;">
+                  เช่น <code>static/videos/xxx.mp4</code> หรือ <code>https://...</code>
+                </p>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  :disabled="!customVideoUrl.trim() || applyingFlowVideo"
+                  @click="handleApplyCustomVideoUrl"
+                >
+                  <Loader2 v-if="applyingFlowVideo" :size="12" class="animate-spin" />
+                  <Check v-else :size="12" />
+                  {{ t('common.save') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <ConfirmDialog
         :open="assetDelete.open"
         :title="t('episode.delete.title', { type: assetDeleteTypeLabel })"
@@ -1432,9 +1746,9 @@ import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import {
   Users, FileText, FolderKanban, Clapperboard, Download, Loader2,
-  Plus, X, ListTodo, CircleHelp,
+  Plus, X, ListTodo, CircleHelp, Upload, Play, Sparkles, RefreshCw, Check,
 } from 'lucide-vue-next'
-import { api, dramaAPI, episodeAPI, storyboardAPI, characterAPI, sceneAPI, propAPI, taskAPI, mergeAPI, aiConfigAPI, uploadAPI } from '~/composables/useApi'
+import { api, dramaAPI, episodeAPI, storyboardAPI, characterAPI, sceneAPI, propAPI, taskAPI, mergeAPI, aiConfigAPI, uploadAPI, flowBridgeAPI } from '~/composables/useApi'
 import { startTour, autoTour } from '~/composables/useTour'
 import { useAgent } from '~/composables/useAgent'
 import { toastError, mapError, MODERATION_RE } from '~/composables/useToast'
@@ -2119,9 +2433,14 @@ const selectedVideoConfig = computed(() => {
 })
 const isWan3Video = computed(() => selectedVideoConfig.value?.provider === 'aliyun'
   || bareModelName(videoModel.value).startsWith('wan3.0-video'))
+const isGoogleFlowVideo = computed(() => {
+  const provider = selectedVideoConfig.value?.provider || ''
+  const name = bareModelName(videoModel.value).toLowerCase()
+  return provider === 'google_flow' || name.includes('veo') || name.includes('flow')
+})
 
-// 参考图上限（Wan 3.0 官方 10 张，其他模型 9 张），绑定素材收集与 @名字 映射统一读取
-const refImageLimit = computed(() => isWan3Video.value ? 10 : 9)
+// 参考图上限（Wan 3.0 官方 10 张，Google Flow 2 张，其他模型 9 张），绑定素材收集与 @名字 映射统一读取
+const refImageLimit = computed(() => isGoogleFlowVideo.value ? 2 : (isWan3Video.value ? 10 : 9))
 
 // 本次生成的生效配置（模型/分辨率/时长），用于右侧小结与批量确认弹窗
 const effectiveVideoModelLabel = computed(() => {
@@ -2154,20 +2473,30 @@ function batchVideos() {
 function retryFailedVideos() {
   openBatchVideoConfirm(sbs.value.filter(s => videoTaskState(s) === 'failed'))
 }
-function confirmBatchVideos() {
+async function confirmBatchVideos() {
   const targets = [...batchVideoConfirm.value.targets]
   batchVideoConfirm.value = { open: false, targets: [] }
-  if (!targets.length) return
+  // Backend synchronizes only the characters bound to each shot before generation.
+
   const ids = targets.map(s => s.id)
-  targets.forEach(sb => genVid(sb, { silent: true }))
   toast.success(t('episode.vid.batchStarted', { n: ids.length }))
+  if (videoSelectMode.value) toggleVideoSelectMode()
+
+  // Run sequentially to prevent bursting upstream video APIs (especially Google Flow)
+  for (let i = 0; i < targets.length; i++) {
+    const sb = targets[i]
+    await genVid(sb, { silent: true })
+    if (i < targets.length - 1) {
+      await sleep(2500)
+    }
+  }
+
   watchAsyncResult(() => ids.every(id => {
     const target = sbs.value.find(s => s.id === id)
     const done = !!getVideoUrl(target)
     if (done) pendingVideoIds.value = pendingVideoIds.value.filter(item => item !== id)
     return done
   }), 80, 4000)
-  if (videoSelectMode.value) toggleVideoSelectMode()
 }
 
 // 配置变化后校验持久化的模型是否仍存在（配置被删/模型被移除时回退默认，避免把失效模型传给后端）
@@ -2189,6 +2518,8 @@ const videoModelMultiCfg = computed(() => hasMultiConfigs(videoModelOptions.valu
 
 // Production step helpers
 // ========== 任务列表面板 ==========
+const notifiedAssetFailures = new Set()
+
 async function loadGenTasks() {
   if (!epId.value) return
   try {
@@ -2217,7 +2548,7 @@ async function loadGenTasks() {
       // 分镜已有视频(失败后重试成功)时不再报历史错误
       if (hasVid(sbs.value.find(s => s.id === sbId))) continue
       if (t.status === 'processing') pending.add(sbId)
-      else if (t.status === 'failed') failed[sbId] = t.error_msg || t('episode.status.failed')
+      else if (t.status === 'failed') failed[sbId] = t.error_msg || 'Video generation failed'
     }
     // 刚点击提交、任务记录尚未加载出来的本地状态保留,避免状态闪退
     for (const id of pendingVideoIds.value) if (!latestBySb.has(id)) pending.add(id)
@@ -2857,6 +3188,40 @@ function watchAsyncResult(check, attempts = 24, delay = 2500) {
   })()
 }
 
+function watchAssetImageTask(response, id, pendingRef) {
+  const taskId = response?.image_generation_id
+  if (!taskId) {
+    pendingRef.value = pendingRef.value.filter(value => value !== id)
+    toast.error('Image generation returned no task ID')
+    return
+  }
+  void (async () => {
+    try {
+      for (let attempt = 0; attempt < 132; attempt++) {
+        const task = await taskAPI.get(taskId)
+        if (task?.status === 'failed') {
+          if (!notifiedAssetFailures.has(task.id)) {
+            notifiedAssetFailures.add(task.id)
+            toast.error(task.errorMsg || task.error_msg || 'Image generation failed')
+          }
+          return
+        }
+        if (task?.status === 'completed') {
+          await refresh()
+          loadFlowCharacterRefs()
+          return
+        }
+        await sleep(5000)
+      }
+      toast.error('ยังไม่ทราบผลการสร้างรูป กรุณาตรวจสถานะในรายการงานก่อนส่งซ้ำ')
+    } catch (error) {
+      toastError(error)
+    } finally {
+      pendingRef.value = pendingRef.value.filter(value => value !== id)
+    }
+  })()
+}
+
 async function genCharImg(id) {
   try {
     if (!isPendingCharImage(id)) pendingCharImageIds.value.push(id)
@@ -2867,37 +3232,20 @@ async function genCharImg(id) {
         await ensureAssetPrompt('character', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    await characterAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await characterAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    watchAssetImageTask(response, id, pendingCharImageIds)
     toast.success(t('episode.image.generatingChar'))
     await refresh()
-    watchAsyncResult(() => {
-      const char = chars.value.find(c => c.id === id)
-      const done = !!(char?.image_url || char?.imageUrl)
-      if (done) pendingCharImageIds.value = pendingCharImageIds.value.filter(item => item !== id)
-      return done
-    })
   } catch (e) {
     pendingCharImageIds.value = pendingCharImageIds.value.filter(item => item !== id)
     toastError(e)
   }
 }
-function batchCharImages() {
+async function batchCharImages() {
   const ids = visualChars.value.filter(c => !(c.image_url || c.imageUrl)).map(c => c.id)
   if (!ids.length) { toast.info(t('episode.image.allCharsDone')); return }
   pendingCharImageIds.value = [...new Set([...pendingCharImageIds.value, ...ids])]
-  characterAPI.batchImages(ids, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId()).then(async () => {
-    toast.success(t('episode.image.batchGeneratingChar'))
-    await refresh()
-    watchAsyncResult(() => ids.every(id => {
-      const char = chars.value.find(c => c.id === id)
-      const done = !!(char?.image_url || char?.imageUrl)
-      if (done) pendingCharImageIds.value = pendingCharImageIds.value.filter(item => item !== id)
-      return done
-    }), 36)
-  }).catch(e => {
-    pendingCharImageIds.value = pendingCharImageIds.value.filter(item => !ids.includes(item))
-    toastError(e)
-  })
+  for (const id of ids) await genCharImg(id)
 }
 async function genSceneImg(id) {
   try {
@@ -2909,15 +3257,10 @@ async function genSceneImg(id) {
         await ensureAssetPrompt('scene', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    await sceneAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await sceneAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    watchAssetImageTask(response, id, pendingSceneImageIds)
     toast.success(t('episode.image.generatingScene'))
     await refresh()
-    watchAsyncResult(() => {
-      const scene = scenes.value.find(s => s.id === id)
-      const done = !!(scene?.image_url || scene?.imageUrl)
-      if (done) pendingSceneImageIds.value = pendingSceneImageIds.value.filter(item => item !== id)
-      return done
-    })
   } catch (e) {
     pendingSceneImageIds.value = pendingSceneImageIds.value.filter(item => item !== id)
     toastError(e)
@@ -2936,45 +3279,26 @@ async function genPropImg(id) {
         await ensureAssetPrompt('prop', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    await propAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await propAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    watchAssetImageTask(response, id, pendingPropImageIds)
     toast.success(t('episode.image.generatingProp'))
     await refresh()
-    watchAsyncResult(() => {
-      const prop = propItems.value.find(p => p.id === id)
-      const done = !!(prop?.image_url || prop?.imageUrl)
-      if (done) pendingPropImageIds.value = pendingPropImageIds.value.filter(item => item !== id)
-      return done
-    })
   } catch (e) {
     pendingPropImageIds.value = pendingPropImageIds.value.filter(item => item !== id)
     toastError(e)
   }
 }
-function batchSceneImages() {
+async function batchSceneImages() {
   const ids = scenes.value.filter(s => !(s.image_url || s.imageUrl)).map(s => s.id)
   if (!ids.length) { toast.info(t('episode.image.allScenesDone')); return }
   pendingSceneImageIds.value = [...new Set([...pendingSceneImageIds.value, ...ids])]
-  ids.forEach(id => { sceneAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId()).then(() => refresh()).catch(e => toastError(e)) })
-  toast.success(t('episode.image.batchGeneratingScene'))
-  watchAsyncResult(() => ids.every(id => {
-    const scene = scenes.value.find(s => s.id === id)
-    const done = !!(scene?.image_url || scene?.imageUrl)
-    if (done) pendingSceneImageIds.value = pendingSceneImageIds.value.filter(item => item !== id)
-    return done
-  }), 36)
+  for (const id of ids) await genSceneImg(id)
 }
-function batchPropImages() {
+async function batchPropImages() {
   const ids = propItems.value.filter(p => !(p.image_url || p.imageUrl)).map(p => p.id)
   if (!ids.length) { toast.info(t('episode.image.allPropsDone')); return }
   pendingPropImageIds.value = [...new Set([...pendingPropImageIds.value, ...ids])]
-  ids.forEach(id => { propAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId()).then(() => refresh()).catch(e => toastError(e)) })
-  toast.success(t('episode.image.batchGeneratingProp'))
-  watchAsyncResult(() => ids.every(id => {
-    const prop = propItems.value.find(p => p.id === id)
-    const done = !!(prop?.image_url || prop?.imageUrl)
-    if (done) pendingPropImageIds.value = pendingPropImageIds.value.filter(item => item !== id)
-    return done
-  }), 36)
+  for (const id of ids) await genPropImg(id)
 }
 function getVideoUrl(s) { return s?.video_url || s?.videoUrl || s?.composed_video_url || s?.composedVideoUrl || null }
 function hasVid(s) { return !!getVideoUrl(s) }
@@ -3025,6 +3349,183 @@ async function removeHistoryVideo(t) {
   } catch (e) { toastError(e, { fallback: 'common.deleteFailed' }) }
 }
 
+// ===== 导入/上传视频到分镜 =====
+const showVideoImportModal = ref(false)
+const importTargetSb = ref(null)
+const importVideoTab = ref('flow') // 'flow' | 'upload' | 'url'
+const flowRecentVideos = ref([])
+const loadingRecentFlowVideos = ref(false)
+const selectedRecentFlowVideo = ref(null)
+const customVideoUrl = ref('')
+const uploadingVideoFile = ref(false)
+const applyingFlowVideo = ref(false)
+const videoFileInput = ref(null)
+
+async function openVideoImportModal(sb) {
+  let target = sb
+  if (!target) {
+    if (selectedSb.value) target = selectedSb.value
+    else if (sbs.value.length) target = sbs.value[0]
+    else return
+  }
+  importTargetSb.value = target
+  importVideoTab.value = 'flow'
+  selectedRecentFlowVideo.value = null
+  customVideoUrl.value = ''
+  showVideoImportModal.value = true
+  await loadFlowRecentVideos()
+}
+
+async function loadFlowRecentVideos() {
+  loadingRecentFlowVideos.value = true
+  try {
+    const res = await flowBridgeAPI.recentVideos()
+    flowRecentVideos.value = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])
+    if (flowRecentVideos.value.length && !selectedRecentFlowVideo.value) {
+      selectedRecentFlowVideo.value = flowRecentVideos.value[0]
+    }
+  } catch (e) {
+    console.warn('Failed to load recent flow videos', e)
+    flowRecentVideos.value = []
+  } finally {
+    loadingRecentFlowVideos.value = false
+  }
+}
+
+async function handleApplyRecentFlowVideo(videoItem) {
+  const v = videoItem || selectedRecentFlowVideo.value
+  if (!v || !importTargetSb.value) return
+  applyingFlowVideo.value = true
+  try {
+    const res = await flowBridgeAPI.applyToStoryboard({
+      storyboard_id: importTargetSb.value.id,
+      filename: v.filename,
+      prompt: v.prompt || undefined,
+    })
+    const vidPath = res?.data?.video_url || res?.data?.url
+    if (vidPath) {
+      importTargetSb.value.video_url = vidPath
+      importTargetSb.value.videoUrl = vidPath
+      toast.success(t('episode.vid.videoImportSuccess'))
+      showVideoImportModal.value = false
+      if (selectedSb.value?.id === importTargetSb.value.id) {
+        selectedSb.value.video_url = vidPath
+        selectedSb.value.videoUrl = vidPath
+        await loadSbVideoHistory()
+      }
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    applyingFlowVideo.value = false
+  }
+}
+
+// ===== Google Flow Character References (Veo Ingredients-to-Video) =====
+const flowCharRefs = ref(null)
+const flowCharSyncing = ref(false)
+
+async function loadFlowCharacterRefs() {
+  if (!dramaId) return
+  try {
+    const res = await flowBridgeAPI.getCharacterRefs(dramaId)
+    if (res) flowCharRefs.value = res
+  } catch (err) {
+    console.warn('[FlowCharRef] Failed to load character refs:', err)
+  }
+}
+
+async function syncFlowCharacterRefs(force = false) {
+  if (!dramaId) return
+  flowCharSyncing.value = true
+  try {
+    const res = await flowBridgeAPI.syncCharacterRefs({
+      drama_id: dramaId,
+      force,
+    })
+    if (res) {
+      flowCharRefs.value = res
+      if (force) {
+        toast.success(res.msg || t('episode.vid.flowSyncSuccess'))
+      }
+    }
+  } catch (err) {
+    console.error('[FlowCharRef] Sync error:', err)
+    if (force) {
+      toast.error(err.message || 'ซิงค์ตัวละครอ้างอิงล้มเหลว')
+    }
+  } finally {
+    flowCharSyncing.value = false
+  }
+}
+
+watch(prodTab, (tab) => {
+  if (tab === 'videos' || tab === 'assets') {
+    loadFlowCharacterRefs()
+  }
+}, { immediate: true })
+
+async function handleVideoFileSelect(event) {
+  const file = event?.target?.files?.[0]
+  if (!file || !importTargetSb.value) return
+  await uploadAndApplyVideoFile(file)
+  if (event.target) event.target.value = ''
+}
+
+async function handleVideoDrop(event) {
+  const file = event?.dataTransfer?.files?.[0]
+  if (!file || !importTargetSb.value) return
+  await uploadAndApplyVideoFile(file)
+}
+
+async function uploadAndApplyVideoFile(file) {
+  uploadingVideoFile.value = true
+  try {
+    const res = await uploadAPI.video(file)
+    const uploadedPath = res?.path || res?.url
+    if (uploadedPath && importTargetSb.value) {
+      const normalizedPath = uploadedPath.replace(/^\/+/, '')
+      await storyboardAPI.update(importTargetSb.value.id, { video_url: normalizedPath })
+      importTargetSb.value.video_url = normalizedPath
+      importTargetSb.value.videoUrl = normalizedPath
+      toast.success(t('episode.vid.videoImportSuccess'))
+      showVideoImportModal.value = false
+      if (selectedSb.value?.id === importTargetSb.value.id) {
+        selectedSb.value.video_url = normalizedPath
+        selectedSb.value.videoUrl = normalizedPath
+        await loadSbVideoHistory()
+      }
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    uploadingVideoFile.value = false
+  }
+}
+
+async function handleApplyCustomVideoUrl() {
+  const raw = customVideoUrl.value.trim()
+  if (!raw || !importTargetSb.value) return
+  applyingFlowVideo.value = true
+  try {
+    const normalizedPath = raw.replace(/^\/+/, '')
+    await storyboardAPI.update(importTargetSb.value.id, { video_url: normalizedPath })
+    importTargetSb.value.video_url = normalizedPath
+    importTargetSb.value.videoUrl = normalizedPath
+    toast.success(t('episode.vid.videoImportSuccess'))
+    showVideoImportModal.value = false
+    if (selectedSb.value?.id === importTargetSb.value.id) {
+      selectedSb.value.video_url = normalizedPath
+      selectedSb.value.videoUrl = normalizedPath
+      await loadSbVideoHistory()
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    applyingFlowVideo.value = false
+  }
+}
+
 function formatHistoryTime(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -3039,6 +3540,20 @@ function getShotReferenceImages(sb) {
     if (!value || refs.includes(value) || refs.length >= refImageLimit.value) return
     refs.push(value)
   }
+
+  // สำหรับ Google Flow (Veo Ingredients-to-Video) ต้องส่งรูปตัวละครเป็นลำดับแรกเสมอ เพื่อจับคู่กับ @ชื่อตัวละคร
+  if (isGoogleFlowVideo.value) {
+    for (const char of getStoryboardCharacters(sb)) {
+      pushRef(char?.image_url || char?.imageUrl)
+    }
+    const scene = getStoryboardScene(sb)
+    pushRef(scene?.image_url || scene?.imageUrl)
+    for (const prop of getStoryboardProps(sb)) {
+      pushRef(prop?.image_url || prop?.imageUrl)
+    }
+    return refs
+  }
+
   const scene = getStoryboardScene(sb)
   pushRef(scene?.image_url || scene?.imageUrl)
   for (const char of getStoryboardCharacters(sb)) {
@@ -3183,9 +3698,13 @@ function getShotReferenceIndexMap(sb) {
   return nameToIndex
 }
 
-// 将视频提示词里的 @名字 替换为 @图片N名字（N 为参考图序号，1 起），生成时使用
+// 将视频提示词里的 @名字 替换为 @图片N名字（仅在可灵 Kling 等特定模型支持图号引用的情况下启用）
 function resolveVideoPromptRefs(sb) {
   const prompt = sb.video_prompt || sb.videoPrompt || ''
+  const provider = selectedVideoConfig.value?.provider || ''
+  const isKling = provider === 'kling' || provider === 'kling_ai'
+  if (!isKling) return prompt
+
   const map = getShotReferenceIndexMap(sb)
   const names = Object.keys(map).sort((a, b) => b.length - a.length)
   if (!names.length) return prompt
@@ -3243,6 +3762,7 @@ function uploadAssetImage(kind, id) {
       else await propAPI.update(id, payload)
       toast.success(t('episode.upload.assetDone', { type: assetUploadLabelMap.value[kind] || '' }))
       await refresh()
+      if (kind === 'character') loadFlowCharacterRefs()
     } catch (e) {
       toastError(e)
     } finally {
@@ -3252,7 +3772,10 @@ function uploadAssetImage(kind, id) {
 }
 
 async function genVid(sb, opts = {}) {
+  // Flow sends local reference files through the original engine/cookie path.
+
   const referenceImages = getShotReferenceImages(sb)
+  const frameImg = sb.first_frame_image || sb.firstFrameImage || sb.composed_image || sb.composedImage || sb.image_url || sb.imageUrl || null
   // 参考素材完全来自分镜绑定的角色/场景/道具图片
   const params = {
     storyboard_id: sb.id,
@@ -3264,8 +3787,11 @@ async function genVid(sb, opts = {}) {
     model: bareModelName(videoModel.value) || undefined,
     config_id: ownerConfigId(videoModelOptions.value, videoModel.value),
     reference_image_urls: referenceImages,
+    reference_mode: isGoogleFlowVideo.value && referenceImages.length ? 'reference' : undefined,
+    image_url: frameImg || undefined,
+    first_frame_url: frameImg || undefined,
   }
-  if (!params.prompt && !referenceImages.length) {
+  if (!params.prompt && !referenceImages.length && !frameImg) {
     toast.error(t('episode.vid.needRefOrPrompt'))
     return
   }
@@ -5799,6 +6325,54 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
 }
 .exp-row-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
+/* 导入/更换分镜视频按钮 */
+.exp-replace-vid-btn {
+  position: absolute;
+  top: 5px;
+  right: 28px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s;
+  z-index: 3;
+}
+.exp-card:hover .exp-replace-vid-btn {
+  opacity: 1;
+}
+.exp-replace-vid-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+.exp-thumb-empty {
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.exp-thumb-empty:hover {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent);
+}
+.exp-thumb-empty-label {
+  font-size: 10px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.flow-video-item:hover {
+  border-color: var(--accent) !important;
+}
+
 /* Shared */
 .dim { color: var(--text-3); }
 
@@ -6106,5 +6680,88 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
     width: 100%;
   }
 
+}
+
+.flow-char-ref-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface-bg-subtle, var(--bg-1, #18181b));
+  border: 1px solid var(--surface-outline, var(--border-color, #27272a));
+  border-radius: var(--radius-sm, 6px);
+  margin-bottom: 2px;
+}
+.flow-ref-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+.flow-ref-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+}
+.flow-ref-badge.is-synced {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+.flow-ref-stat {
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+}
+.flow-ref-avatars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  max-width: 55vw;
+  padding: 2px 0;
+}
+.flow-ref-char-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 3px;
+  background: var(--bg-2, #27272a);
+  border: 1px solid var(--border-color, #3f3f46);
+  border-radius: 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.flow-ref-char-chip.synced {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+.flow-ref-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.flow-ref-name {
+  color: var(--text-1, #f4f4f5);
+  font-weight: 500;
+}
+.flow-ref-check {
+  font-size: 10px;
+  color: var(--text-3, #71717a);
+}
+.flow-ref-char-chip.synced .flow-ref-check {
+  color: #22c55e;
+  font-weight: bold;
+}
+.flow-sync-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 </style>
