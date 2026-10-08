@@ -224,7 +224,14 @@ async function processTask(id: number, config: AIConfig) {
       }))
     } else {
       const adapter = getVideoAdapter(config.provider)
-      const effectivePrompt = await enrichStoryboardVideoPrompt(record.prompt || '', record.storyboardId)
+      const hasVisualRefs = Boolean(
+        (Array.isArray(params.referenceImageUrls) && params.referenceImageUrls.length > 0) ||
+        params.firstFrameUrl ||
+        params.imageUrl
+      )
+      const effectivePrompt = await enrichStoryboardVideoPrompt(record.prompt || '', record.storyboardId, {
+        skipCharacterProfile: hasVisualRefs,
+      })
       const isGoogleFlow = config.provider === 'google_flow'
       const resolvedImageUrl = isGoogleFlow ? (params.imageUrl ?? null) : await normalizeVideoReferenceUrl(params.imageUrl)
       const resolvedFirstFrameUrl = isGoogleFlow ? (params.firstFrameUrl ?? null) : await normalizeVideoReferenceUrl(params.firstFrameUrl)

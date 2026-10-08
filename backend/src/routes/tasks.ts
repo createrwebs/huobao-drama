@@ -183,7 +183,7 @@ app.post('/', async (c) => {
         dramaId: body.drama_id,
         prompt: videoPrompt,
         model: videoBody!.model,
-        referenceMode: 'reference',
+        referenceMode: videoBody!.reference_mode || 'reference',
         imageUrl: videoBody!.image_url,
         firstFrameUrl: videoBody!.first_frame_url,
         lastFrameUrl: videoBody!.last_frame_url,

@@ -789,7 +789,10 @@ export async function generateFlowVideo(options: GenerateFlowVideoOptions): Prom
   }
 
   const rawPrompt = options.prompt || ''
-  const enrichedPrompt = await enrichStoryboardVideoPrompt(rawPrompt, options.storyboardId)
+  const hasVisualRefs = resolvedRefImages.length > 0 || !!resolvedStartImage
+  const enrichedPrompt = await enrichStoryboardVideoPrompt(rawPrompt, options.storyboardId, {
+    skipCharacterProfile: hasVisualRefs,
+  })
   const prompt = sanitizeFlowPrompt(enrichedPrompt, 1500)
   console.log(`[FlowEngine] Prompt with visual context: ${prompt.slice(0, 160)}...`)
   const args = ['generate', prompt, aspect, duration, quality]

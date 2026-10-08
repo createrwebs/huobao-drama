@@ -535,6 +535,11 @@
                   <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   {{ videoPromptBatch.running ? t('episode.sb.promptProgress', { done: videoPromptBatch.completed, total: videoPromptBatch.total }) : (videoSelectMode && selectedVideoSbIds.length ? t('episode.sb.promptSelected', { n: selectedVideoSbIds.length }) : t('episode.sb.batchPrompts')) }}
                 </button>
+                <button class="btn btn-sm" :disabled="sbImageBatchRunning || !sbs.length" @click="batchSbImages">
+                  <Loader2 v-if="sbImageBatchRunning" :size="11" class="animate-spin" />
+                  <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  {{ sbImageBatchRunning ? `กำลังสร้างภาพสตอรี่บอร์ด (${pendingSbImageIds.length})...` : (videoSelectMode && selectedVideoSbIds.length ? `สร้างภาพสตอรี่บอร์ดที่เลือก (${selectedVideoSbIds.length})` : 'สร้างภาพสตอรี่บอร์ดทั้งหมด') }}
+                </button>
                 <button v-if="videoTaskFailedCount" class="btn btn-sm video-retry-failed" @click="retryFailedVideos">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                   {{ t('episode.vid.retryFailed', { n: videoTaskFailedCount }) }}
@@ -644,6 +649,13 @@
                       muted
                       tabindex="-1"
                     />
+                    <img
+                      v-else-if="hasSbImg(task.storyboard)"
+                      :src="thumbOf('/' + getSbImgUrl(task.storyboard))"
+                      alt=""
+                      loading="lazy"
+                      @error="thumbFallback($event, '/' + getSbImgUrl(task.storyboard))"
+                    />
                     <div v-else class="video-task-empty">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                     </div>
@@ -659,6 +671,10 @@
                       </span>
                       <span class="video-task-sep">·</span>
                       <span>{{ task.duration }}s</span>
+                      <template v-if="hasSbImg(task.storyboard)">
+                        <span class="video-task-sep">·</span>
+                        <span class="video-task-sb-badge">มีภาพ SB</span>
+                      </template>
                       <template v-if="task.meta">
                         <span class="video-task-sep">·</span>
                         <span class="video-task-loc truncate">{{ task.meta }}</span>
@@ -675,7 +691,9 @@
                     :disabled="videoTaskState(task.storyboard) === 'pending'"
                     @click.stop="genVid(task.storyboard)"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    <Loader2 v-if="videoTaskState(task.storyboard) === 'pending'" :size="12" class="animate-spin" />
+                    <svg v-else-if="hasVid(task.storyboard)" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   </button>
                 </div>
                 </div>
@@ -738,6 +756,91 @@
                   </section>
                 </div>
 
+                  <!-- Storyboard First-Frame Image Section (สร้างภาพสตอรี่บอร์ดก่อนทำวิดีโอ) -->
+                  <section class="video-inspector-section sb-frame-section">
+                    <div class="video-inspector-prompt-head">
+                      <div class="flex items-center gap-2">
+                        <span class="video-inspector-label video-inspector-label-hero">ภาพสตอรี่บอร์ด (เฟรมแรกก่อนสร้างวิดีโอ)</span>
+                        <span v-if="hasSbImg(selectedSb)" class="tag mono is-ready">มีภาพแล้ว</span>
+                      </div>
+                      <div class="flex items-center gap-1 flex-wrap">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :disabled="sbImagePromptGeneratingIds.includes(selectedSb?.id)"
+                          @click="genSbImagePrompt(selectedSb)"
+                        >
+                          <Loader2 v-if="sbImagePromptGeneratingIds.includes(selectedSb?.id)" :size="11" class="animate-spin" />
+                          <Sparkles v-else :size="11" />
+                          {{ (selectedSb.image_prompt || selectedSb.imagePrompt) ? 'AI เขียนพรอมต์ภาพใหม่' : 'AI เขียนพรอมต์ภาพ' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :disabled="isUploadingAsset('sb_frame', selectedSb?.id)"
+                          @click="uploadSbImage(selectedSb)"
+                        >
+                          <Loader2 v-if="isUploadingAsset('sb_frame', selectedSb?.id)" :size="11" class="animate-spin" />
+                          <Upload v-else :size="11" />
+                          อัปโหลดภาพ
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-primary"
+                          :disabled="isPendingSbImage(selectedSb?.id)"
+                          @click="genSbImg(selectedSb)"
+                        >
+                          <Loader2 v-if="isPendingSbImage(selectedSb?.id)" :size="11" class="animate-spin" />
+                          <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          {{ isPendingSbImage(selectedSb?.id) ? 'กำลังสร้างภาพ...' : (hasSbImg(selectedSb) ? 'สร้างภาพสตอรี่บอร์ดใหม่' : 'สร้างภาพสตอรี่บอร์ด') }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="sb-frame-grid">
+                      <div class="sb-frame-preview-box">
+                        <template v-if="hasSbImg(selectedSb)">
+                          <img
+                            :src="'/' + getSbImgUrl(selectedSb)"
+                            class="sb-frame-img previewable-image"
+                            alt="Storyboard Frame"
+                            @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
+                          />
+                          <div class="sb-frame-overlay-actions">
+                            <button type="button" class="btn btn-xs" @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)">ดูภาพใหญ่</button>
+                            <button type="button" class="btn btn-xs" @click="clearSbImage(selectedSb)">ลบภาพ</button>
+                          </div>
+                        </template>
+                        <div v-else class="sb-frame-empty">
+                          <Loader2 v-if="isPendingSbImage(selectedSb?.id)" :size="18" class="animate-spin" />
+                          <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          <span>{{ isPendingSbImage(selectedSb?.id) ? 'กำลังสร้างภาพสตอรี่บอร์ด...' : 'ยังไม่มีภาพสตอรี่บอร์ด' }}</span>
+                        </div>
+                      </div>
+
+                      <div class="sb-frame-prompt-col">
+                        <textarea
+                          :value="selectedSb.image_prompt || selectedSb.imagePrompt || ''"
+                          class="textarea sb-frame-prompt-input"
+                          rows="4"
+                          placeholder="พรอมต์สำหรับสร้างภาพสตอรี่บอร์ด (ภาพนิ่งเฟรมแรก): [ขนาดภาพและมุมกล้อง] + [@ชื่อตัวละคร อิริยาบถ ท่าทาง สีหน้า และสภาพในฉากนี้ เช่น บาดเจ็บ/เปลี่ยนชุด โดยไม่ต้องคัดลอกจากไฟล์ตัวละครหากมี Ref แล้ว] + [ฉากหลัง แสง บรรยากาศ]"
+                          @blur="updateField(selectedSb, 'image_prompt', $event.target.value)"
+                        />
+                        <div v-if="hasSbImg(selectedSb)" class="sb-frame-mode-row">
+                          <span class="sb-frame-mode-label">โหมดอ้างอิงตอนสร้างวิดีโอ:</span>
+                          <label class="sb-frame-radio">
+                            <input v-model="sbVideoRefMode" type="radio" value="first_frame" />
+                            <span>ใช้ภาพสตอรี่บอร์ดเป็นเฟรมแรก (Image-to-Video)</span>
+                          </label>
+                          <label class="sb-frame-radio">
+                            <input v-model="sbVideoRefMode" type="radio" value="reference" />
+                            <span>ใช้รูปตัวละครอ้างอิง (@ตัวละคร)</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
                   <section class="video-inspector-section">
                     <div class="video-inspector-prompt-head">
                       <span class="video-inspector-label video-inspector-label-hero">{{ t('episode.sb.videoPromptSection') }}</span>
@@ -776,6 +879,17 @@
                 </div>
                 <button
                   type="button"
+                  class="btn btn-sm btn-primary"
+                  :disabled="videoTaskState(selectedSb) === 'pending'"
+                  @click="genVid(selectedSb)"
+                >
+                  <Loader2 v-if="videoTaskState(selectedSb) === 'pending'" :size="11" class="animate-spin" />
+                  <svg v-else-if="hasVid(selectedSb)" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  {{ videoTaskActionLabel(selectedSb) }}
+                </button>
+                <button
+                  type="button"
                   class="btn btn-sm"
                   :title="t('episode.vid.importVideo')"
                   @click="openVideoImportModal(selectedSb)"
@@ -812,12 +926,29 @@
                   class="video-player-video"
                 />
                 <div v-else class="video-player-empty">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  <img
+                    v-if="hasSbImg(selectedSb)"
+                    :src="'/' + getSbImgUrl(selectedSb)"
+                    class="video-player-sb-preview previewable-image"
+                    alt="Storyboard Preview"
+                    @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
+                  />
+                  <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   <div class="video-player-empty-copy">
-                    <div class="video-player-empty-title">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGenerating') : t('episode.vid.emptyNoVideo') }}</div>
-                    <div class="video-player-empty-desc">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGeneratingDesc') : t('episode.vid.emptyNoVideoDesc') }}</div>
+                    <div class="video-player-empty-title">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGenerating') : (hasSbImg(selectedSb) ? 'มีภาพสตอรี่บอร์ดพร้อมแล้ว' : t('episode.vid.emptyNoVideo')) }}</div>
+                    <div class="video-player-empty-desc">{{ videoTaskState(selectedSb) === 'pending' ? t('episode.vid.emptyGeneratingDesc') : (hasSbImg(selectedSb) ? 'ตรวจสอบภาพสตอรี่บอร์ดแล้ว กดสร้างวิดีโอได้เลย' : t('episode.vid.emptyNoVideoDesc')) }}</div>
                   </div>
-                  <div v-if="videoTaskState(selectedSb) !== 'pending'" class="flex gap-2">
+                  <div v-if="videoTaskState(selectedSb) !== 'pending'" class="flex gap-2 flex-wrap justify-center">
+                    <button
+                      v-if="!hasSbImg(selectedSb)"
+                      type="button"
+                      class="btn btn-sm video-player-empty-action"
+                      :disabled="isPendingSbImage(selectedSb?.id)"
+                      @click="genSbImg(selectedSb)"
+                    >
+                      <Loader2 v-if="isPendingSbImage(selectedSb?.id)" :size="12" class="animate-spin" />
+                      สร้างภาพสตอรี่บอร์ดก่อน
+                    </button>
                     <button
                       class="btn btn-primary btn-sm video-player-empty-action"
                       @click="genVid(selectedSb)"
@@ -911,6 +1042,7 @@
                     :disabled="videoTaskState(selectedSb) === 'pending'"
                     @click="genVid(selectedSb)"
                   >
+                    <Loader2 v-if="videoTaskState(selectedSb) === 'pending'" :size="13" class="animate-spin" />
                     {{ videoTaskActionLabel(selectedSb) }}
                   </button>
                 </div>
@@ -1911,6 +2043,10 @@ function chatConfigId() { return ownerConfigId(textModelOptions.value, chatModel
 const pendingCharImageIds = ref([])
 const pendingSceneImageIds = ref([])
 const pendingPropImageIds = ref([])
+const pendingSbImageIds = ref([])
+const sbImagePromptGeneratingIds = ref([])
+const sbImageBatchRunning = ref(false)
+const sbVideoRefMode = ref('first_frame')
 const pendingVideoIds = ref([])
 const failedVideoMessages = ref({})
 // 任务列表面板：顶栏按钮触发的右侧抽屉,按集聚合 sys_task + video_merges
@@ -2266,8 +2402,8 @@ function videoModerationHint(msg) {
 }
 
 function videoTaskState(sb) {
-  if (hasVid(sb)) return 'done'
   if (isPendingVideo(sb?.id)) return 'pending'
+  if (hasVid(sb)) return 'done'
   if (videoFailMessage(sb?.id)) return 'failed'
   return 'ready'
 }
@@ -2463,11 +2599,12 @@ function openBatchVideoConfirm(pool) {
   batchVideoConfirm.value = { open: true, targets }
 }
 function batchVideos() {
-  // 选择模式且有勾选 → 仅所选（允许重出已完成镜头）；否则全部未完成（待生成+失败）
+  // 选择模式且有勾选 → 仅所选（允许重出已完成镜头）；否则优先未完成（待生成+失败），若全部已完成则允许重新生成全部
   const useSelection = videoSelectMode.value && selectedVideoSbIds.value.length
+  const missing = sbs.value.filter(s => !hasVid(s))
   const pool = useSelection
     ? sbs.value.filter(s => selectedVideoSbIds.value.includes(s.id))
-    : sbs.value.filter(s => !hasVid(s))
+    : (missing.length ? missing : sbs.value)
   openBatchVideoConfirm(pool)
 }
 function retryFailedVideos() {
@@ -2490,13 +2627,6 @@ async function confirmBatchVideos() {
       await sleep(2500)
     }
   }
-
-  watchAsyncResult(() => ids.every(id => {
-    const target = sbs.value.find(s => s.id === id)
-    const done = !!getVideoUrl(target)
-    if (done) pendingVideoIds.value = pendingVideoIds.value.filter(item => item !== id)
-    return done
-  }), 80, 4000)
 }
 
 // 配置变化后校验持久化的模型是否仍存在（配置被删/模型被移除时回退默认，避免把失效模型传给后端）
@@ -2545,10 +2675,13 @@ async function loadGenTasks() {
     const pending = new Set()
     const failed = {}
     for (const [sbId, t] of latestBySb) {
+      if (t.status === 'processing') {
+        pending.add(sbId)
+        continue
+      }
       // 分镜已有视频(失败后重试成功)时不再报历史错误
       if (hasVid(sbs.value.find(s => s.id === sbId))) continue
-      if (t.status === 'processing') pending.add(sbId)
-      else if (t.status === 'failed') failed[sbId] = t.error_msg || 'Video generation failed'
+      if (t.status === 'failed') failed[sbId] = t.error_msg || 'Video generation failed'
     }
     // 刚点击提交、任务记录尚未加载出来的本地状态保留,避免状态闪退
     for (const id of pendingVideoIds.value) if (!latestBySb.has(id)) pending.add(id)
@@ -3159,7 +3292,10 @@ async function genVideoPrompt(sb) {
 
 该分镜信息:时长 ${sb.duration || 10}s;场景:${getSceneName(sb) || '未绑定'};角色:${charNames};道具:${propNames}。
 
-请先调用 read_storyboard_context 获取该分镜的画面描述(含【镜头N】子镜头与台词/旁白)、氛围及时长,据此生成 video_prompt(按 3 秒分段换行、用 @角色名/@场景名/@道具名 引用参考素材；段落内允许多镜头切镜,但不跨场景,切镜点对齐 description 的【镜头N】结构),然后调用 update_storyboard 保存到分镜 ID:${sb.id}。只更新 video_prompt 字段,不要改动其他字段,不要重新拆分整集。`,
+请先调用 read_storyboard_context 获取该分镜的画面描述(含【镜头N】子镜头与台词/旁白)、氛围及时长,据此生成 video_prompt:
+- 第一行信息头仅写 @角色名 与 @场景名 (环境光线)，严禁照抄角色档案中的初始 appearance 和 styling（因为已传递角色参考图 Reference，且新场景中角色姿态、伤势、衣衫破损或换装可能与初始档案不同，照抄会导致冲突）
+- 按 3 秒分段换行、用 @角色名/@场景名/@道具名 引用参考素材，仅描述当前分镜中的真实姿态、状态、表情与动作；段落内允许多镜头切镜,但不跨场景,切镜点对齐 description 的【镜头N】结构
+然后调用 update_storyboard 保存到分镜 ID:${sb.id}。只更新 video_prompt 字段,不要改动其他字段,不要重新拆分整集。`,
       drama_id: dramaId,
       episode_id: epId.value,
       model: chatModelOverride() || undefined,
@@ -3302,6 +3438,202 @@ async function batchPropImages() {
 }
 function getVideoUrl(s) { return s?.video_url || s?.videoUrl || s?.composed_video_url || s?.composedVideoUrl || null }
 function hasVid(s) { return !!getVideoUrl(s) }
+function getSbImgUrl(s) { return s?.first_frame_image || s?.firstFrameImage || s?.composed_image || s?.composedImage || s?.image_url || s?.imageUrl || null }
+function hasSbImg(s) { return !!getSbImgUrl(s) }
+function isPendingSbImage(id) { return pendingSbImageIds.value.includes(id) }
+
+function buildFallbackSbImagePrompt(sb) {
+  if (!sb) return ''
+  const shotType = sb.shot_type || sb.shotType || 'Medium Shot'
+  const angle = sb.angle || 'Eye-level'
+  const charsInShot = getStoryboardCharacters(sb)
+  // หากตัวละครมีภาพอ้างอิง (Ref) แล้ว ไม่ต้องดึง appearance/styling เริ่มต้นจากไฟล์ตัวละครมาใส่ เพราะอาจขัดกับสภาพจริงในฉากใหม่ (เช่น บาดเจ็บ เสื้อขาด เปลี่ยนชุด)
+  const charDesc = charsInShot.length
+    ? charsInShot.map(c => {
+        const hasRef = Boolean(c.image_url || c.imageUrl)
+        if (hasRef) return `@${c.name}`
+        return `${c.name}${c.appearance ? ` (${c.appearance})` : ''}${c.styling ? `, สวมใส่ ${c.styling}` : ''}`
+      }).join(', ')
+    : ''
+  const scene = getStoryboardScene(sb)
+  const sceneDesc = scene
+    ? `${scene.location || ''}${scene.time ? ` เวลา${scene.time}` : ''}${scene.prompt ? ` (${scene.prompt})` : ''}${scene.lighting ? `, แสง${scene.lighting}` : ''}`
+    : (sb.location || '')
+  const rawAction = String(sb.description || sb.action || '')
+    .replace(/【ช็อต\s*\d+】/g, ' ')
+    .replace(/【镜头\s*\d+】/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const atmosphere = sb.atmosphere ? `บรรยากาศ: ${sb.atmosphere}` : ''
+  const stylePreset = drama.value?.style || 'Cinematic realistic drama, high detail, 8k film still'
+  return [
+    `[มุมกล้อง: ${shotType}, ${angle}]`,
+    charDesc ? `[ตัวละคร: ${charDesc}]` : '',
+    rawAction ? `[เหตุการณ์ อิริยาบถ และสภาพในเฟรมแรก: ${rawAction}]` : '',
+    sceneDesc ? `[ฉากหลังและแสง: ${sceneDesc}]` : '',
+    atmosphere ? `[${atmosphere}]` : '',
+    `[สไตล์ภาพ: ${stylePreset}, ภาพนิ่งเฟรมแรกสำหรับสตอรี่บอร์ด ไม่มีตัวอักษรหรือซับไตเติลในภาพ]`,
+  ].filter(Boolean).join(' ')
+}
+
+async function genSbImagePrompt(sb, opts = {}) {
+  if (!sb || sbImagePromptGeneratingIds.value.includes(sb.id)) return ''
+  const idx = sbs.value.indexOf(sb) + 1
+  const charDetails = getStoryboardCharacters(sb)
+    .map(c => {
+      const hasRef = Boolean(c.image_url || c.imageUrl)
+      if (hasRef) return `@${c.name} (มีภาพอ้างอิงแล้ว — ห้ามดึงรูปลักษณ์หรือชุดเริ่มต้นจากไฟล์ตัวละคร)`
+      return `${c.name} (รูปลักษณ์: ${c.appearance || '-'}, ชุด: ${c.styling || '-'})`
+    })
+    .join('; ') || 'ไม่มี'
+  const scene = getStoryboardScene(sb)
+  const sceneDetail = scene
+    ? `${scene.location} · ${scene.time || ''} (${scene.prompt || ''}, แสง: ${scene.lighting || ''})`
+    : (getSceneName(sb) || 'ไม่ระบุ')
+  const propNames = getStoryboardProps(sb).map(p => p.name).join('、') || 'ไม่มี'
+
+  sbImagePromptGeneratingIds.value.push(sb.id)
+  try {
+    await api.post(`/agent/prompt_generator/chat`, {
+      message: `กรุณาสร้างพรอมต์ภาพนิ่งสตอรี่บอร์ดเฟรมแรก (image_prompt) สำหรับช็อตที่ #${idx} (ID:${sb.id})
+ข้อมูลช็อต:
+- คำบรรยายช็อต: ${sb.description || '-'}
+- บรรยากาศ: ${sb.atmosphere || '-'}
+- มุมกล้อง/ขนาดภาพ: ${sb.shot_type || 'Medium Shot'} / ${sb.angle || 'Eye-level'}
+- ตัวละครในช็อต: ${charDetails}
+- ฉากและแสง: ${sceneDetail}
+- พร็อพ: ${propNames}
+
+กฎสำคัญ:
+1. ตัวละครที่มีภาพอ้างอิง (Reference) แล้ว ห้ามคัดลอกรูปลักษณ์หรือชุดเริ่มต้น (appearance, styling) จากไฟล์โปรไฟล์ตัวละครมาใส่ซ้ำเด็ดขาด เพราะในฉากใหม่ตัวละครอาจเปลี่ยนอิริยาบถ บาดเจ็บ เสื้อขาด หรือเปลี่ยนชุดตามเนื้อเรื่อง การระบุชุดหรือท่าทางจากโปรไฟล์เริ่มต้นจะทำให้ภาพผิดเพี้ยน
+2. ให้ใช้ @ชื่อตัวละคร และบรรยายเฉพาะอิริยาบถ ท่าทาง สีหน้า และสภาพร่างกาย/เครื่องแต่งกายที่เกิดขึ้นจริงในช็อตนี้ตามคำบรรยายช็อตเท่านั้น
+3. โครงสร้างพรอมต์ภาพสตอรี่บอร์ด: [ขนาดภาพและมุมกล้อง] + [@ชื่อตัวละคร อิริยาบถ ท่าทาง สีหน้า และสภาพตามเหตุการณ์ในเฟรมแรก] + [ฉากหลัง แสงเงา และบรรยากาศภาพยนตร์] (ห้ามใส่บทพูดหรือข้อความตัวอักษรลงในภาพ และหลีกเลี่ยงคำรุนแรง/เลือด)
+กรุณาเรียกใช้ update_storyboard เพื่อบันทึกค่าลงในฟิลด์ image_prompt ของช็อต ID:${sb.id} เท่านั้น (ห้ามแก้ไขฟิลด์อื่น)`,
+      drama_id: dramaId,
+      episode_id: epId.value,
+      model: chatModelOverride() || undefined,
+      config_id: chatConfigId() || undefined,
+    })
+    await refresh()
+    const updated = sbs.value.find(x => x.id === sb.id)
+    let promptText = (updated?.image_prompt || updated?.imagePrompt || '').trim()
+    if (!promptText) {
+      promptText = buildFallbackSbImagePrompt(updated || sb)
+      await storyboardAPI.update(sb.id, { image_prompt: promptText })
+      if (updated) updated.image_prompt = promptText
+      sb.image_prompt = promptText
+    }
+    if (!opts.silent) toast.success(`สร้างพรอมต์ภาพสตอรี่บอร์ด ช็อต #${idx} สำเร็จ`)
+    return promptText
+  } catch (e) {
+    const fallback = buildFallbackSbImagePrompt(sb)
+    try {
+      await storyboardAPI.update(sb.id, { image_prompt: fallback })
+      sb.image_prompt = fallback
+      if (!opts.silent) toast.info(`ใช้พรอมต์ภาพอัตโนมัติสำหรับช็อต #${idx}`)
+      return fallback
+    } catch {
+      if (!opts.silent) toastError(e)
+      return ''
+    }
+  } finally {
+    sbImagePromptGeneratingIds.value = sbImagePromptGeneratingIds.value.filter(id => id !== sb.id)
+  }
+}
+
+async function genSbImg(sb, opts = {}) {
+  if (!sb || isPendingSbImage(sb.id)) return
+  const idx = sbs.value.indexOf(sb) + 1
+  pendingSbImageIds.value.push(sb.id)
+  try {
+    let prompt = (sb.image_prompt || sb.imagePrompt || '').trim()
+    if (!prompt) {
+      if (!opts.silent) toast.info(`กำลังสร้างพรอมต์ภาพสตอรี่บอร์ด ช็อต #${idx}...`)
+      prompt = await genSbImagePrompt(sb, { silent: true })
+    }
+    if (!prompt) {
+      prompt = buildFallbackSbImagePrompt(sb)
+      await storyboardAPI.update(sb.id, { image_prompt: prompt })
+      sb.image_prompt = prompt
+    }
+    const referenceImages = getShotReferenceImages(sb)
+    const generation = await taskAPI.generate({
+      type: 'image',
+      storyboard_id: sb.id,
+      drama_id: dramaId,
+      prompt,
+      frame_type: 'first_frame',
+      size: dramaAspectRatio.value,
+      reference_images: referenceImages.length ? referenceImages : undefined,
+      model: bareModelName(imageModel.value) || undefined,
+      config_id: ownerConfigId(imageModelOptions.value, imageModel.value),
+    })
+    if (!opts.silent) toast.success(`เริ่มสร้างภาพสตอรี่บอร์ด ช็อต #${idx} แล้ว`)
+    watchAssetImageTask({ image_generation_id: generation?.id }, sb.id, pendingSbImageIds)
+    await refresh()
+  } catch (e) {
+    pendingSbImageIds.value = pendingSbImageIds.value.filter(id => id !== sb.id)
+    if (!opts.silent) toastError(e)
+  }
+}
+
+async function batchSbImages() {
+  if (sbImageBatchRunning.value || !sbs.value.length) return
+  const useSelection = videoSelectMode.value && selectedVideoSbIds.value.length
+  const missing = sbs.value.filter(s => !hasSbImg(s))
+  const targets = useSelection
+    ? sbs.value.filter(s => selectedVideoSbIds.value.includes(s.id))
+    : (missing.length ? missing : sbs.value)
+  if (!targets.length) {
+    toast.info('ทุกช็อตมีภาพสตอรี่บอร์ดครบแล้ว')
+    return
+  }
+  sbImageBatchRunning.value = true
+  toast.info(`เริ่มสร้างภาพสตอรี่บอร์ด ${targets.length} ช็อต...`)
+  try {
+    for (let i = 0; i < targets.length; i++) {
+      await genSbImg(targets[i], { silent: true })
+      if (i < targets.length - 1) await sleep(1500)
+    }
+  } finally {
+    sbImageBatchRunning.value = false
+  }
+}
+
+function uploadSbImage(sb) {
+  if (!sb) return
+  pickFile('image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp', async (file) => {
+    const key = `sb_frame:${sb.id}`
+    if (!uploadingAssetKeys.value.includes(key)) uploadingAssetKeys.value.push(key)
+    try {
+      const res = await uploadAPI.image(file)
+      await storyboardAPI.update(sb.id, { first_frame_image: res.path, composed_image: res.path })
+      sb.first_frame_image = res.path
+      sb.firstFrameImage = res.path
+      toast.success('อัปโหลดภาพสตอรี่บอร์ดสำเร็จ')
+      await refresh()
+    } catch (e) {
+      toastError(e)
+    } finally {
+      uploadingAssetKeys.value = uploadingAssetKeys.value.filter(k => k !== key)
+    }
+  })
+}
+
+async function clearSbImage(sb) {
+  if (!sb) return
+  try {
+    await storyboardAPI.update(sb.id, { first_frame_image: null, composed_image: null })
+    sb.first_frame_image = null
+    sb.firstFrameImage = null
+    sb.composed_image = null
+    sb.composedImage = null
+    toast.success('ลบภาพสตอรี่บอร์ดแล้ว')
+    await refresh()
+  } catch (e) {
+    toastError(e)
+  }
+}
 
 // ===== 分镜视频历史（一个分镜可能生成多个视频,sys_task 留存全部记录）=====
 const sbVideoHistory = ref([])
@@ -3790,6 +4122,9 @@ async function genVid(sb, opts = {}) {
     reference_mode: isGoogleFlowVideo.value && referenceImages.length ? 'reference' : undefined,
     image_url: frameImg || undefined,
     first_frame_url: frameImg || undefined,
+  }
+  if (frameImg && sbVideoRefMode.value === 'first_frame') {
+    params.reference_mode = 'first_frame'
   }
   if (!params.prompt && !referenceImages.length && !frameImg) {
     toast.error(t('episode.vid.needRefOrPrompt'))
@@ -5608,7 +5943,7 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
 .video-task-inspector {
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--border);
@@ -5629,9 +5964,12 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
 }
 .video-inspector-title { color: var(--text-0); font-size: 14px; font-weight: 700; }
 .video-inspector-sub { margin-top: 2px; color: var(--text-3); font-size: 11px; }
-.video-inspector-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px 18px 18px; }
+.video-inspector-body { flex: 1 0 auto; min-height: 0; display: flex; flex-direction: column; gap: 16px; padding: 14px 16px; }
 /* 时长参数 + 生成操作常驻底部：不随检查器滚动 */
 .video-inspector-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -5667,6 +6005,107 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
   min-height: 176px;
   font-size: 13px;
   line-height: 1.6;
+}
+.sb-frame-section {
+  padding: 12px;
+  border: 1px solid var(--surface-outline);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+}
+.sb-frame-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .sb-frame-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.sb-frame-preview-box {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--surface-outline);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sb-frame-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+.sb-frame-overlay-actions {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 3px 5px;
+  border-radius: var(--radius-sm);
+}
+.sb-frame-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  color: var(--text-3);
+  font-size: 11px;
+  text-align: center;
+}
+.sb-frame-prompt-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.sb-frame-prompt-input {
+  font-size: 12.5px;
+  line-height: 1.55;
+  min-height: 92px;
+}
+.sb-frame-mode-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  border: 1px solid var(--surface-outline);
+  font-size: 11.5px;
+}
+.sb-frame-mode-label {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.sb-frame-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-1);
+  cursor: pointer;
+}
+.video-player-sb-preview {
+  width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--surface-outline);
+  cursor: pointer;
+}
+.video-task-sb-badge {
+  color: var(--accent-text, var(--accent));
+  font-weight: 600;
 }
 .video-inspector-params { display: grid; gap: 8px; }
 .video-inspector-params div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }

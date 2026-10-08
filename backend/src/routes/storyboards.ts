@@ -135,6 +135,9 @@ app.put('/:id', async (c) => {
     time: 'time', atmosphere: 'atmosphere', result: 'result',
     bgm_prompt: 'bgmPrompt', sound_effect: 'soundEffect',
     video_url: 'videoUrl',
+    first_frame_image: 'firstFrameImage',
+    last_frame_image: 'lastFrameImage',
+    composed_image: 'composedImage',
   }
 
   const updates: Record<string, any> = { updatedAt: now() }

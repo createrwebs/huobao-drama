@@ -75,16 +75,18 @@ export async function startVideoPromptBatch(
         const lang = getContentLanguage()
         const promptContent = lang === 'th'
           ? `โปรดสร้างพร้อมท์วิดีโอ (video_prompt) สำหรับสตอรี่บอร์ด #${sb.storyboardNumber}(ID:${sb.id}) โมเดลวิดีโอ:${videoLabel}
-โปรดเรียกใช้ read_storyboard_context ก่อนเพื่อรับคำอธิบายภาพ (รวมถึงช็อตย่อย 【ช็อต N】 และบทพูด/เสียงบรรยาย), บรรยากาศ, ข้อมูลตัวละคร (appearance, styling) และข้อมูลฉาก (lighting, prompt)
+โปรดเรียกใช้ read_storyboard_context ก่อนเพื่อรับคำอธิบายภาพ (รวมถึงช็อตย่อย 【ช็อต N】 และบทพูด/เสียงบรรยาย), บรรยากาศ, รายชื่อตัวละคร และข้อมูลฉาก (lighting, prompt)
 จากนั้นสร้าง video_prompt:
-1. บรรทัดแรกต้องเป็นส่วนหัว (Header): ระบุบริบทภาพ รูปลักษณ์ และเครื่องแต่งกายของตัวละครและฉากอย่างละเอียด เช่น "ตัวละคร: @ชื่อตัวละคร (เพศ วัย รูปร่างหน้าตา ทรงผม สีผิว เสื้อผ้าเครื่องแต่งกายที่ใส่), ...; ฉาก: @ชื่อฉาก (สภาพแวดล้อม ยุคสมัย แสงและบรรยากาศ)." เพื่อให้โมเดลวิดีโอเข้าใจตัวละครได้อย่างถูกต้อง
-2. จากนั้นแบ่งช่วงละ 3 วินาที แยกบรรทัด ดึงการกระทำ สีหน้า บทพูดจาก 【ช็อต N】 ใช้ @ชื่อตัวละคร และ @ชื่อฉาก ให้ตรงกัน อนุญาตให้ตัดช็อตภายในช่วงได้แต่ไม่ข้ามฉาก
+1. บรรทัดแรกต้องเป็นส่วนหัว (Header): ระบุเพียงรายชื่อตัวละครที่เข้าฉากด้วย @ชื่อตัวละคร และบริบทของฉาก เช่น "ตัวละคร: @ชื่อตัวละคร1, @ชื่อตัวละคร2; ฉาก: @ชื่อฉาก (สภาพแวดล้อม แสงและบรรยากาศ)."
+   - กฎสำคัญ: ห้ามคัดลอกรูปลักษณ์หรือชุดเริ่มต้น (appearance, styling) จากไฟล์โปรไฟล์ตัวละครมาใส่ในวงเล็บเด็ดขาด เพราะระบบส่งรูปอ้างอิงตัวละคร (Reference) ไปให้โมเดลแล้ว และในฉากใหม่ตัวละครอาจเปลี่ยนอิริยาบถ บาดเจ็บ เสื้อขาด หรือเปลี่ยนชุดตามเนื้อเรื่อง การระบุชุดหรือท่าทางจากโปรไฟล์เริ่มต้นจะทำให้ภาพขัดแย้งกับฉากจริง
+2. จากนั้นแบ่งช่วงละ 3 วินาที แยกบรรทัด ดึงเฉพาะการกระทำ อิริยาบถ สีหน้า สภาพของตัวละครในฉากนั้นๆ และบทพูดจาก 【ช็อต N】 ใช้ @ชื่อตัวละคร และ @ชื่อฉาก ให้ตรงกัน อนุญาตให้ตัดช็อตภายในช่วงได้แต่ไม่ข้ามฉาก
 แล้วเรียกใช้ update_storyboard เพื่อบันทึกลงในสตอรี่บอร์ด ID:${sb.id} ส่งเฉพาะพารามิเตอร์ storyboard_id และ video_prompt เท่านั้น อย่าส่งฟิลด์อื่นกลับมา`
           : `请为分镜 #${sb.storyboardNumber}(ID:${sb.id})生成视频提示词(video_prompt)。视频模型:${videoLabel}。
-请先调用 read_storyboard_context 获取该分镜的画面描述(含【镜头N】子镜头与台词/旁白)、氛围及时长，以及角色外貌装束(appearance, styling)与场景信息(lighting, prompt)。
+请先调用 read_storyboard_context 获取该分镜的画面描述(含【镜头N】子镜头与台词/旁白)、氛围及时长，以及角色列表与场景信息(lighting, prompt)。
 据此生成 video_prompt：
-1. 第一行必须是信息头：详细注明出场人物的外貌、体貌、发型、肤色与服装装束，以及场景的环境时代与光线，格式如："出场人物：@角色名 (性别、年龄、体貌特征与发型肤色、服装装束)，...；场景：@场景名 (地理环境、时代建筑、光照色调与氛围)。" 确保视频模型获得完整人物视觉上下文；
-2. 之后按 3 秒分段换行，写明机位景别、动作、对白与情绪，提到人物场景使用 @角色名/@场景名，段落内允许切镜但不跨场景，切镜点对齐【镜头N】结构。
+1. 第一行必须是信息头：仅列出出场人物 @角色名 与场景环境，格式如："出场人物：@角色名1, @角色名2；场景：@场景名 (地理环境、时代建筑、光照色调与氛围)。"
+   - 重要规则：由于已传递角色参考图(Reference)，严禁照抄角色档案中的初始 appearance 或 styling（角色在新场景中可能受伤、衣衫破损、换装或姿态变化，照抄初始档案会导致画面冲突）；仅在子镜头中描述当前场景下的真实状态与动作；
+2. 之后按 3 秒分段换行，写明机位景别、当前动作状态、对白与情绪，提到人物场景使用 @角色名/@场景名，段落内允许切镜但不跨场景，切镜点对齐【镜头N】结构。
 然后调用 update_storyboard 保存到分镜 ID:${sb.id}。update_storyboard 参数只传 storyboard_id 和 video_prompt 两个键，不要回传该分镜的其他任何字段。`
         await agent.generate([{
           role: 'user',
@@ -122,14 +124,19 @@ export function getVideoPromptBatchStatus(episodeId: number): VideoPromptBatchSt
   return tasks.get(episodeId) || null
 }
 
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
- * เติมบริบทภาพของตัวละคร (appearance, styling) และฉาก (prompt, lighting)
- * รวมถึงสไตล์ภาพรวมของเรื่อง (drama style) ลงใน video_prompt ก่อนส่งเข้า AI Video Engine (เช่น Google Flow / Veo)
- * เพื่อให้โมเดลเข้าใจว่าตัวละครและฉากมีรูปลักษณ์อย่างไร ไม่สร้างมั่วหรือหน้าตาเพี้ยน
+ * เติมบริบทของฉาก (prompt, lighting) และสไตล์ภาพรวมของเรื่อง (drama style) ลงใน video_prompt
+ * หากตัวละครมีภาพอ้างอิง (Reference Image) หรือส่ง Reference ไปแล้ว จะไม่ดึง appearance/styling
+ * จากไฟล์ตัวละครมาใส่ซ้ำ เพื่อป้องกันการขัดแย้งกับอิริยาบถหรือสภาพร่างกาย/ชุดในฉากใหม่ (เช่น บาดเจ็บ เสื้อขาด เปลี่ยนชุด)
  */
 export async function enrichStoryboardVideoPrompt(
   rawPrompt: string,
-  storyboardId?: number | null
+  storyboardId?: number | null,
+  options: { skipCharacterProfile?: boolean } = {},
 ): Promise<string> {
   let prompt = (rawPrompt || '')
     .replace(/^Shot on iPhone 16 Pro Max[\s\S]*?--no\s+cgi,\s*3d render,\s*cartoon[,\s]*/i, '')
@@ -157,13 +164,14 @@ export async function enrichStoryboardVideoPrompt(
       }
     }
 
-    // 2. Get bound characters with appearance and styling
+    // 2. Get bound characters (including imageUrl to know if character reference image exists)
     const boundChars = await db.select({
       name: schema.characters.name,
       appearance: schema.characters.appearance,
       styling: schema.characters.styling,
       description: schema.characters.description,
       role: schema.characters.role,
+      imageUrl: schema.characters.imageUrl,
     }).from(schema.storyboardCharacters)
       .innerJoin(schema.characters, eq(schema.storyboardCharacters.characterId, schema.characters.id))
       .where(eq(schema.storyboardCharacters.storyboardId, storyboardId))
@@ -181,9 +189,37 @@ export async function enrichStoryboardVideoPrompt(
       }
     }
 
-    // Format character context descriptions
+    // If any character has a reference image (or skipCharacterProfile is set), strip static (@Name (...))
+    // descriptions from the header line so old character-file descriptions don't conflict with the new scene.
+    const lines = prompt.split('\n')
+    for (let i = 0; i < Math.min(lines.length, 3); i++) {
+      if (/^(?:\[สไตล์ภาพ:[^\]]*\]\s*)?(?:ตัวละคร|出场人物|Characters)\s*:/i.test(lines[i])) {
+        const semiIdx = lines[i].indexOf(';')
+        const fullSemiIdx = lines[i].indexOf('；')
+        const splitAt = semiIdx >= 0 ? semiIdx : fullSemiIdx
+        let charPart = splitAt >= 0 ? lines[i].slice(0, splitAt) : lines[i]
+        const restPart = splitAt >= 0 ? lines[i].slice(splitAt) : ''
+        for (const c of boundChars) {
+          const hasRef = Boolean(options.skipCharacterProfile || c.imageUrl?.trim())
+          if (hasRef && c.name) {
+            const re = new RegExp(`@${escapeRegExp(c.name)}\\s*\\([^)]*\\)`, 'g')
+            charPart = charPart.replace(re, `@${c.name}`)
+          }
+        }
+        lines[i] = charPart + restPart
+      }
+    }
+    prompt = lines.join('\n')
+
+    // Format character context descriptions:
+    // Only include character file appearance/styling if the character has NO reference image AND skipCharacterProfile is false
     const charContexts: string[] = []
     for (const c of boundChars) {
+      const hasRef = Boolean(options.skipCharacterProfile || c.imageUrl?.trim())
+      if (hasRef) {
+        charContexts.push(`@${c.name}`)
+        continue
+      }
       const traits: string[] = []
       if (c.appearance?.trim()) traits.push(c.appearance.trim())
       if (c.styling?.trim()) traits.push(c.styling.trim())
@@ -212,20 +248,16 @@ export async function enrichStoryboardVideoPrompt(
       sceneContext = desc ? `@${sceneInfo.location} (${desc})` : `@${sceneInfo.location}`
     }
 
-    // Check if prompt already has detailed character context (e.g. contains @Name (...))
-    const hasDetailedCharContext = boundChars.some(c =>
-      prompt.includes(`@${c.name} (`) || prompt.includes(`@${c.name}(`)
-    )
-
-    if (hasDetailedCharContext) {
-      // Already has context, just ensure drama style prefix if not present
+    // Check if prompt already has a header line (e.g. starts with ตัวละคร: / 出场人物: / Characters:)
+    const hasHeaderLine = /^(?:\[สไตล์ภาพ:[^\]]*\]\s*\n?)?(?:ตัวละคร|出场人物|Characters)\s*:/i.test(prompt)
+    if (hasHeaderLine) {
       if (dramaStyleName && !prompt.includes('สไตล์ภาพ') && !prompt.includes('Style:')) {
         return `[สไตล์ภาพ: ${dramaStyleName}]\n${prompt}`
       }
       return prompt
     }
 
-    // Build rich header
+    // Build header
     const headerParts: string[] = []
     if (dramaStyleName) headerParts.push(`สไตล์ภาพ: ${dramaStyleName}`)
     if (charContexts.length > 0) headerParts.push(`ตัวละคร: ${charContexts.join(', ')}`)
@@ -234,13 +266,6 @@ export async function enrichStoryboardVideoPrompt(
     if (!headerParts.length) return prompt
 
     const newHeader = headerParts.join('; ') + '.\n'
-
-    // Replace existing bare header if present: e.g. "ตัวละคร: @ทิน, @จัน; ฉาก: @... .\n" or "出场人物：@...；场景：@...。\n"
-    const bareHeaderRegex = /^(?:ตัวละคร|出场人物|Characters):\s*@[^;.\n]+(?:[,、]\s*@[^;.\n]+)*\s*;\s*(?:ฉาก|场景|Scene):\s*@[^.\n]+[.\n]+/i
-    if (bareHeaderRegex.test(prompt)) {
-      return prompt.replace(bareHeaderRegex, newHeader)
-    }
-
     return `${newHeader}${prompt}`
   } catch (err) {
     console.warn('[VideoPrompts] Failed to enrich video prompt:', err)
