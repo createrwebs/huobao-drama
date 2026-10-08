@@ -1,0 +1,30 @@
+backend/src/agents/index.ts
+  h_f97827f62b0fea 110,148
+backend/src/routes/storyboards.ts
+  h_f97827f62b0fea 138-140
+backend/src/routes/tasks.ts
+  h_f97827f62b0fea 186
+backend/src/services/flow-engine.ts
+  h_f97827f62b0fea 792-795
+backend/src/services/generation.ts
+  h_f97827f62b0fea 227-234
+backend/src/services/video-prompts.ts
+  h_f97827f62b0fea 78,80-82,85,87-89,127-130,132-134,138-139,167,174,192-215,218-222,251-253,260
+backend/workspace/prompts/prompt_generator.th.md
+  h_f97827f62b0fea 28-29
+backend/workspace/prompts/storyboard_breaker.th.md
+  h_f97827f62b0fea 36-37
+frontend/app/views/drama/episode.vue
+  h_f97827f62b0fea 538-542,652-658,674-677,694-696,759-843,880-890,929-936,938-939,941-951,1045,2046-2049,2406,2602,2604,2607,2678-2681,2684,3295-3298,3441-3636,4126-4128,5946,5967,5970-5972,6009-6109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "cfb08fd0fc6bce161662dfd7edc7b716fe8c5ee3",
+  "prompts": {},
+  "humans": {
+    "h_f97827f62b0fea": {
+      "author": "NOPPANAN THEERACHARTE <noppanan.the@axonstech.com>"
+    }
+  }
+}
