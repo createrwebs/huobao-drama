@@ -1,0 +1,51 @@
+docs/HUOBAO_NEW_API_INTEGRATION_PLAN_TH.md
+  s_e9a9dd321e6ce9::t_930919b834ee25 4,6-11,121-157,159,161,163-167,169,193
+  s_e9a9dd321e6ce9::t_274457af346c20 12-13
+  s_e9a9dd321e6ce9::t_af043bb8968b5e 1-3,5,14-120,158,160,162,168,170-192,195-198
+  s_e9a9dd321e6ce9::t_90a3376a25cd1a 194
+docs/STORY_MODE_IMPLEMENTATION_PLAN_TH.md
+  s_e9a9dd321e6ce9::t_274457af346c20 1-96
+docs/COLAB_LOGIN_TH.md
+  s_e9a9dd321e6ce9::t_90a3376a25cd1a 1-50
+docs/antigravity-huobao/HANDOFF.md
+  s_e9a9dd321e6ce9::t_f9656bcb9336a0 1-18
+  s_e9a9dd321e6ce9::t_930919b834ee25 25-31
+  s_e9a9dd321e6ce9::t_3417958330ccdb 19
+  s_e9a9dd321e6ce9::t_90a3376a25cd1a 20-23
+  s_e9a9dd321e6ce9::t_f8a7afe5dbbeaa 24
+docs/antigravity-huobao/FEEDBACK_M1_ROUND2.md
+  s_e9a9dd321e6ce9::t_3417958330ccdb 1-13
+docs/antigravity-huobao/TASK_M1.md
+  s_e9a9dd321e6ce9::t_930919b834ee25 5-6
+  s_e9a9dd321e6ce9::t_af043bb8968b5e 1-4,7-18
+docs/COLAB_MINIMAX_H3_PLAN_TH.md
+  s_e9a9dd321e6ce9::t_90a3376a25cd1a 1-3,7-75
+  s_e9a9dd321e6ce9::t_caceff664c62bc 4-6
+docs/antigravity-huobao/dev-m1-close.ndjson
+  s_e9a9dd321e6ce9::t_32a024360276f6 2-36
+  s_e9a9dd321e6ce9::t_e431b5fa220de0 1
+docs/antigravity-huobao/dev-m1-round2.ndjson
+  s_e9a9dd321e6ce9::t_967d0fd8b30083 1-130
+docs/antigravity-huobao/dev-m1-round2.stderr.txt
+  s_e9a9dd321e6ce9::t_08b033ffb4bf26 1
+docs/antigravity-huobao/dev-m1.ndjson
+  s_e9a9dd321e6ce9::t_58e63264e597a3 1-34
+docs/antigravity-huobao/dev-m1.stderr.txt
+  s_e9a9dd321e6ce9::t_afc38dc9736cc2 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "a4edb3caf52999655ebd5d1d677d4ef2eda1a488",
+  "prompts": {},
+  "sessions": {
+    "s_e9a9dd321e6ce9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12223-c727-71b3-9788-680859421ca7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "NOPPANAN THEERACHARTE <noppanan.the@axonstech.com>"
+    }
+  }
+}
