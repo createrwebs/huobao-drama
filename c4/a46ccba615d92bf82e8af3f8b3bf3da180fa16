@@ -1,0 +1,32 @@
+frontend/app/views/drama/episode.vue
+  s_e9a9dd321e6ce9::t_f045c949d19588 2327-2330,2790-2791
+  s_e9a9dd321e6ce9::t_0166498b295907 654,657,804,807,810,931,934,2785,2788-2789,3447
+docs/auth-research/RESEARCH_2026-10-10.json
+  s_e9a9dd321e6ce9::t_e2b00f31d725ab 1-199
+docs/ANTIGRAVITY_MULTI_USER_TASK_TH.md
+  s_e9a9dd321e6ce9::t_ab2fafc212c6e7 1-92
+docs/HUOBAO_MULTI_USER_PLAN_TH.md
+  s_e9a9dd321e6ce9::t_c99d59d778b5f7 1-161
+frontend/app/utils/story-mode.mjs
+  s_e9a9dd321e6ce9::t_8b76d30dade9de 42,45-47,49
+frontend/app/views/drama/detail.vue
+  s_e9a9dd321e6ce9::t_d940b921fc979e 839-842
+frontend/nuxt.config.ts
+  s_e9a9dd321e6ce9::t_d0c93a10e1b305 34,36,40-41,48-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "c4a46ccba615d92bf82e8af3f8b3bf3da180fa16",
+  "prompts": {},
+  "sessions": {
+    "s_e9a9dd321e6ce9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12223-c727-71b3-9788-680859421ca7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "NOPPANAN THEERACHARTE <noppanan.the@axonstech.com>"
+    }
+  }
+}
