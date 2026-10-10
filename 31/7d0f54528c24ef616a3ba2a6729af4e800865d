@@ -1,0 +1,249 @@
+docs/antigravity-story/ecc/e2e-runner.md
+  s_e9a9dd321e6ce9::t_61d7c9241339ba 1-116
+docs/antigravity-story/baseline.json
+  s_e9a9dd321e6ce9::t_f3b764ff32ed43 1-146
+frontend/app/views/drama/detail.vue
+  s_e9a9dd321e6ce9::t_5421a2969ed303 39-46
+docs/antigravity-story/qa-s1-round1.ndjson
+  s_e9a9dd321e6ce9::t_497ee87f10f938 1
+  s_e9a9dd321e6ce9::t_6b1f40ee4e949f 2-4
+  s_e9a9dd321e6ce9::t_9f494881f14cfa 5-94
+docs/antigravity-story/QA_FINAL_RECHECK.md
+  s_e9a9dd321e6ce9::t_50972cd710696f 1-14
+docs/antigravity-story/ecc/code-reviewer.md
+  s_e9a9dd321e6ce9::t_61d7c9241339ba 1-323
+frontend/app/views/drama/story.vue
+  s_e9a9dd321e6ce9::t_5421a2969ed303 1-2,5-8,12-27,29-48,50-51,53-72,74-85,88-114,116-122,130-131,134-142,155,158-160,162,172,194,206-215,217-225,230-251,254,261,265-275,277-344,360-373,377-383,386-427,429-431,433-435,437-452,455-484,486-507,509-512,514-517,520-545,547-550,552-555,557-558,560-582,584-592,594,596-602,604,606-625,627-628,630-659,661-673,675-678,680-684,686-704,706-716,718-722,724-737,740-743
+  s_e9a9dd321e6ce9::t_b194376f21ff8b 3-4,9-11,28,49,52,73,86-87,115,123-129,132-133,143-154,156-157,161,163-171,173-193,195-205,216,226-229,252-253,255-260,262-264,276,345-359,374-376,384-385,428,432,436,453-454,485,508,513,518-519,546,551,556,559,583,593,595,603,605,626,629,660,674,679,685,705,717,723,738-739
+docs/antigravity-story/QA_ASSERTION_CLOSEOUT.md
+  s_e9a9dd321e6ce9::t_12f25be19d720d 1-8
+docs/antigravity-story/locale-audit.json
+  s_e9a9dd321e6ce9::t_1bac730f7f1a04 1-37
+docs/antigravity-story/conversations.json
+  s_e9a9dd321e6ce9::t_9d987cdf83340d 5-6,11-17,24-26,28-41,45-118,120-133,138-139,144-150,157-385
+  s_e9a9dd321e6ce9::t_513352b37cb90d 1-4,7-10,18-23,27,42-44,119,134-137,140-143,151-156,386-387
+docs/antigravity-story/dev-skills-round2.ndjson
+  s_e9a9dd321e6ce9::t_703ae3933292d8 49-54
+  s_e9a9dd321e6ce9::t_497ee87f10f938 43-45
+  s_e9a9dd321e6ce9::t_5e2100a1b7d90f 40-42
+  s_e9a9dd321e6ce9::t_2a98f2e83c09dd 46-48
+  s_e9a9dd321e6ce9::t_5086fae2ac5ae8 55-57
+  s_e9a9dd321e6ce9::t_d4b8c74e06ea3b 1-39,58-240
+docs/antigravity-story/CONVERSATIONS.md
+  s_e9a9dd321e6ce9::t_9d987cdf83340d 1-730
+docs/antigravity-story/frozen-before-qa.json
+  s_e9a9dd321e6ce9::t_8a3db6161b2d7e 2-185
+  s_e9a9dd321e6ce9::t_1bac730f7f1a04 1,186
+docs/antigravity-story/dev-tora-logging-round2.ndjson
+  s_e9a9dd321e6ce9::t_dd0b23b2687543 28-219
+  s_e9a9dd321e6ce9::t_b9ca74295222e8 1-27
+docs/antigravity-story/TASK_S1.md
+  s_e9a9dd321e6ce9::t_45b608bd6aab9d 1-28
+docs/antigravity-story/FEEDBACK_S1_ROUND2.md
+  s_e9a9dd321e6ce9::t_f3a12b823464bc 1-13
+docs/antigravity-story/QA_MEDIA_RECHECK.md
+  s_e9a9dd321e6ce9::t_ed4a771c884a3b 1-13
+docs/STORY_MODE_IMPLEMENTATION_PLAN_TH.md
+  s_e9a9dd321e6ce9::t_5cd629f918e0ec 4,96
+docs/antigravity-story/qa-s1-round6-assertions.ndjson
+  s_e9a9dd321e6ce9::t_9e0bbed9ba7be6 31-34
+  s_e9a9dd321e6ce9::t_02dc99dad4f4d0 1-30
+docs/antigravity-story/PROGRESS.md
+  s_e9a9dd321e6ce9::t_37f659192fd1c6 1-24
+docs/antigravity-story/ecc/security-reviewer.md
+  s_e9a9dd321e6ce9::t_61d7c9241339ba 1-117
+docs/antigravity-story/FEEDBACK_QA_SKILLS_ROUND2.md
+  s_e9a9dd321e6ce9::t_3a9a56d7f3455d 1-3
+docs/antigravity-story/PO_ACCEPTANCE_TORA_LOGGING.md
+  s_e9a9dd321e6ce9::t_5cd629f918e0ec 1-9
+docs/antigravity-story/qa-s1-round4-closeout.ndjson
+  s_e9a9dd321e6ce9::t_7ab477113586c8 235-369
+  s_e9a9dd321e6ce9::t_106c1508ffb61e 229-234
+  s_e9a9dd321e6ce9::t_bf988488724a2d 1-228
+docs/antigravity-story/research/zenstory-source.json
+  s_e9a9dd321e6ce9::t_f9ace5901ea8c5 1-10
+docs/antigravity-story/FEEDBACK_S1_ROUND4.md
+  s_e9a9dd321e6ce9::t_27cb7ac69434f9 1-10
+docs/antigravity-story/QA_COVERAGE_CLOSEOUT.md
+  s_e9a9dd321e6ce9::t_dbbf10f1e0dc4d 1-9
+docs/antigravity-story/FEEDBACK_QA_S1_ROUND2.md
+  s_e9a9dd321e6ce9::t_27cb7ac69434f9 1-9
+docs/antigravity-story/FEEDBACK_S1_ROUND3.md
+  s_e9a9dd321e6ce9::t_a3069c76b5f6ee 1-9
+docs/antigravity-story/qa-s1-round6-assertions.stderr.txt
+  s_e9a9dd321e6ce9::t_9e0bbed9ba7be6 1
+docs/antigravity-story/permission-cleanup.json
+  s_e9a9dd321e6ce9::t_9d987cdf83340d 1-37
+docs/antigravity-story/ecc/tdd-guide.md
+  s_e9a9dd321e6ce9::t_61d7c9241339ba 1-100
+docs/antigravity-story/qa-readonly-audit.json
+  s_e9a9dd321e6ce9::t_20526ef6b20bea 1-11
+docs/antigravity-story/FEEDBACK_S1_MEDIA.md
+  s_e9a9dd321e6ce9::t_106c1508ffb61e 1-14
+docs/antigravity-story/FEEDBACK_SKILLS_ROUND2.md
+  s_e9a9dd321e6ce9::t_79fba572f92fc1 1-9
+docs/antigravity-story/qa-logging-readonly-audit.json
+  s_e9a9dd321e6ce9::t_ab4a8ff742408d 1-5
+docs/antigravity-story/ecc/typescript-reviewer.md
+  s_e9a9dd321e6ce9::t_61d7c9241339ba 1-124
+docs/antigravity-story/FEEDBACK_S1_FINAL_SMALL.md
+  s_e9a9dd321e6ce9::t_5e5bad7615c67b 1-7
+docs/antigravity-story/TASK_TORA_LOGGING_PREREQUISITE.md
+  s_e9a9dd321e6ce9::t_46ddadface7974 1-14
+backend/workspace/skills/storyboard-breaker/continuity/SKILL.md
+  s_e9a9dd321e6ce9::t_703ae3933292d8 2
+  s_e9a9dd321e6ce9::t_cb241481b940ad 1,3-34
+docs/antigravity-story/qa-s1-round5-media.ndjson
+  s_e9a9dd321e6ce9::t_3dd2fcdc37636e 49-52
+  s_e9a9dd321e6ce9::t_55fc99039da725 185-187
+  s_e9a9dd321e6ce9::t_69babffc354e9b 1-48,53-184,188-331
+docs/antigravity-story/TASK_QA_TORA_LOGGING.md
+  s_e9a9dd321e6ce9::t_4ae4d399e2d59a 1-9
+docs/antigravity-story/dev-tora-logging-round1.ndjson
+  s_e9a9dd321e6ce9::t_dd0b23b2687543 10-13
+  s_e9a9dd321e6ce9::t_3a463912e8d0e7 1-9
+docs/antigravity-story/dev-s1-round6-media.ndjson
+  s_e9a9dd321e6ce9::t_7ab477113586c8 1
+  s_e9a9dd321e6ce9::t_ed4a771c884a3b 143-148
+  s_e9a9dd321e6ce9::t_f4dbbc30c730c8 149-194
+  s_e9a9dd321e6ce9::t_c9ddc050cdd2e2 2-142
+docs/antigravity-story/DELIVERY_TORA_LOGGING.md
+  s_e9a9dd321e6ce9::t_dd0b23b2687543 1-96
+docs/antigravity-story/dev-s1-round2.ndjson
+  s_e9a9dd321e6ce9::t_5421a2969ed303 58-85
+  s_e9a9dd321e6ce9::t_6148d29a759e70 1-57
+frontend/app/locales/en.json
+  s_e9a9dd321e6ce9::t_497ee87f10f938 1057,1065,1073-1074
+  s_e9a9dd321e6ce9::t_5421a2969ed303 161,1051-1056,1058-1064,1068-1072,1075-1080
+  s_e9a9dd321e6ce9::t_205c4f5ba4f0fd 1066-1067
+docs/antigravity-story/PO_NOTES_S1.md
+  s_e9a9dd321e6ce9::t_8627f2da963bd0 1-15
+docs/antigravity-story/dev-tora-logging-round1.stderr.txt
+  s_e9a9dd321e6ce9::t_dd0b23b2687543 1
+docs/antigravity-story/research/short-drama-storyboard.md
+  s_e9a9dd321e6ce9::t_f9ace5901ea8c5 1-185
+docs/antigravity-story/permission-changes.json
+  s_e9a9dd321e6ce9::t_497ee87f10f938 20-26
+  s_e9a9dd321e6ce9::t_2d81dfe22635e1 27
+  s_e9a9dd321e6ce9::t_6512539f4f1d3b 1-19,34-37
+  s_e9a9dd321e6ce9::t_46ddadface7974 28-33
+docs/antigravity-story/source-audit.json
+  s_e9a9dd321e6ce9::t_a6f33f0e91e3c7 1,12,16
+  s_e9a9dd321e6ce9::t_20526ef6b20bea 2-11,13-15
+docs/antigravity-story/TASK_SKILLS.md
+  s_e9a9dd321e6ce9::t_ed1166665c7090 1-22
+docs/antigravity-story/frozen-logging-before-qa.json
+  s_e9a9dd321e6ce9::t_4ae4d399e2d59a 1-4
+docs/antigravity-story/qa_s1.py
+  s_e9a9dd321e6ce9::t_9e0bbed9ba7be6 490-622
+  s_e9a9dd321e6ce9::t_68c102898b6c04 1-489,623-701
+docs/antigravity-story/FEEDBACK_TORA_LOGGING_ROUND2.md
+  s_e9a9dd321e6ce9::t_13560118bfc086 1-3
+docs/antigravity-story/TASK_QA_SKILLS.md
+  s_e9a9dd321e6ce9::t_5e55267b806f18 1-10
+docs/antigravity-story/QA_S1_ROUND1_PO.md
+  s_e9a9dd321e6ce9::t_e1b9d0328d6673 1-7
+backend/workspace/skills/prompt-generator/video-prompt/continuity/SKILL.th.md
+  s_e9a9dd321e6ce9::t_497ee87f10f938 1,3-29
+  s_e9a9dd321e6ce9::t_c507d63d0eb6c5 2
+docs/antigravity-story/research/short-drama-video-prompts.md
+  s_e9a9dd321e6ce9::t_f9ace5901ea8c5 1-163
+docs/antigravity-story/dev-s1-round2.stderr.txt
+  s_e9a9dd321e6ce9::t_5421a2969ed303 1
+docs/antigravity-story/PO_ACCEPTANCE_S1.md
+  s_e9a9dd321e6ce9::t_37f659192fd1c6 1-34
+docs/antigravity-story/research/zenstory-LICENSE.txt
+  s_e9a9dd321e6ce9::t_f9ace5901ea8c5 1-21
+docs/antigravity-story/dev-s1-round3.ndjson
+  s_e9a9dd321e6ce9::t_f87c072a52d597 52-54
+  s_e9a9dd321e6ce9::t_c7a59db1f59fde 150-153
+  s_e9a9dd321e6ce9::t_166fa695e994a1 58-63
+  s_e9a9dd321e6ce9::t_05e5ccdc074503 1-51,55-57,64-149,154-226
+docs/antigravity-story/TASK_QA_S1.md
+  s_e9a9dd321e6ce9::t_c68b6f37cd5fbf 9
+  s_e9a9dd321e6ce9::t_2b71638134560d 1-8,10-20
+backend/src/middleware/logger.ts
+  s_e9a9dd321e6ce9::t_6e7ceaecc142d9 25,34
+backend/tests/request-logger.test.ts
+  s_e9a9dd321e6ce9::t_b92527ee0cc09d 1-195
+docs/antigravity-story/DELIVERY_S1.md
+  s_e9a9dd321e6ce9::t_cf5ba6efa244af 1-67
+docs/antigravity-story/QA_S1.md
+  s_e9a9dd321e6ce9::t_acaba8b28778d4 1-130
+docs/antigravity-story/QA_TORA_LOGGING.md
+  s_e9a9dd321e6ce9::t_90e3dc1982b6ef 1-71
+docs/antigravity-story/TORA_RUNTIME_LIMIT_TH.md
+  s_e9a9dd321e6ce9::t_0a742809793e2b 1-9
+docs/antigravity-story/dev-s1-round1.ndjson
+  s_e9a9dd321e6ce9::t_2ef292f1045332 1-10
+docs/antigravity-story/dev-s1-round1.stderr.txt
+  s_e9a9dd321e6ce9::t_4267b9765766a2 1
+docs/antigravity-story/dev-skills-round1.ndjson
+  s_e9a9dd321e6ce9::t_ad715aafa73618 1-28
+docs/antigravity-story/dev-skills-round1.stderr.txt
+  s_e9a9dd321e6ce9::t_c949f9bebf01e1 1
+docs/antigravity-story/qa-artifacts-round1/qa_run_summary.json
+  s_e9a9dd321e6ce9::t_b3113009b9be80 1-103
+docs/antigravity-story/qa-artifacts/qa_run_summary.json
+  s_e9a9dd321e6ce9::t_64c6a96ec7a7a4 1-212
+docs/antigravity-story/qa-artifacts/run_20261010_040128/qa_run_summary.json
+  s_e9a9dd321e6ce9::t_f9605c14d3158b 1-155
+docs/antigravity-story/qa-artifacts/run_20261010_040841/qa_run_summary.json
+  s_e9a9dd321e6ce9::t_86fdf2d7f61b21 1-212
+docs/antigravity-story/qa-artifacts/run_20261010_041351/qa_run_summary.json
+  s_e9a9dd321e6ce9::t_d9d749b74e3b2d 1-212
+docs/antigravity-story/qa-s1-round7-final-run.ndjson
+  s_e9a9dd321e6ce9::t_3fccc3d8694a21 1-137
+docs/antigravity-story/qa-s1-round7-final-run.stderr.txt
+  s_e9a9dd321e6ce9::t_6b8d01d9fe1e19 1
+docs/antigravity-story/qa-tora-logging-round1.ndjson
+  s_e9a9dd321e6ce9::t_0622be927ecd61 1-119
+docs/antigravity-story/qa_s1_round1.py
+  s_e9a9dd321e6ce9::t_5c1482c630c969 1-401
+frontend/tests/story-mode.test.mjs
+  s_e9a9dd321e6ce9::t_4070f4f02e6742 1-266
+backend/tests/story-continuity-skills.test.ts
+  s_e9a9dd321e6ce9::t_a06f706390aef1 1-82
+backend/workspace/skills/storyboard-breaker/continuity/SKILL.th.md
+  s_e9a9dd321e6ce9::t_4a4ce8a2def507 1-34
+docs/antigravity-story/QA_SKILLS.md
+  s_e9a9dd321e6ce9::t_0031f98b27fe4b 1-84
+docs/antigravity-story/dev-s1-round4.ndjson
+  s_e9a9dd321e6ce9::t_f6750514770865 1-194
+docs/antigravity-story/dev-s1-round5.ndjson
+  s_e9a9dd321e6ce9::t_5a85828b07101e 1-43
+docs/antigravity-story/dev-s1-round5.stderr.txt
+  s_e9a9dd321e6ce9::t_4f1e679eca16aa 1
+docs/antigravity-story/qa-s1-round1.stderr.txt
+  s_e9a9dd321e6ce9::t_7561c47ab53cf0 1
+docs/antigravity-story/qa-s1-round2-harness.ndjson
+  s_e9a9dd321e6ce9::t_26c39a82b71125 1-162
+docs/antigravity-story/qa-s1-round3-final.ndjson
+  s_e9a9dd321e6ce9::t_76cd44bd7d12b3 1-292
+docs/antigravity-story/qa-skills-round1.ndjson
+  s_e9a9dd321e6ce9::t_52dfda7309f79a 1-49
+docs/antigravity-story/qa-skills-round1.stderr.txt
+  s_e9a9dd321e6ce9::t_7ec8d833657847 1
+docs/antigravity-story/qa-skills-round2.ndjson
+  s_e9a9dd321e6ce9::t_d64d73c8453af0 1-112
+frontend/app/utils/story-mode.mjs
+  s_e9a9dd321e6ce9::t_7b06408fd1b098 1-191
+frontend/nuxt.config.ts
+  s_e9a9dd321e6ce9::t_625b62d58ae6ca 20-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "317d0f54528c24ef616a3ba2a6729af4e800865d",
+  "prompts": {},
+  "sessions": {
+    "s_e9a9dd321e6ce9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12223-c727-71b3-9788-680859421ca7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "NOPPANAN THEERACHARTE <noppanan.the@axonstech.com>"
+    }
+  }
+}
