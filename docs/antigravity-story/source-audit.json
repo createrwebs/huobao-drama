@@ -1,0 +1,16 @@
+{
+  "tracked_baseline_files": 139,
+  "changed": [
+    "backend/src/middleware/logger.ts",
+    "frontend/app/locales/en.json",
+    "frontend/app/locales/ja.json",
+    "frontend/app/locales/ko.json",
+    "frontend/app/locales/th.json",
+    "frontend/app/locales/zh.json",
+    "frontend/app/views/drama/detail.vue",
+    "frontend/nuxt.config.ts"
+  ],
+  "out_of_scope_changes": [],
+  "result": "PASS",
+  "backend_source_change_scope": "only requestLogger body logging removal; routes/schema/generation/adapters unchanged"
+}

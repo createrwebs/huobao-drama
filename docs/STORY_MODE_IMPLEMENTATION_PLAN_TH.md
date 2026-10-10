@@ -1,7 +1,7 @@
 # แผน Story Mode: ทำ Huobao ให้ใช้ง่ายตั้งแต่ไอเดียถึงวิดีโอ
 
 วันที่: 10 ตุลาคม 2026 (Asia/Bangkok)
-สถานะ: แผนจากหน้า localhost/MaxPlus และ source ที่ตรวจ; ยังไม่มี implementation หรือ live generation test
+สถานะ: S1 และ native continuity skills มี implementation และ independent local QA แล้ว; รายละเอียดการรับงาน/NOT RUN อยู่ใน docs/antigravity-story/PROGRESS.md. S2–S5 ยังไม่ implement; ไม่มี live generation test.
 
 ## ผลที่ผู้ใช้ต้องได้
 
@@ -93,4 +93,4 @@ TTS/เสียงแยก, music, subtitle burn-in, หลายซีซั�
 
 ## งานแรกสำหรับส่ง Dev
 
-อ่านแผนนี้และแผน Tora แล้วทำ S1 เท่านั้น: หน้า Story Mode อ่านข้อมูลละคร/ตอน/ช็อตเดิม พร้อม brief form, การ์ดช็อต, progress และลิงก์กลับ studio. ใช้ local fixtures ตรวจ empty/error/completed; ยังไม่เปิดปุ่มให้สั่ง paid generation อัตโนมัติ. ส่ง diff, exact checks, screenshot และสิ่งที่ยัง NOT RUN. จากนั้นจึงส่ง S2/S3 ตาม dependency; Antigravity รอบเดิมยังไม่ส่งมอบโค้ดและไม่มีงาน Dev รอบใหม่ถูกส่งในรอบวางแผนนี้.
+อ่านแผนนี้และแผน Tora แล้วทำ S1 เท่านั้น: หน้า Story Mode อ่านข้อมูลละคร/ตอน/ช็อตเดิม พร้อม brief form, การ์ดช็อต, progress และลิงก์กลับ studio. ใช้ local fixtures ตรวจ empty/error/completed; ยังไม่เปิดปุ่มให้สั่ง paid generation อัตโนมัติ. ส่ง diff, exact checks, screenshot และสิ่งที่ยัง NOT RUN. S1 ส่ง Dev และ QA แยก conversation แล้ว พร้อมแก้ actual API fields, async guards, unsafe/empty media fallback และลิงก์ static เดิม. ดูสถานะจริงและ evidence ใน [PROGRESS.md](antigravity-story/PROGRESS.md). ขั้นถัดไปทำ M1 Tora key/credits ตามเป้าหมายหลัก ควบคู่ S2/S3 ตาม dependency โดย paid managed creation ต้องรอ M2/M3.

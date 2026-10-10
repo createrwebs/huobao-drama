@@ -158,6 +158,7 @@
       "charCount": "{n} characters",
       "sceneCount": "{n} scenes",
       "epCount": "{n} episodes",
+      "storyMode": "Story Mode",
       "addEpisode": "Add Episode"
     },
     "tabs": {
@@ -1047,5 +1048,35 @@
         "desc": "Click this \"?\" button to replay this page's guide. Happy creating!"
       }
     }
+  },
+  "story": {
+    "title": "Story Mode",
+    "back": "Back to Drama",
+    "brief": "Story Brief",
+    "briefReadonlyHint": "Story brief is in read-only mode during preview. Editing is disabled.",
+    "briefPlaceholder": "No story brief provided.",
+    "selectEpisode": "Select Episode",
+    "totalDuration": "Calculated Duration: {sec}s ({formatted})",
+    "stats": "{total} shots · {prompts} with prompt · {images} with image · {videos} with video ({percent}%)",
+    "noEpisodes": "No episodes found for this drama.",
+    "noShots": "No storyboard shots found for this episode.",
+    "loading": "Loading story data...",
+    "errorTitle": "Failed to load story mode data",
+    "errorEpisode": "Failed to load episode storyboards.",
+    "errorMerge": "Failed to load merged video result.",
+    "errorInvalidId": "Invalid drama ID",
+    "retry": "Retry",
+    "retryMerge": "Retry video result",
+    "openStudio": "Open Studio for Episode {n}",
+    "finalVideoTitle": "Final Merged Video",
+    "noFinalVideo": "No final video produced yet.",
+    "aiActionsDisabled": "AI planning and generation will be enabled in an upcoming release.",
+    "aiPlanBtn": "AI Planning · Available soon",
+    "shotCard": "Shot {n}",
+    "duration": "Duration: {sec}s",
+    "noImage": "No image generated yet",
+    "noVideo": "No video generated yet",
+    "status": "Status: {status}",
+    "readiness": "Episode Readiness: {percent}%"
   }
 }

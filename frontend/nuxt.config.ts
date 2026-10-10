@@ -18,6 +18,11 @@ export default defineNuxtConfig({
           file: fileURLToPath(new URL('./app/views/drama/detail.vue', import.meta.url)),
         },
         {
+          name: 'drama-story',
+          path: '/drama/:id/story',
+          file: fileURLToPath(new URL('./app/views/drama/story.vue', import.meta.url)),
+        },
+        {
           name: 'drama-episode',
           path: '/drama/:id/episode/:episodeNumber',
           file: fileURLToPath(new URL('./app/views/drama/episode.vue', import.meta.url)),

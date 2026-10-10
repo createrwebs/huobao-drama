@@ -1,0 +1,155 @@
+{
+  "verdict": "PASS",
+  "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040128",
+  "timestamp": "20261010_040128",
+  "launch_mode": "headless=False",
+  "total_checks": 23,
+  "passed_checks": 23,
+  "failed_checks": 0,
+  "mutations_blocked": 0,
+  "results": [
+    {
+      "name": "Server Reachability",
+      "status": "PASS",
+      "detail": "Connected successfully to http://localhost:3013",
+      "timestamp": "2026-10-10T04:01:28.324332"
+    },
+    {
+      "name": "Browser Launch",
+      "status": "PASS",
+      "detail": "Chromium launched (headless=False)",
+      "timestamp": "2026-10-10T04:01:31.596790"
+    },
+    {
+      "name": "Prompt Fallback to Image Prompt",
+      "status": "PASS",
+      "detail": "Rendered 'Fallback Image Prompt Shot 2' when video_prompt was whitespace",
+      "timestamp": "2026-10-10T04:01:33.101470"
+    },
+    {
+      "name": "Image Fallback to First Frame Image",
+      "status": "PASS",
+      "detail": "Rendered '/static/fixtures/shot2_frame.png' when composed_image was empty",
+      "timestamp": "2026-10-10T04:01:33.107201"
+    },
+    {
+      "name": "Shot Description XSS Protection",
+      "status": "PASS",
+      "detail": "Malicious script in shot description remained unexecuted plain text",
+      "timestamp": "2026-10-10T04:01:33.112309"
+    },
+    {
+      "name": "Partial Readiness Accuracy",
+      "status": "PASS",
+      "detail": "Retained 33% for partial episode (\u0e04\u0e27\u0e32\u0e21\u0e1e\u0e23\u0e49\u0e2d\u0e21\u0e02\u0e2d\u0e07\u0e15\u0e2d\u0e19: 33%)",
+      "timestamp": "2026-10-10T04:01:33.115626"
+    },
+    {
+      "name": "Exact Storyboard Duration Sum",
+      "status": "PASS",
+      "detail": "Duration: \u0e04\u0e27\u0e32\u0e21\u0e22\u0e32\u0e27\u0e04\u0e33\u0e19\u0e27\u0e13\u0e44\u0e14\u0e49: 11 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 (00:11)",
+      "timestamp": "2026-10-10T04:01:33.118213"
+    },
+    {
+      "name": "Readonly Brief & Disabled AI Action",
+      "status": "PASS",
+      "detail": "Textarea is readonly; AI Plan button is disabled with aria-disabled='true'",
+      "timestamp": "2026-10-10T04:01:33.125252"
+    },
+    {
+      "name": "Unsafe Media URL Rejection",
+      "status": "PASS",
+      "detail": "javascript: and //evil.com rejected; placeholder shown",
+      "timestamp": "2026-10-10T04:01:33.126844"
+    },
+    {
+      "name": "Merge Error Banner & Shots Preservation",
+      "status": "PASS",
+      "detail": "Shots retained (3); error displayed: Simulated merge 500 error",
+      "timestamp": "2026-10-10T04:01:33.132889"
+    },
+    {
+      "name": "Merge Error Retry Recovery",
+      "status": "PASS",
+      "detail": "Final video loaded after retry: /static/fixtures/merged_ep1.mp4",
+      "timestamp": "2026-10-10T04:01:33.171038"
+    },
+    {
+      "name": "Complete Readiness Accuracy",
+      "status": "PASS",
+      "detail": "100% readiness confirmed on fully completed episode: \u0e04\u0e27\u0e32\u0e21\u0e1e\u0e23\u0e49\u0e2d\u0e21\u0e02\u0e2d\u0e07\u0e15\u0e2d\u0e19: 100%",
+      "timestamp": "2026-10-10T04:01:33.313335"
+    },
+    {
+      "name": "Empty Shots State (Episode 102)",
+      "status": "PASS",
+      "detail": "\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e0a\u0e47\u0e2d\u0e15\u0e2a\u0e15\u0e2d\u0e23\u0e35\u0e48\u0e1a\u0e2d\u0e23\u0e4c\u0e14\u0e43\u0e19\u0e15\u0e2d\u0e19\u0e19\u0e35\u0e49",
+      "timestamp": "2026-10-10T04:01:33.389967"
+    },
+    {
+      "name": "Async Race Setup Confirmation",
+      "status": "PASS",
+      "detail": "Delayed EP 102 route callback confirmed active before re-selection",
+      "timestamp": "2026-10-10T04:01:33.460580"
+    },
+    {
+      "name": "Episode Token Race Guard",
+      "status": "PASS",
+      "detail": "Delayed EP 102 response safely dropped; 3 shots from EP 01 preserved",
+      "timestamp": "2026-10-10T04:01:34.883476"
+    },
+    {
+      "name": "No Episodes State (Drama 997)",
+      "status": "PASS",
+      "detail": "\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e15\u0e2d\u0e19\u0e43\u0e19\u0e40\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49",
+      "timestamp": "2026-10-10T04:01:35.750266"
+    },
+    {
+      "name": "Drama GET 500 Error Display",
+      "status": "PASS",
+      "detail": "Simulated drama 500 error",
+      "timestamp": "2026-10-10T04:01:36.589802"
+    },
+    {
+      "name": "Episode Shots GET 500 Error Display",
+      "status": "PASS",
+      "detail": "Simulated shots 500 error",
+      "timestamp": "2026-10-10T04:01:36.632360"
+    },
+    {
+      "name": "Episode Shots GET 500 Retry Recovery",
+      "status": "PASS",
+      "detail": "Recovered Shot 1",
+      "timestamp": "2026-10-10T04:01:36.666871"
+    },
+    {
+      "name": "Real Drama Content Verification",
+      "status": "PASS",
+      "detail": "Title: '\u0e22\u0e49\u0e2d\u0e19\u0e40\u0e27\u0e25\u0e32\u0e44\u0e1b\u0e40\u0e1b\u0e47\u0e19\u0e23\u0e32\u0e0a\u0e32\u0e22\u0e38\u0e04\u0e2a\u0e38\u0e42\u0e02\u0e17\u0e31\u0e22', 3 cards, \u0e04\u0e27\u0e32\u0e21\u0e22\u0e32\u0e27\u0e04\u0e33\u0e19\u0e27\u0e13\u0e44\u0e14\u0e49: 30 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 (00:30)",
+      "timestamp": "2026-10-10T04:01:37.633452"
+    },
+    {
+      "name": "Real Drama Studio Navigation",
+      "status": "PASS",
+      "detail": "Navigated successfully to: http://localhost:3013/drama/2/episode/1",
+      "timestamp": "2026-10-10T04:01:37.736946"
+    },
+    {
+      "name": "Real Drama Detail Entry Button",
+      "status": "PASS",
+      "detail": "Verified .story-mode-entry-btn on /drama/2",
+      "timestamp": "2026-10-10T04:01:38.750698"
+    },
+    {
+      "name": "Zero Mutation Enforcement",
+      "status": "PASS",
+      "detail": "Strictly zero POST/PUT/PATCH/DELETE calls observed",
+      "timestamp": "2026-10-10T04:01:38.750710"
+    }
+  ],
+  "artifacts": {
+    "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040128",
+    "actual_drama_screenshot": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040128/actual_drama_2_story.png",
+    "trace": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040128/trace.zip"
+  }
+}

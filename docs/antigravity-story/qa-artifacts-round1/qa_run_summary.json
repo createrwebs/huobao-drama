@@ -1,0 +1,103 @@
+{
+  "launch_mode": "headless=False",
+  "total_checks": 17,
+  "passed_checks": 17,
+  "failed_checks": 0,
+  "mutations_blocked": 0,
+  "results": [
+    {
+      "name": "Server Reachability",
+      "status": "PASS",
+      "detail": "Connected to http://localhost:3013"
+    },
+    {
+      "name": "Browser Launch",
+      "status": "PASS",
+      "detail": "Launched Chromium in headless=False"
+    },
+    {
+      "name": "Title Display",
+      "status": "PASS",
+      "detail": "QA Fixture Drama \u0e0b\u0e35\u0e23\u0e35\u0e2a\u0e4c\u0e17\u0e14\u0e2a\u0e2d\u0e1a"
+    },
+    {
+      "name": "Duration Calculation (Storyboard Sum)",
+      "status": "PASS",
+      "detail": "Displayed duration: \u0e04\u0e27\u0e32\u0e21\u0e22\u0e32\u0e27\u0e04\u0e33\u0e19\u0e27\u0e13\u0e44\u0e14\u0e49: 11 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 (00:11)"
+    },
+    {
+      "name": "Ordered Storyboard Cards",
+      "status": "PASS",
+      "detail": "Order: ['\u0e0a\u0e47\u0e2d\u0e15\u0e17\u0e35\u0e48 1', '\u0e0a\u0e47\u0e2d\u0e15\u0e17\u0e35\u0e48 2', '\u0e0a\u0e47\u0e2d\u0e15\u0e17\u0e35\u0e48 3']"
+    },
+    {
+      "name": "Final Video Player",
+      "status": "PASS",
+      "detail": "Video src: /static/fixtures/merged_ep1.mp4"
+    },
+    {
+      "name": "Pending AI Action Disabled",
+      "status": "PASS",
+      "detail": "Button is disabled and aria-disabled='true'"
+    },
+    {
+      "name": "Studio Link Target",
+      "status": "PASS",
+      "detail": "Label: \u0e40\u0e1b\u0e34\u0e14\u0e2a\u0e15\u0e39\u0e14\u0e34\u0e42\u0e2d \u0e15\u0e2d\u0e19\u0e17\u0e35\u0e48 1"
+    },
+    {
+      "name": "Story Brief Read-only & XSS Safe",
+      "status": "PASS",
+      "detail": "Readonly=True, text preserved as string without execution"
+    },
+    {
+      "name": "Unsafe Media URL Rejection",
+      "status": "PASS",
+      "detail": "Unsafe schemes rejected; placeholder shown"
+    },
+    {
+      "name": "Episode Switching (Empty Shots)",
+      "status": "PASS",
+      "detail": "Message: \u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e0a\u0e47\u0e2d\u0e15\u0e2a\u0e15\u0e2d\u0e23\u0e35\u0e48\u0e1a\u0e2d\u0e23\u0e4c\u0e14\u0e43\u0e19\u0e15\u0e2d\u0e19\u0e19\u0e35\u0e49"
+    },
+    {
+      "name": "Async Episode Race Guard",
+      "status": "PASS",
+      "detail": "Remained 3 shots from latest EP 01 selection"
+    },
+    {
+      "name": "No Episodes State",
+      "status": "PASS",
+      "detail": "Message: \u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e15\u0e2d\u0e19\u0e43\u0e19\u0e40\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49"
+    },
+    {
+      "name": "Drama Load Error Display",
+      "status": "PASS",
+      "detail": "Error: Simulated drama 500 error"
+    },
+    {
+      "name": "Drama Load Retry Success",
+      "status": "PASS",
+      "detail": "Recovered title: Recovered Drama 996"
+    },
+    {
+      "name": "Real Drama Detail Entry Button",
+      "status": "PASS",
+      "detail": "Found Story Mode button on /drama/1"
+    },
+    {
+      "name": "Mutation Prevention (Strict GET-Only)",
+      "status": "PASS",
+      "detail": "Zero POST/PUT/PATCH/DELETE calls observed"
+    }
+  ],
+  "artifacts": {
+    "screenshots": [
+      "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/01_populated_story_mode.png",
+      "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/02_empty_shots_episode.png",
+      "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/04_no_episodes.png",
+      "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/05_error_and_retry.png"
+    ],
+    "trace": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/trace.zip"
+  }
+}

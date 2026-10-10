@@ -1,0 +1,3 @@
+# Rework after denied unrelated probe
+
+Round1 stopped on denied `which rtk || echo ...`; no product/test delivery. rtk is installed and exact task command is already allowed. Do not probe shell/tools, use which, chain commands or request access. Use file read/write tools, create the exact allowed test first, run exact task test command for RED, remove request body logging, same command GREEN, write exact delivery. Read original TASK_TORA_LOGGING_PREREQUISITE. Scope/timebox unchanged. No credentials/database/network/API changes. Final response required. Never repeat denied command or bypass permissions.

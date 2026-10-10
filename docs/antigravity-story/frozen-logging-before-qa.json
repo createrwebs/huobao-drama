@@ -1,0 +1,4 @@
+{
+  "backend/src/middleware/logger.ts": "f08d32e6d761af0ba90cbaae2edba808d610be2f2630cda4250ba9e5638ff6f1",
+  "backend/tests/request-logger.test.ts": "ed7ca59d87906127eb3d45568d8283d6ce5c42c0b54f20b6110b5eb40b93b97b"
+}

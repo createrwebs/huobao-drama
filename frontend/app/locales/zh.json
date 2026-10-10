@@ -158,6 +158,7 @@
       "charCount": "{n} 角色",
       "sceneCount": "{n} 场景",
       "epCount": "{n} 集",
+      "storyMode": "故事模式",
       "addEpisode": "添加集"
     },
     "tabs": {
@@ -1047,5 +1048,35 @@
         "desc": "点这个「?」按钮可重新播放本页引导。祝创作顺利！"
       }
     }
+  },
+  "story": {
+    "title": "故事模式",
+    "back": "返回剧本详情",
+    "brief": "故事大纲",
+    "briefReadonlyHint": "预览期间故事大纲为只读状态，保存已禁用。",
+    "briefPlaceholder": "暂无故事大纲内容。",
+    "selectEpisode": "选择剧集",
+    "totalDuration": "计算总时长：{sec}秒 ({formatted})",
+    "stats": "{total} 个分镜 · 提示词 {prompts} · 图片 {images} · 视频 {videos} ({percent}%)",
+    "noEpisodes": "当前剧本暂无剧集。",
+    "noShots": "当前剧集暂无分镜卡片。",
+    "loading": "正在加载故事数据...",
+    "errorTitle": "加载故事数据失败",
+    "errorEpisode": "加载本集分镜失败。",
+    "errorMerge": "加载最终合成视频失败。",
+    "errorInvalidId": "剧本 ID 无效",
+    "retry": "重试",
+    "retryMerge": "重试加载合成视频",
+    "openStudio": "打开第 {n} 集工作台",
+    "finalVideoTitle": "最终合成视频",
+    "noFinalVideo": "尚未生成最终合成视频。",
+    "aiActionsDisabled": "AI 规划与一键生成功能将在后续版本推出。",
+    "aiPlanBtn": "AI 规划 · 敬请期待",
+    "shotCard": "分镜 {n}",
+    "duration": "时长：{sec}秒",
+    "noImage": "暂无生成图片",
+    "noVideo": "暂无生成视频",
+    "status": "状态：{status}",
+    "readiness": "剧集就绪度：{percent}%"
   }
 }

@@ -1,0 +1,212 @@
+{
+  "verdict": "PASS",
+  "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040841",
+  "timestamp": "20261010_040841",
+  "launch_mode": "headless=False",
+  "total_checks": 26,
+  "passed_checks": 26,
+  "failed_checks": 0,
+  "mutations_blocked": 0,
+  "results": [
+    {
+      "name": "Server Reachability",
+      "status": "PASS",
+      "detail": "Connected successfully to http://localhost:3013",
+      "timestamp": "2026-10-10T04:08:41.118540"
+    },
+    {
+      "name": "Browser Launch",
+      "status": "PASS",
+      "detail": "Chromium launched (headless=False)",
+      "timestamp": "2026-10-10T04:08:44.726694"
+    },
+    {
+      "name": "Prompt Fallback to Image Prompt",
+      "status": "PASS",
+      "detail": "Rendered 'Fallback Image Prompt Shot 2' when video_prompt was whitespace",
+      "timestamp": "2026-10-10T04:08:46.384345"
+    },
+    {
+      "name": "Image Fallback to First Frame Image",
+      "status": "PASS",
+      "detail": "Rendered '/static/fixtures/shot2_frame.png' when composed_image was empty",
+      "timestamp": "2026-10-10T04:08:46.392008"
+    },
+    {
+      "name": "Shot Description XSS Protection",
+      "status": "PASS",
+      "detail": "Malicious script in shot description remained unexecuted plain text",
+      "timestamp": "2026-10-10T04:08:46.398312"
+    },
+    {
+      "name": "Partial Readiness Accuracy",
+      "status": "PASS",
+      "detail": "Retained 33% for partial episode (\u0e04\u0e27\u0e32\u0e21\u0e1e\u0e23\u0e49\u0e2d\u0e21\u0e02\u0e2d\u0e07\u0e15\u0e2d\u0e19: 33%)",
+      "timestamp": "2026-10-10T04:08:46.401821"
+    },
+    {
+      "name": "Exact Storyboard Duration Sum",
+      "status": "PASS",
+      "detail": "Duration: \u0e04\u0e27\u0e32\u0e21\u0e22\u0e32\u0e27\u0e04\u0e33\u0e19\u0e27\u0e13\u0e44\u0e14\u0e49: 11 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 (00:11)",
+      "timestamp": "2026-10-10T04:08:46.405238"
+    },
+    {
+      "name": "Readonly Brief & Disabled AI Action",
+      "status": "PASS",
+      "detail": "Textarea is readonly; AI Plan button is disabled with aria-disabled='true'",
+      "timestamp": "2026-10-10T04:08:46.413972"
+    },
+    {
+      "name": "Unsafe Media URL Rejection",
+      "status": "PASS",
+      "detail": "javascript: and //evil.com rejected; placeholder shown",
+      "timestamp": "2026-10-10T04:08:46.416775"
+    },
+    {
+      "name": "Merge Error Banner & Shots Preservation",
+      "status": "PASS",
+      "detail": "Shots retained (3); error displayed: Simulated merge 500 error",
+      "timestamp": "2026-10-10T04:08:46.424988"
+    },
+    {
+      "name": "Merge Error Retry Recovery",
+      "status": "PASS",
+      "detail": "Final video loaded after retry: /static/fixtures/merged_ep1.mp4",
+      "timestamp": "2026-10-10T04:08:46.502425"
+    },
+    {
+      "name": "Complete Readiness Accuracy",
+      "status": "PASS",
+      "detail": "100% readiness confirmed on fully completed episode: \u0e04\u0e27\u0e32\u0e21\u0e1e\u0e23\u0e49\u0e2d\u0e21\u0e02\u0e2d\u0e07\u0e15\u0e2d\u0e19: 100%",
+      "timestamp": "2026-10-10T04:08:46.626481"
+    },
+    {
+      "name": "Empty Shots State (Episode 102)",
+      "status": "PASS",
+      "detail": "\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e0a\u0e47\u0e2d\u0e15\u0e2a\u0e15\u0e2d\u0e23\u0e35\u0e48\u0e1a\u0e2d\u0e23\u0e4c\u0e14\u0e43\u0e19\u0e15\u0e2d\u0e19\u0e19\u0e35\u0e49",
+      "timestamp": "2026-10-10T04:08:46.747933"
+    },
+    {
+      "name": "Async Race Setup Confirmation",
+      "status": "PASS",
+      "detail": "Delayed EP 102 route callback confirmed active before re-selection",
+      "timestamp": "2026-10-10T04:08:46.818824"
+    },
+    {
+      "name": "Episode Token Race Guard",
+      "status": "PASS",
+      "detail": "Delayed EP 102 response safely dropped; 3 shots from EP 01 preserved",
+      "timestamp": "2026-10-10T04:08:48.252657"
+    },
+    {
+      "name": "No Episodes State (Drama 997)",
+      "status": "PASS",
+      "detail": "\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e15\u0e2d\u0e19\u0e43\u0e19\u0e40\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49",
+      "timestamp": "2026-10-10T04:08:49.151584"
+    },
+    {
+      "name": "Drama GET 500 Error Display",
+      "status": "PASS",
+      "detail": "Simulated drama 500 error",
+      "timestamp": "2026-10-10T04:08:50.023688"
+    },
+    {
+      "name": "Episode Shots GET 500 Error Display",
+      "status": "PASS",
+      "detail": "Simulated shots 500 error",
+      "timestamp": "2026-10-10T04:08:50.077947"
+    },
+    {
+      "name": "Episode Shots GET 500 Retry Recovery",
+      "status": "PASS",
+      "detail": "Recovered Shot 1",
+      "timestamp": "2026-10-10T04:08:50.127912"
+    },
+    {
+      "name": "Visual Main-Card Styles & Spacing",
+      "status": "PASS",
+      "detail": "Card paddings: final=18.4px 20px, shot=14.4px",
+      "timestamp": "2026-10-10T04:08:51.553916"
+    },
+    {
+      "name": "Real Drama Content Verification",
+      "status": "PASS",
+      "detail": "Title: '\u0e22\u0e49\u0e2d\u0e19\u0e40\u0e27\u0e25\u0e32\u0e44\u0e1b\u0e40\u0e1b\u0e47\u0e19\u0e23\u0e32\u0e0a\u0e32\u0e22\u0e38\u0e04\u0e2a\u0e38\u0e42\u0e02\u0e17\u0e31\u0e22', 3 cards, \u0e04\u0e27\u0e32\u0e21\u0e22\u0e32\u0e27\u0e04\u0e33\u0e19\u0e27\u0e13\u0e44\u0e14\u0e49: 30 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 (00:30)",
+      "timestamp": "2026-10-10T04:08:51.572455"
+    },
+    {
+      "name": "Real Media HTTP & Metadata Validation",
+      "status": "PASS",
+      "detail": "All 4 videos loaded successfully without double static (HTTP 200/206, readyState >= 1, duration > 0)",
+      "timestamp": "2026-10-10T04:08:51.659751"
+    },
+    {
+      "name": "Final Video Real Playback Actuation",
+      "status": "PASS",
+      "detail": "Playback advanced to 0.562s (duration 30.04s)",
+      "timestamp": "2026-10-10T04:08:52.274148"
+    },
+    {
+      "name": "Real Drama Studio Navigation",
+      "status": "PASS",
+      "detail": "Navigated successfully to: http://localhost:3013/drama/2/episode/1",
+      "timestamp": "2026-10-10T04:08:53.252188"
+    },
+    {
+      "name": "Real Drama Detail Entry Button",
+      "status": "PASS",
+      "detail": "Verified .story-mode-entry-btn on /drama/2",
+      "timestamp": "2026-10-10T04:08:54.499979"
+    },
+    {
+      "name": "Zero Mutation Enforcement",
+      "status": "PASS",
+      "detail": "Strictly zero POST/PUT/PATCH/DELETE calls observed",
+      "timestamp": "2026-10-10T04:08:54.499994"
+    }
+  ],
+  "media_facts": [
+    {
+      "video": "Final Merged Video",
+      "src": "/static/merged/5fea83c1-9273-4454-a150-4988dce113df.mp4",
+      "http_status": 206,
+      "content_type": "video/mp4",
+      "readyState": 4,
+      "duration": 30.04,
+      "resolution": "1280x720"
+    },
+    {
+      "video": "Shot 1 Video",
+      "src": "/static/uploads/71a6e419-a569-4d1c-8bd9-6893d3170d35.mp4",
+      "http_status": 206,
+      "content_type": "video/mp4",
+      "readyState": 4,
+      "duration": 10.01,
+      "resolution": "1280x720"
+    },
+    {
+      "video": "Shot 2 Video",
+      "src": "/static/uploads/d55548f3-8ef8-466d-8fb1-12e8621ea87d.mp4",
+      "http_status": 206,
+      "content_type": "video/mp4",
+      "readyState": 4,
+      "duration": 10.01,
+      "resolution": "1280x720"
+    },
+    {
+      "video": "Shot 3 Video",
+      "src": "/static/videos/92c7128d-550d-4850-a009-574f218ffa4d.mp4",
+      "http_status": 206,
+      "content_type": "video/mp4",
+      "readyState": 4,
+      "duration": 10.01,
+      "resolution": "1280x720"
+    }
+  ],
+  "artifacts": {
+    "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040841",
+    "actual_drama_screenshot": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040841/actual_drama_2_story.png",
+    "actual_drama_playback_screenshot": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040841/actual_drama_2_story_playback.png",
+    "trace": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_040841/trace.zip"
+  }
+}

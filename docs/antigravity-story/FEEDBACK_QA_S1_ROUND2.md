@@ -1,0 +1,9 @@
+# Repair QA harness and verify corrected S1
+
+First browser run failed in QA's own harness, not a product verdict: qa_s1.py:74 uses route.request() but Python Playwright exposes route.request property. Task-44 was killed; no completed browser report. Keep all partial/failed evidence. Do not count this as PASS.
+
+Fix the harness only (product READ-ONLY). Use a small async Playwright script with asyncio.sleep in delayed route callbacks; sync time.sleep blocks browser dispatch and doesn't establish a genuine overlapping-request race. Correct request property. Save diagnostics, screenshot and trace in finally even on failure; use a new run directory per invocation to retain previous evidence. Set bounded page/test timeouts and finish within five minutes. Do not let exceptions become passes: current real-drama catch/empty branch labels every outcome PASS. Studio target requires actual navigation URL, not a label containing 1. Exact duration assertion, real API fields, assertions for loading/readiness/completed/unsafe text/media. Abort all mutating methods.
+
+After Dev round 4 completes, rerun actual browser with populated, empty/no episodes, failed drama+shots+merge GET retry, real overlapping episode selection and SPA route-ID change, disabled paid action, real existing drama and studio navigation. Guard correctness may be reviewed from actual implementation if SPA race cannot be driven safely; mark NOT RUN explicitly, not PASS. Never assert a race using full page goto that cancels the old document.
+
+PO_NOTES_S1.md records product issues for Dev round 4. Read updated DELIVERY_S1.md/source before recheck. Run only exact previously permitted node/coverage/build/python commands. Don't run git/status/probes/install commands. Write QA_S1.md with exact findings and real browser artifacts. Verify whole required scope, classify remaining NOT RUN/PARTIAL honestly. Finish final response.

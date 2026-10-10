@@ -22,7 +22,7 @@ function formatTime(): string {
 }
 
 /**
- * 全局日志中间件 — 打印请求方法/路径/状态/耗时/请求体
+ * 全局日志中间件 — 打印请求方法/路径/状态/耗时
  */
 export const requestLogger: MiddlewareHandler = async (c, next) => {
   const method = c.req.method
@@ -31,19 +31,7 @@ export const requestLogger: MiddlewareHandler = async (c, next) => {
 
   // 打印请求
   const time = formatTime()
-  let bodyInfo = ''
-  if (['POST', 'PUT', 'PATCH'].includes(method)) {
-    try {
-      const clone = c.req.raw.clone()
-      const text = await clone.text()
-      if (text) {
-        const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text
-        bodyInfo = `\n  ${colors.dim}body: ${truncated}${colors.reset}`
-      }
-    } catch {}
-  }
-
-  console.log(`${colors.dim}${time}${colors.reset} ${colors.cyan}${method}${colors.reset} ${path}${bodyInfo}`)
+  console.log(`${colors.dim}${time}${colors.reset} ${colors.cyan}${method}${colors.reset} ${path}`)
 
   await next()
 

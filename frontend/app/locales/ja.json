@@ -158,6 +158,7 @@
       "charCount": "{n} キャラクター",
       "sceneCount": "{n} シーン",
       "epCount": "{n} 話",
+      "storyMode": "ストーリーモード",
       "addEpisode": "話を追加"
     },
     "tabs": {
@@ -959,5 +960,35 @@
         "desc": "この「?」ボタンでこのページのガイドを再表示できます。良い制作を！"
       }
     }
+  },
+  "story": {
+    "title": "ストーリーモード",
+    "back": "ドラマ詳細に戻る",
+    "brief": "ストーリー概要",
+    "briefReadonlyHint": "プレビュー中はストーリー概要は読み取り専用です。保存は無効です。",
+    "briefPlaceholder": "ストーリー概要がありません。",
+    "selectEpisode": "エピソード選択",
+    "totalDuration": "計算された長さ: {sec}秒 ({formatted})",
+    "stats": "{total} ショット · プロンプト {prompts} · 画像 {images} · 動画 {videos} ({percent}%)",
+    "noEpisodes": "エピソードが見つかりません。",
+    "noShots": "このエピソードの絵コンテはありません。",
+    "loading": "ストーリーデータを読み込み中...",
+    "errorTitle": "ストーリーデータの読み込みに失敗しました",
+    "errorEpisode": "このエピソードの絵コンテ読み込みに失敗しました。",
+    "errorMerge": "完成統合動画の読み込みに失敗しました。",
+    "errorInvalidId": "無効なドラマIDです",
+    "retry": "再試行",
+    "retryMerge": "動画結果を再読み込み",
+    "openStudio": "第 {n} 話スタジオを開く",
+    "finalVideoTitle": "完成した統合動画",
+    "noFinalVideo": "完成動画はまだありません。",
+    "aiActionsDisabled": "AI計画・生成機能は近日提供予定です。",
+    "aiPlanBtn": "AI 計画 · まもなく公開",
+    "shotCard": "ショット {n}",
+    "duration": "長さ: {sec}秒",
+    "noImage": "画像未生成",
+    "noVideo": "動画未生成",
+    "status": "状態: {status}",
+    "readiness": "エピソード準備状況: {percent}%"
   }
 }

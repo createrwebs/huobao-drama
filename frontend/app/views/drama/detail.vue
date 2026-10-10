@@ -36,6 +36,14 @@
           </span>
         </div>
       </div>
+      <button class="btn btn-secondary head-action story-mode-entry-btn" :title="t('detail.head.storyMode')" @click="navigateTo(`/drama/${drama.id}/story`)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+          <path d="M6 6h10"/>
+          <path d="M6 10h10"/>
+        </svg>
+        {{ t('detail.head.storyMode') }}
+      </button>
       <button class="btn btn-primary head-action" @click="openAddEpisode">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

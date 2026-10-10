@@ -158,6 +158,7 @@
       "charCount": "캐릭터 {n}",
       "sceneCount": "장면 {n}",
       "epCount": "{n}화",
+      "storyMode": "스토리 모드",
       "addEpisode": "화 추가"
     },
     "tabs": {
@@ -959,5 +960,35 @@
         "desc": "이 \"?\" 버튼으로 이 페이지의 가이드를 다시 재생할 수 있습니다. 즐거운 제작 되세요!"
       }
     }
+  },
+  "story": {
+    "title": "스토리 모드",
+    "back": "드라마 상세로 돌아가기",
+    "brief": "스토리 개요",
+    "briefReadonlyHint": "미리보기 중에는 스토리 개요가 읽기 전용입니다. 저장은 비활성화되어 있습니다.",
+    "briefPlaceholder": "스토리 개요가 없습니다.",
+    "selectEpisode": "에피소드 선택",
+    "totalDuration": "계산된 재생 시간: {sec}초 ({formatted})",
+    "stats": "{total}개 샷 · 프롬프트 {prompts} · 이미지 {images} · 비디오 {videos} ({percent}%)",
+    "noEpisodes": "에피소드가 없습니다.",
+    "noShots": "이 에피소드의 스토리보드 샷이 없습니다.",
+    "loading": "스토리 데이터를 불러오는 중...",
+    "errorTitle": "스토리 데이터를 불러오지 못했습니다",
+    "errorEpisode": "에피소드 스토리보드를 불러오지 못했습니다.",
+    "errorMerge": "최종 병합 비디오를 불러오지 못했습니다.",
+    "errorInvalidId": "유효하지 않은 드라마 ID입니다",
+    "retry": "다시 시도",
+    "retryMerge": "비디오 결과 다시 시도",
+    "openStudio": "{n}화 스튜디오 열기",
+    "finalVideoTitle": "최종 병합 비디오",
+    "noFinalVideo": "생성된 최종 비디오가 없습니다.",
+    "aiActionsDisabled": "AI 계획 및 생성 기능은 향후 출시될 예정입니다.",
+    "aiPlanBtn": "AI 계획 · 출시 예정",
+    "shotCard": "샷 {n}",
+    "duration": "재생 시간: {sec}초",
+    "noImage": "생성된 이미지 없음",
+    "noVideo": "생성된 비디오 없음",
+    "status": "상태: {status}",
+    "readiness": "에피소드 준비 상태: {percent}%"
   }
 }

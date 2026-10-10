@@ -1,0 +1,41 @@
+{
+  "verdict": "FAIL",
+  "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_035644",
+  "timestamp": "20261010_035644",
+  "launch_mode": "headless=False",
+  "total_checks": 4,
+  "passed_checks": 3,
+  "failed_checks": 1,
+  "mutations_blocked": 0,
+  "results": [
+    {
+      "name": "Server Reachability",
+      "status": "PASS",
+      "detail": "Connected successfully to http://localhost:3013",
+      "timestamp": "2026-10-10T03:56:44.190244"
+    },
+    {
+      "name": "Browser Launch",
+      "status": "PASS",
+      "detail": "Chromium launched (headless=False)",
+      "timestamp": "2026-10-10T03:56:47.905757"
+    },
+    {
+      "name": "Prompt Fallback to Image Prompt",
+      "status": "PASS",
+      "detail": "Rendered 'Fallback Image Prompt Shot 2' when video_prompt was whitespace",
+      "timestamp": "2026-10-10T03:56:49.365603"
+    },
+    {
+      "name": "Unhandled Test Failure",
+      "status": "FAIL",
+      "detail": "Fallback first_frame_image not rendered: ['/static/fixtures/shot1.png']",
+      "timestamp": "2026-10-10T03:56:49.371938"
+    }
+  ],
+  "artifacts": {
+    "run_dir": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_035644",
+    "actual_drama_screenshot": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_035644/actual_drama_2_story.png",
+    "trace": "/Users/noppanan/huobao-drama/docs/antigravity-story/qa-artifacts/run_20261010_035644/trace.zip"
+  }
+}

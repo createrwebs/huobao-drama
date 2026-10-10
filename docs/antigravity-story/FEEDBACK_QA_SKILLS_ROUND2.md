@@ -1,0 +1,3 @@
+# Finish QA report after denied unrelated command
+
+Exact loader test already executed: 6 pass, 0 fail. git status --porcelain was unauthorized and denied; do not repeat, bypass, or broaden command permissions. Product remains read-only. Use file tools only and write QA_SKILLS.md now with your code/native-format/provenance review and honest verdict. If further testing necessary only exact loader command from TASK_QA_SKILLS.md is permitted. No need to run git or inspect other workspace modifications: PO already audited the 139 baseline source hashes, backend/src unchanged. Finish within two minutes with concrete findings, do not hide denial or claim video quality verified.

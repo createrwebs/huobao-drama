@@ -1,0 +1,37 @@
+[
+  {
+    "locale": "th",
+    "removed_keys": [],
+    "changed_existing_keys": [],
+    "new_key_count": 29,
+    "new_keys_outside_story": []
+  },
+  {
+    "locale": "en",
+    "removed_keys": [],
+    "changed_existing_keys": [],
+    "new_key_count": 29,
+    "new_keys_outside_story": []
+  },
+  {
+    "locale": "zh",
+    "removed_keys": [],
+    "changed_existing_keys": [],
+    "new_key_count": 29,
+    "new_keys_outside_story": []
+  },
+  {
+    "locale": "ja",
+    "removed_keys": [],
+    "changed_existing_keys": [],
+    "new_key_count": 29,
+    "new_keys_outside_story": []
+  },
+  {
+    "locale": "ko",
+    "removed_keys": [],
+    "changed_existing_keys": [],
+    "new_key_count": 29,
+    "new_keys_outside_story": []
+  }
+]
