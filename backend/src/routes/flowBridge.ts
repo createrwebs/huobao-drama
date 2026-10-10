@@ -21,6 +21,8 @@ import {
 import { db, schema } from '../db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from '../utils/response.js'
+import { isServerMode } from '../middleware/auth.js'
+import { getDramaIfAuthorized, getStoryboardIfAuthorized } from '../utils/ownership.js'
 
 export const flowBridge = new Hono()
 
@@ -41,6 +43,9 @@ flowBridge.get('/status', async (c) => {
 
 // GET /accounts — รายการบัญชี Google Flow ทั้งหมด
 flowBridge.get('/accounts', async (c) => {
+  if (isServerMode()) {
+    return c.json({ code: 403, msg: 'Google Flow accounts management is disabled in server mode' }, 403)
+  }
   try {
     const accounts = listFlowAccounts()
     return c.json({ code: 0, data: accounts })
@@ -51,6 +56,9 @@ flowBridge.get('/accounts', async (c) => {
 
 // POST /accounts/switch — สลับบัญชีที่ใช้งาน (ตั้งเป็นบัญชีหลักที่สดใหม่ที่สุด)
 flowBridge.post('/accounts/switch', async (c) => {
+  if (isServerMode()) {
+    return c.json({ code: 403, msg: 'Google Flow accounts management is disabled in server mode' }, 403)
+  }
   try {
     const body = await c.req.json()
     const target = body.filename || body.id || body.account_id
@@ -66,6 +74,9 @@ flowBridge.post('/accounts/switch', async (c) => {
 
 // POST /accounts/import — นำเข้าหรืออัปเดต Cookie ของบัญชีจาก JSON
 flowBridge.post('/accounts/import', async (c) => {
+  if (isServerMode()) {
+    return c.json({ code: 403, msg: 'Google Flow accounts management is disabled in server mode' }, 403)
+  }
   try {
     const body = await c.req.json()
     const content = body.content !== undefined ? body.content : (body.json !== undefined ? body.json : body)
@@ -78,6 +89,9 @@ flowBridge.post('/accounts/import', async (c) => {
 
 // DELETE /accounts/:id — ลบบัญชี Cookie
 flowBridge.delete('/accounts/:id', async (c) => {
+  if (isServerMode()) {
+    return c.json({ code: 403, msg: 'Google Flow accounts management is disabled in server mode' }, 403)
+  }
   try {
     const id = c.req.param('id')
     const result = deleteFlowAccount(id)
@@ -125,10 +139,11 @@ flowBridge.post('/apply-to-storyboard', async (c) => {
       return c.json({ code: 400, msg: 'ต้องระบุ storyboard_id' }, 400)
     }
 
-    const [storyboard] = await db.select().from(schema.storyboards).where(eq(schema.storyboards.id, storyboardId))
-    if (!storyboard) {
-      return c.json({ code: 404, msg: 'ไม่พบช็อต (Storyboard) ที่ระบุ' }, 404)
+    const auth = await getStoryboardIfAuthorized(c, storyboardId)
+    if (!auth) {
+      return c.json({ code: 404, msg: '不属于该用户的镜头或不存在' }, 404)
     }
+    const storyboard = auth.storyboard
 
     let localPath = ''
     if (body.filename || body.file_path) {
@@ -152,8 +167,9 @@ flowBridge.post('/apply-to-storyboard', async (c) => {
     // บันทึกลง sys_task เป็นงาน completed เพื่อให้ประวัติวิดีโอแสดงผลถูกต้อง
     await db.insert(schema.sysTask).values({
       type: 'video',
+      ownerUserId: auth.drama.ownerUserId,
       storyboardId,
-      dramaId: undefined,
+      dramaId: auth.drama.id,
       provider: 'google_flow_import',
       prompt: body.prompt || storyboard.videoPrompt || storyboard.description || 'Imported Video',
       model: 'google-flow-veo',
@@ -238,6 +254,10 @@ flowBridge.get('/character-refs/:dramaId', async (c) => {
     if (!dramaId) {
       return c.json({ code: 400, msg: 'dramaId ไม่ถูกต้อง' }, 400)
     }
+    const drama = await getDramaIfAuthorized(c, dramaId)
+    if (!drama) {
+      return c.json({ code: 404, msg: '剧集不存在' }, 404)
+    }
     const data = await getDramaCharacterRefs(dramaId)
     return c.json({ code: 0, data })
   } catch (err: any) {
@@ -252,6 +272,10 @@ flowBridge.post('/sync-character-refs', async (c) => {
     const dramaId = Number(body.drama_id || body.dramaId)
     if (!dramaId) {
       return c.json({ code: 400, msg: 'ต้องระบุ drama_id' }, 400)
+    }
+    const drama = await getDramaIfAuthorized(c, dramaId)
+    if (!drama) {
+      return c.json({ code: 404, msg: '剧集不存在' }, 404)
     }
     const force = Boolean(body.force)
     const characterIds = Array.isArray(body.character_ids || body.characterIds)
@@ -288,6 +312,13 @@ flowBridge.post('/v1/video', async (c) => {
       : undefined
     const referenceMode = body.reference_mode || body.referenceMode || null
     const storyboardId = body.storyboard_id || body.storyboardId ? Number(body.storyboard_id || body.storyboardId) : null
+
+    if (storyboardId) {
+      const auth = await getStoryboardIfAuthorized(c, storyboardId)
+      if (!auth) {
+        return c.json({ error: { message: 'Storyboard not found or unauthorized' } }, 404)
+      }
+    }
 
     const result = await generateFlowVideo({
       prompt,

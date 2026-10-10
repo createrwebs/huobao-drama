@@ -3,7 +3,7 @@
 **/node_modules
 **/.nuxt
 **/.output
-frontend/dist
+# frontend/dist is needed for Docker build
 backend/dist
 desktop/build
 desktop/dist

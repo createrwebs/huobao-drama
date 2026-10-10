@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
 import { db, schema } from '../db/index.js'
-import { success, created, badRequest } from '../utils/response.js'
+import { success, created, badRequest, notFound } from '../utils/response.js'
 import { generateImage, generateVideo } from '../services/generation.js'
 import { getActiveConfig, getConfigById } from '../services/ai.js'
 import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../services/style-preset.js'
 import { logTaskError, logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
+import { getActor, isServerMode } from '../middleware/auth.js'
+import { getDramaIfAuthorized, getStoryboardIfAuthorized } from '../utils/ownership.js'
 
 const app = new Hono()
 
@@ -26,14 +28,12 @@ const WAN_MEDIA_TYPES = new Set([
  */
 function normalizeVideoRequest(body: any) {
   const input = body.input && typeof body.input === 'object' && !Array.isArray(body.input) ? body.input : {}
-  const parameters = body.parameters && typeof body.parameters === 'object' && !Array.isArray(body.parameters)
-    ? body.parameters
-    : {}
+  const parameters =
+    body.parameters && typeof body.parameters === 'object' && !Array.isArray(body.parameters) ? body.parameters : {}
   const media = Array.isArray(input.media) ? input.media : []
 
-  const mediaUrls = (type: string) => media
-    .filter((item: any) => item?.type === type)
-    .map((item: any) => item?.url)
+  const mediaUrls = (type: string) =>
+    media.filter((item: any) => item?.type === type).map((item: any) => item?.url)
 
   return {
     ...body,
@@ -66,7 +66,13 @@ function validateVideoRequest(body: any, provider?: string): string | null {
 
   if (body.official_media.length) {
     for (const item of body.official_media) {
-      if (!item || typeof item !== 'object' || !WAN_MEDIA_TYPES.has(item.type) || typeof item.url !== 'string' || !item.url.trim()) {
+      if (
+        !item ||
+        typeof item !== 'object' ||
+        !WAN_MEDIA_TYPES.has(item.type) ||
+        typeof item.url !== 'string' ||
+        !item.url.trim()
+      ) {
         return 'input.media 中的每项都必须包含官方支持的 type 和非空 url'
       }
     }
@@ -105,7 +111,7 @@ function validateVideoRequest(body: any, provider?: string): string | null {
   return null
 }
 
-// POST /tasks — 发起生成任务（body.type: image | video）
+// POST /tasks — 发起生成任务（body.type: image | video, guarded by ownership）
 app.post('/', async (c) => {
   const body = await c.req.json()
   const type = body.type as TaskType
@@ -115,16 +121,32 @@ app.post('/', async (c) => {
     if (!body.prompt) return badRequest(c, '提示词必填')
   }
 
+  const actor = getActor(c)
+
+  // Verify ownership of referenced drama
+  if (body.drama_id) {
+    const drama = await getDramaIfAuthorized(c, Number(body.drama_id))
+    if (!drama) return notFound(c, '剧本不存在')
+  }
+
+  // Verify ownership of referenced storyboard
+  if (body.storyboard_id) {
+    const sbAuth = await getStoryboardIfAuthorized(c, Number(body.storyboard_id))
+    if (!sbAuth) return notFound(c, '镜头不存在')
+  }
+
   const videoBody = type === 'video' ? normalizeVideoRequest(body) : null
 
   try {
-    // 请求显式指定 config_id（工作台模型下拉跨厂商切换）时优先；
-    // 未指定才回退到集锁定配置，避免锁定配置与所选模型错配（如锁定 Seedance 却传 MiniMax 模型名）
     let configId: number | undefined = body.config_id
     let episodeResolution: string | undefined
     let storyboardDramaId: number | undefined
+
     if (body.storyboard_id) {
-      const [sb] = await db.select().from(schema.storyboards).where(eq(schema.storyboards.id, Number(body.storyboard_id)))
+      const [sb] = await db
+        .select()
+        .from(schema.storyboards)
+        .where(eq(schema.storyboards.id, Number(body.storyboard_id)))
       if (sb) {
         const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, sb.episodeId))
         const locked = type === 'image' ? ep?.imageConfigId : ep?.videoConfigId
@@ -136,7 +158,7 @@ app.post('/', async (c) => {
 
     if (type === 'video' && videoBody) {
       const effectiveConfig = configId
-        ? (await getConfigById(configId)) ?? await getActiveConfig('video')
+        ? (await getConfigById(configId)) ?? (await getActiveConfig('video'))
         : await getActiveConfig('video')
       const validationError = validateVideoRequest(videoBody, effectiveConfig?.provider)
       if (validationError) return badRequest(c, validationError)
@@ -148,10 +170,10 @@ app.post('/', async (c) => {
       sceneId: body.scene_id,
       characterId: body.character_id,
       dramaId: body.drama_id,
+      ownerUserId: actor?.userId ?? null,
     })
     logTaskPayload('TaskAPI', 'request body', body)
 
-    // 视频与图片生成时把项目视觉风格词注入提示词最前方（保持全局风格一致）
     const targetDramaId = body.drama_id ?? storyboardDramaId ?? null
 
     let videoPrompt = videoBody?.prompt
@@ -165,45 +187,47 @@ app.post('/', async (c) => {
       imagePrompt = await applyDramaStyleToPrompt(imagePrompt, targetDramaId)
     }
 
-    const id = type === 'image'
-      ? await generateImage({
-        storyboardId: body.storyboard_id,
-        dramaId: body.drama_id,
-        sceneId: body.scene_id,
-        characterId: body.character_id,
-        prompt: imagePrompt,
-        model: body.model,
-        size: body.size,
-        referenceImages: body.reference_images,
-        frameType: body.frame_type,
-        configId,
-      })
-      : await generateVideo({
-        storyboardId: body.storyboard_id,
-        dramaId: body.drama_id,
-        prompt: videoPrompt,
-        model: videoBody!.model,
-        referenceMode: videoBody!.reference_mode || 'reference',
-        imageUrl: videoBody!.image_url,
-        firstFrameUrl: videoBody!.first_frame_url,
-        lastFrameUrl: videoBody!.last_frame_url,
-        referenceImageUrls: videoBody!.reference_image_urls,
-        referenceVideoUrls: videoBody!.reference_video_urls,
-        referenceAudioUrls: videoBody!.reference_audio_urls,
-        referenceFileUrl: videoBody!.file_url,
-        referenceLinkUrl: videoBody!.link_url,
-        generateAudio: videoBody!.generate_audio,
-        duration: videoBody!.duration,
-        aspectRatio: videoBody!.aspect_ratio,
-        resolution: episodeResolution || videoBody!.resolution,
-        seed: videoBody!.seed,
-        promptExtend: videoBody!.prompt_extend,
-        watermark: videoBody!.watermark,
-        configId,
-      })
+    const id =
+      type === 'image'
+        ? await generateImage({
+            ownerUserId: actor?.userId ?? null,
+            storyboardId: body.storyboard_id,
+            dramaId: body.drama_id,
+            sceneId: body.scene_id,
+            characterId: body.character_id,
+            prompt: imagePrompt,
+            model: body.model,
+            size: body.size,
+            referenceImages: body.reference_images,
+            frameType: body.frame_type,
+            configId,
+          })
+        : await generateVideo({
+            ownerUserId: actor?.userId ?? null,
+            storyboardId: body.storyboard_id,
+            dramaId: body.drama_id,
+            prompt: videoPrompt,
+            model: videoBody!.model,
+            referenceMode: videoBody!.reference_mode || 'reference',
+            imageUrl: videoBody!.image_url,
+            firstFrameUrl: videoBody!.first_frame_url,
+            lastFrameUrl: videoBody!.last_frame_url,
+            referenceImageUrls: videoBody!.reference_image_urls,
+            referenceVideoUrls: videoBody!.reference_video_urls,
+            referenceAudioUrls: videoBody!.reference_audio_urls,
+            referenceFileUrl: videoBody!.file_url,
+            referenceLinkUrl: videoBody!.link_url,
+            generateAudio: videoBody!.generate_audio,
+            duration: videoBody!.duration,
+            aspectRatio: videoBody!.aspect_ratio,
+            resolution: episodeResolution || videoBody!.resolution,
+            seed: videoBody!.seed,
+            promptExtend: videoBody!.prompt_extend,
+            watermark: videoBody!.watermark,
+            configId,
+          })
 
-    const [record] = await db.select().from(schema.sysTask)
-      .where(eq(schema.sysTask.id, id))
+    const [record] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
     logTaskSuccess('TaskAPI', 'generate', { taskId: id, type, provider: record?.provider })
     return created(c, record)
   } catch (err: any) {
@@ -212,32 +236,62 @@ app.post('/', async (c) => {
   }
 })
 
-// GET /tasks/:id — 轮询任务状态
+// GET /tasks/:id — 轮询任务状态 (guarded by owner)
 app.get('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [row] = await db.select().from(schema.sysTask)
-    .where(eq(schema.sysTask.id, id))
-  return success(c, row || null)
+  const [row] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
+  if (!row) return notFound(c, '任务不存在')
+
+  const actor = getActor(c)
+  if (isServerMode()) {
+    if (!actor || row.ownerUserId !== actor.userId) {
+      return notFound(c, '任务不存在')
+    }
+  } else if (actor) {
+    if (row.ownerUserId !== null && row.ownerUserId !== actor.userId) {
+      return notFound(c, '任务不存在')
+    }
+  }
+
+  return success(c, row)
 })
 
-// GET /tasks — 按 type / storyboard_id / drama_id 过滤
+// GET /tasks — 按 type / storyboard_id / drama_id 过滤 (guarded by owner)
 app.get('/', async (c) => {
   const type = c.req.query('type')
   const storyboardId = c.req.query('storyboard_id')
   const dramaId = c.req.query('drama_id')
 
+  const actor = getActor(c)
   let rows = await db.select().from(schema.sysTask)
 
-  if (type) rows = rows.filter(r => r.type === type)
-  if (storyboardId) rows = rows.filter(r => r.storyboardId === Number(storyboardId))
-  if (dramaId) rows = rows.filter(r => r.dramaId === Number(dramaId))
+  if (isServerMode()) {
+    if (!actor) return success(c, [])
+    rows = rows.filter((r) => r.ownerUserId === actor.userId)
+  } else if (actor) {
+    rows = rows.filter((r) => r.ownerUserId === actor.userId || r.ownerUserId === null)
+  }
+
+  if (type) rows = rows.filter((r) => r.type === type)
+  if (storyboardId) rows = rows.filter((r) => r.storyboardId === Number(storyboardId))
+  if (dramaId) rows = rows.filter((r) => r.dramaId === Number(dramaId))
 
   return success(c, rows)
 })
 
-// DELETE /tasks/:id
+// DELETE /tasks/:id (guarded by owner)
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
+  const [row] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
+  if (!row) return notFound(c, '任务不存在')
+
+  const actor = getActor(c)
+  if (isServerMode()) {
+    if (!actor || row.ownerUserId !== actor.userId) {
+      return notFound(c, '任务不存在')
+    }
+  }
+
   await db.delete(schema.sysTask).where(eq(schema.sysTask.id, id))
   return success(c)
 })

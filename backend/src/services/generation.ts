@@ -13,6 +13,7 @@ import type { AIConfig } from './adapters/types'
 import { enrichStoryboardVideoPrompt } from './video-prompts.js'
 import { prepareAssetImagePrompt } from './asset-image-prompt.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess, logTaskWarn, redactUrl } from '../utils/task-logger.js'
+import { getUserToraApiKey, reserveToraVideo, settleToraVideo } from './tora-client.js'
 
 type TaskType = 'image' | 'video'
 
@@ -25,6 +26,7 @@ const POLL_PROFILES: Record<TaskType, { attempts: number; intervalMs: number; ma
 }
 
 interface GenerateImageParams {
+  ownerUserId?: number | null
   storyboardId?: number
   dramaId?: number
   sceneId?: number
@@ -39,6 +41,7 @@ interface GenerateImageParams {
 }
 
 interface GenerateVideoParams {
+  ownerUserId?: number | null
   storyboardId?: number
   dramaId?: number
   prompt: string
@@ -70,6 +73,7 @@ export async function generateImage(params: GenerateImageParams): Promise<number
   if (!config) throw new Error('未配置图片模型，请先到「设置」页添加并启用 AI 服务')
 
   const id = await createTask('image', config, {
+    ownerUserId: params.ownerUserId,
     storyboardId: params.storyboardId,
     dramaId: params.dramaId,
     sceneId: params.sceneId,
@@ -108,6 +112,7 @@ export async function generateVideo(params: GenerateVideoParams): Promise<number
   if (!config) throw new Error('未配置视频模型，请先到「设置」页添加并启用 AI 服务')
 
   const id = await createTask('video', config, {
+    ownerUserId: params.ownerUserId,
     storyboardId: params.storyboardId,
     dramaId: params.dramaId,
     prompt: params.prompt,
@@ -152,6 +157,7 @@ async function createTask(
   type: TaskType,
   config: AIConfig,
   fields: {
+    ownerUserId?: number | null
     storyboardId?: number
     dramaId?: number
     sceneId?: number
@@ -162,8 +168,27 @@ async function createTask(
   },
   params: Record<string, unknown>,
 ): Promise<number> {
+  // A5: Central Tora Credit Reservation for managed video tasks
+  if (type === 'video' && fields.ownerUserId) {
+    const userApiKey = await getUserToraApiKey(fields.ownerUserId)
+    if (userApiKey) {
+      const requestId = 'hb-vid-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+      params.requestId = requestId
+      params.toraManaged = true
+      const maxDuration = (params.duration as number) || 10
+      const reservation = await reserveToraVideo(userApiKey, {
+        requestId,
+        model: fields.model || config.model,
+        resolution: (params.resolution as string) || '720P',
+        maxDurationSeconds: maxDuration,
+      })
+      params.toraReservedQuota = reservation.reservedQuota
+    }
+  }
+
   const ts = now()
   const res = await db.insert(schema.sysTask).values({
+    ownerUserId: fields.ownerUserId ?? null,
     type,
     ...fields,
     provider: config.provider,
@@ -352,6 +377,26 @@ async function failTask(id: number, message: string) {
   await db.update(schema.sysTask)
     .set({ status: 'failed', errorMsg: message, updatedAt: now() })
     .where(eq(schema.sysTask.id, id))
+
+  // A5: Refund reservation on failure at New-API (0 video fee)
+  try {
+    const [rec] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
+    if (rec && rec.ownerUserId) {
+      const params = parseTaskParams(rec.params)
+      if (params.requestId) {
+        const userApiKey = await getUserToraApiKey(rec.ownerUserId)
+        if (userApiKey) {
+          await settleToraVideo(userApiKey, {
+            requestId: params.requestId,
+            success: false,
+            errorMessage: message,
+          })
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn(`[A5 Refund] Warning: Failed to refund video task for sysTask ${id}:`, err?.message)
+  }
 }
 
 type SysTaskRecord = typeof schema.sysTask.$inferSelect
@@ -495,6 +540,23 @@ async function handleVideoComplete(record: SysTaskRecord, videoUrl: string, dura
     await db.update(schema.storyboards)
       .set({ videoUrl: localPath, duration: duration || undefined, updatedAt: now() })
       .where(eq(schema.storyboards.id, record.storyboardId))
+  }
+
+  // A5: Settle actual successful output seconds at New-API
+  const params = parseTaskParams(record.params)
+  if (params.requestId && record.ownerUserId) {
+    try {
+      const userApiKey = await getUserToraApiKey(record.ownerUserId)
+      if (userApiKey) {
+        await settleToraVideo(userApiKey, {
+          requestId: params.requestId,
+          success: true,
+          actualDurationSeconds: duration || (params.duration as number) || 5,
+        })
+      }
+    } catch (err: any) {
+      console.warn(`[A5 Settle] Warning: Failed to settle video task ${params.requestId}:`, err?.message)
+    }
   }
 }
 

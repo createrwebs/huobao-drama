@@ -1,0 +1,199 @@
+{
+  "checked_date": "2026-10-10",
+  "timezone": "Asia/Bangkok",
+  "type": "static_source_research_and_plan",
+  "implementation_changed": false,
+  "local": {
+    "huobao_head": "a4edb3caf52999655ebd5d1d677d4ef2eda1a488",
+    "new_api_head": "a38907bad88ce97f0ff3ee3aa75ec16054728432",
+    "note": "Huobao has pre-existing staged changes; HEAD alone does not describe full working tree."
+  },
+  "fork_search": {
+    "metadata_pages": [
+      {
+        "url": "https://api.github.com/repos/chatfire-AI/huobao-drama/forks?sort=stargazers&per_page=100",
+        "count": 100
+      },
+      {
+        "url": "https://api.github.com/repos/chatfire-AI/huobao-drama/forks?sort=newest&per_page=100",
+        "count": 100
+      }
+    ],
+    "unique_metadata_repositories": 197,
+    "descriptions_with_auth_login_multuser_keywords": [],
+    "not_exhaustive": true,
+    "note": "Metadata is not source audit. Source inspected only for repositories listed below."
+  },
+  "sources": [
+    {
+      "repo": "chatfire-AI/huobao-drama",
+      "sha": "26de7df59806588e98e103a21bd0bfd26d4a55a6",
+      "files": [
+        {
+          "path": "backend/src/index.ts",
+          "sha256": "336af16a98bfa9accb626afbd9afddce7737e9dd9454d551f0b72df11e9dd1d8",
+          "url": "https://github.com/chatfire-AI/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/index.ts"
+        },
+        {
+          "path": "backend/src/db/schema.ts",
+          "sha256": "816fb42e517af35fa016ae2de9a5c8d5761aea9a1f518a217bdddb7d28aaba24",
+          "url": "https://github.com/chatfire-AI/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/db/schema.ts"
+        },
+        {
+          "path": "backend/src/routes/dramas.ts",
+          "sha256": "b0556ca665a071b3d4e25d7e1283317c2e8a7c38b624227a7c5e49e6f3abdac6",
+          "url": "https://github.com/chatfire-AI/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/routes/dramas.ts"
+        },
+        {
+          "path": "README.md",
+          "sha256": "f74c043c9e9e993e12c1d1123b0321c3d99678a51e575eb661200436ff7dbab5",
+          "url": "https://github.com/chatfire-AI/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/README.md"
+        },
+        {
+          "path": "LICENSE",
+          "sha256": "e66c269d4819aaab34b49ef5220c4ddab6756f21bb5180761a4eb8561f2b7bbd",
+          "url": "https://github.com/chatfire-AI/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/LICENSE"
+        }
+      ]
+    },
+    {
+      "repo": "A1pha3/huobao-drama",
+      "sha": "cfa41e39dbf39c5da5dfc1ff396c7e9540044395",
+      "files": [
+        {
+          "path": "go.mod",
+          "sha256": "f05ae922acc012a0f917928cf2588d34405c735fb03cd168f775aca03a658dd4",
+          "url": "https://github.com/A1pha3/huobao-drama/blob/cfa41e39dbf39c5da5dfc1ff396c7e9540044395/go.mod"
+        }
+      ]
+    },
+    {
+      "repo": "goosmanlei/huobao-drama",
+      "sha": "26de7df59806588e98e103a21bd0bfd26d4a55a6",
+      "files": [
+        {
+          "path": "backend/src/index.ts",
+          "sha256": "336af16a98bfa9accb626afbd9afddce7737e9dd9454d551f0b72df11e9dd1d8",
+          "url": "https://github.com/goosmanlei/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/index.ts"
+        },
+        {
+          "path": "backend/src/db/schema.ts",
+          "sha256": "816fb42e517af35fa016ae2de9a5c8d5761aea9a1f518a217bdddb7d28aaba24",
+          "url": "https://github.com/goosmanlei/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/db/schema.ts"
+        },
+        {
+          "path": "backend/src/routes/dramas.ts",
+          "sha256": "b0556ca665a071b3d4e25d7e1283317c2e8a7c38b624227a7c5e49e6f3abdac6",
+          "url": "https://github.com/goosmanlei/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/routes/dramas.ts"
+        }
+      ]
+    },
+    {
+      "repo": "mahmudul0x1/huobao-drama",
+      "sha": "26de7df59806588e98e103a21bd0bfd26d4a55a6",
+      "files": [
+        {
+          "path": "backend/src/index.ts",
+          "sha256": "336af16a98bfa9accb626afbd9afddce7737e9dd9454d551f0b72df11e9dd1d8",
+          "url": "https://github.com/mahmudul0x1/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/index.ts"
+        },
+        {
+          "path": "backend/src/db/schema.ts",
+          "sha256": "816fb42e517af35fa016ae2de9a5c8d5761aea9a1f518a217bdddb7d28aaba24",
+          "url": "https://github.com/mahmudul0x1/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/db/schema.ts"
+        },
+        {
+          "path": "backend/src/routes/dramas.ts",
+          "sha256": "b0556ca665a071b3d4e25d7e1283317c2e8a7c38b624227a7c5e49e6f3abdac6",
+          "url": "https://github.com/mahmudul0x1/huobao-drama/blob/26de7df59806588e98e103a21bd0bfd26d4a55a6/backend/src/routes/dramas.ts"
+        }
+      ]
+    },
+    {
+      "repo": "dav-niu474/huobao-drama-ai",
+      "sha": "eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "d41e209bbd141f972ca1160c1f923c375cd6508f1e304253a25331dfce61ccb7",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/README.md"
+        },
+        {
+          "path": "LICENSE",
+          "sha256": "2c4e74afe1b5b586d17be3290cd8a9afdcf7ab3ff7a19105100d0b3eb2904d57",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/LICENSE"
+        },
+        {
+          "path": "prisma/schema.prisma",
+          "sha256": "e5cf1adf4a6f70591259dfa859bdc2010ec2da2f787093feb35e52524149e62a",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/prisma/schema.prisma"
+        },
+        {
+          "path": "src/lib/auth.ts",
+          "sha256": "ff6b817c1b540168b4bf0c46f5797a7421e067cd171f4fe99aa3ec1effe3898c",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/lib/auth.ts"
+        },
+        {
+          "path": "src/lib/auth-helpers.ts",
+          "sha256": "96dbfe7ffbc42333ea59705f17b64657a71b30eaa416939d07a2dfe6cacb2284",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/lib/auth-helpers.ts"
+        },
+        {
+          "path": "src/middleware.ts",
+          "sha256": "50360f1a9554a95fd7db93e9108388b3a169eae0986fee1f478db7ffea490691",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/middleware.ts"
+        },
+        {
+          "path": "src/app/api/dramas/route.ts",
+          "sha256": "6f50dc2cfa40cee603756e49da63f321770a30228db817d6620a0d1a3884c752",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/app/api/dramas/route.ts"
+        },
+        {
+          "path": "src/app/api/dramas/[id]/route.ts",
+          "sha256": "716bd7d3759089118efc9a89ba41cfbb4b0205ca3d832169d8fcd25856940a2d",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/app/api/dramas/%5Bid%5D/route.ts"
+        },
+        {
+          "path": "src/app/api/episodes/[id]/route.ts",
+          "sha256": "59d58a76499822b6f06427e45dc2d9827f7b8c472083629dbca90805fc74e29f",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/app/api/episodes/%5Bid%5D/route.ts"
+        },
+        {
+          "path": "src/app/api/storyboards/[id]/route.ts",
+          "sha256": "9d92a70798cabfc9001ec2e6a8287648a4b983248ba99faa0e7af75eb3d94e10",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/app/api/storyboards/%5Bid%5D/route.ts"
+        },
+        {
+          "path": "src/app/api/files/[...path]/route.ts",
+          "sha256": "f82a4c94dc32edf4ded1951860b83d8fd6bd90a6ea7103d32614abc0454d72cf",
+          "url": "https://github.com/dav-niu474/huobao-drama-ai/blob/eece93fa0d2cb3b72551f80a1aa63b9d1d6111d6/src/app/api/files/%5B...path%5D/route.ts"
+        }
+      ]
+    }
+  ],
+  "candidate_github_metadata": {
+    "repo": "dav-niu474/huobao-drama-ai",
+    "fork": false,
+    "parent": null,
+    "license": "MIT"
+  },
+  "unavailable": [
+    {
+      "repo": "Aibrother258/JisuVideo-ai",
+      "result": "git clone failed: Repository not found",
+      "source_review": "NOT RUN"
+    }
+  ],
+  "findings": {
+    "upstream": "No app auth/owner fields or owner checks in server entry/schema/drama routes at pinned SHA. Desktop userData isolation is not web-user tenancy.",
+    "reference_project": "Credential login and project ownership exist; source gaps in child mutations, nullable-owner handling and cookie-presence-only middleware make it unsuitable for unchanged adoption.",
+    "recommended": "Add stable Tora identity contract and server sessions, enforce resource/job/config/file ownership in existing Hono/Nuxt app."
+  },
+  "limitations": [
+    "197 fork metadata entries is not 197 code audits",
+    "No external fork was installed or run",
+    "No live Tora identity/login or paid render tested",
+    "No actual DB migration or auth implementation performed"
+  ],
+  "plan": "../HUOBAO_MULTI_USER_PLAN_TH.md"
+}

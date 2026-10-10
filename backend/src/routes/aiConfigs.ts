@@ -7,6 +7,8 @@ import { joinProviderUrl } from '../services/adapters/url.js'
 import { isOfficialProvider, parseConfigTemperature } from '../services/ai.js'
 import { getContentLanguage } from '../services/app-settings.js'
 import { redactUrl, logTaskError, logTaskProgress, logTaskSuccess } from '../utils/task-logger.js'
+import { getActor, isServerMode } from '../middleware/auth.js'
+import { maskApiKey } from '../utils/crypto.js'
 
 const app = new Hono()
 
@@ -18,10 +20,12 @@ function normalizeTemperature(v: any): number | null {
   return n
 }
 
-/** 把 settings JSON 中的 temperature 透出为顶层字段，便于前端直接读写 */
+/** 把 settings JSON 中的 temperature 透出为顶层字段，便于前端直接读写，并遮盖敏感 api_key */
 function withParsedFields(r: any) {
+  const converted = toSnakeCase(r)
   return {
-    ...toSnakeCase(r),
+    ...converted,
+    api_key: r.apiKey ? maskApiKey(r.apiKey) : '',
     model: r.model ? JSON.parse(r.model) : [],
     temperature: parseConfigTemperature(r.settings),
   }
@@ -137,7 +141,16 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
 // GET /ai-configs?service_type=text
 app.get('/', async (c) => {
   const serviceType = c.req.query('service_type')
+  const actor = getActor(c)
   let rows = await db.select().from(schema.aiServiceConfigs)
+
+  if (isServerMode()) {
+    if (!actor) return success(c, [])
+    rows = rows.filter(r => r.ownerUserId === actor.userId)
+  } else if (actor) {
+    rows = rows.filter(r => r.ownerUserId === actor.userId || r.ownerUserId === null)
+  }
+
   if (serviceType) rows = rows.filter(r => r.serviceType === serviceType)
 
   const parsed = rows.map(withParsedFields)
@@ -146,6 +159,11 @@ app.get('/', async (c) => {
 
 // POST /ai-configs
 app.post('/', async (c) => {
+  const actor = getActor(c)
+  if (isServerMode() && !actor) {
+    return badRequest(c, '未授权')
+  }
+
   const body = await c.req.json()
   const ts = now()
 
@@ -167,6 +185,7 @@ app.post('/', async (c) => {
   }
 
   const res = await db.insert(schema.aiServiceConfigs).values({
+    ownerUserId: actor?.userId ?? null,
     serviceType: body.service_type,
     provider: body.provider,
     name: body.name || `${body.provider}-${body.service_type}`,
@@ -280,16 +299,31 @@ app.get('/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const [row] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
   if (!row) return notFound(c)
+
+  const actor = getActor(c)
+  if (isServerMode()) {
+    if (!actor || row.ownerUserId !== actor.userId) return notFound(c)
+  } else if (actor) {
+    if (row.ownerUserId !== null && row.ownerUserId !== actor.userId) return notFound(c)
+  }
+
   return success(c, withParsedFields(row))
 })
 
 // PUT /ai-configs/:id
 app.put('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const body = await c.req.json()
   const [existing] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
   if (!existing) return notFound(c)
 
+  const actor = getActor(c)
+  if (isServerMode()) {
+    if (!actor || existing.ownerUserId !== actor.userId) return notFound(c)
+  } else if (actor) {
+    if (existing.ownerUserId !== null && existing.ownerUserId !== actor.userId) return notFound(c)
+  }
+
+  const body = await c.req.json()
   const serviceType = 'service_type' in body ? body.service_type : existing.serviceType
   const provider = 'provider' in body ? body.provider : existing.provider
   if (!isOfficialProvider(serviceType, provider)) {
@@ -302,7 +336,9 @@ app.put('/:id', async (c) => {
   if ('provider' in body) updates.provider = body.provider
   if ('name' in body) updates.name = body.name
   if ('base_url' in body) updates.baseUrl = body.base_url
-  if ('api_key' in body) updates.apiKey = body.api_key
+  if ('api_key' in body && body.api_key && !String(body.api_key).includes('****')) {
+    updates.apiKey = body.api_key
+  }
   if ('model' in body) updates.model = JSON.stringify(body.model)
   if ('priority' in body) updates.priority = body.priority
   if ('is_active' in body) updates.isActive = body.is_active
@@ -328,6 +364,16 @@ app.put('/:id', async (c) => {
 // DELETE /ai-configs/:id
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
+  const [existing] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
+  if (!existing) return notFound(c)
+
+  const actor = getActor(c)
+  if (isServerMode()) {
+    if (!actor || existing.ownerUserId !== actor.userId) return notFound(c)
+  } else if (actor) {
+    if (existing.ownerUserId !== null && existing.ownerUserId !== actor.userId) return notFound(c)
+  }
+
   await db.delete(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
   return success(c)
 })

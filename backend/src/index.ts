@@ -24,7 +24,10 @@ import settings from './routes/settings.js'
 import storage from './routes/storage.js'
 import serverUpdate from './routes/serverUpdate.js'
 import { flowBridge } from './routes/flowBridge.js'
+import auth from './routes/auth.js'
 import { requestLogger, errorHandler } from './middleware/logger.js'
+import { authMiddleware } from './middleware/auth.js'
+import { handleAuthenticatedMedia } from './utils/media-auth.js'
 import { db, schema } from './db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from './utils/response.js'
@@ -37,11 +40,12 @@ const app = new Hono()
 
 // Middleware
 app.use('*', cors({
-  origin: ['http://localhost:3013', 'http://localhost:5679'],
+  origin: ['http://localhost:3013', 'http://localhost:5679', 'https://www.toraapi.com', 'http://www.toraapi.com'],
   credentials: true,
 }))
 app.use('*', requestLogger)
 app.use('*', errorHandler)
+app.use('*', authMiddleware)
 
 // Health check（version 供部署巡检/更新检查核对当前运行版本）
 app.get('/api/v1/health', (c) => c.json({
@@ -71,21 +75,27 @@ api.route('/storage', storage)
 api.route('/settings', settings)
 api.route('/server-update', serverUpdate)
 api.route('/flow-bridge', flowBridge)
+api.route('/auth', auth)
 
 app.route('/api/v1', api)
 
-// Serve static files (storage)
-// 生成的图片/视频按 uuid 命名、内容不变，标记为 immutable 让浏览器长缓存
-app.use('/static/*', async (c, next) => {
-  await next()
-  if (c.res.ok) c.header('Cache-Control', 'public, max-age=31536000, immutable')
-})
-app.use('/static/*', serveStatic({ root: DATA_ROOT }))
+// Serve static files (storage) with tenant isolation and Range 206 streaming
+app.all('/static/*', handleAuthenticatedMedia)
 
 // Serve frontend (production build) — 桌面版由主进程注入 FRONTEND_DIST（resources/frontend）
 const distPath = process.env.FRONTEND_DIST || path.join(projectRoot, 'frontend', 'dist')
-app.use('*', serveStatic({ root: distPath }))
-app.get('*', serveStatic({ root: distPath, path: 'index.html' }))
+app.use('*', serveStatic({
+  root: distPath,
+  rewriteRequestPath: (p) => p.replace(/^\/storyvdo/, '') || 'index.html',
+}))
+app.get('*', serveStatic({
+  root: distPath,
+  path: 'index.html',
+}))
+
+const root = new Hono()
+root.route('/storyvdo', app)
+root.route('/', app)
 
 const port = Number(process.env.PORT || 5679)
 console.log(`🚀 Huobao Drama TS server on http://localhost:${port}`)
@@ -101,4 +111,4 @@ db.update(schema.sysTask)
   })
   .catch(err => console.error('清理中断任务失败:', err?.message))
 
-serve({ fetch: app.fetch, port })
+serve({ fetch: root.fetch, port })

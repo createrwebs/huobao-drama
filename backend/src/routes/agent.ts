@@ -5,8 +5,10 @@ import { Hono } from 'hono'
 import { validAgentTypes } from '../agents/index.js'
 import { buildAgentRequestContext } from '../agents/context.js'
 import { mastra } from '../mastra/index.js'
-import { success, badRequest } from '../utils/response.js'
+import { success, badRequest, notFound } from '../utils/response.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
+import { getEpisodeIfAuthorized } from '../utils/ownership.js'
+import { getConfigById } from '../services/ai.js'
 
 const app = new Hono()
 
@@ -48,6 +50,19 @@ app.post('/:type/chat', async (c) => {
   if (!episode_id || !drama_id) {
     logTaskError('Agent', agentType, { reason: 'missing drama_id or episode_id' })
     return badRequest(c, '需要 drama_id 与 episode_id')
+  }
+
+  const auth = await getEpisodeIfAuthorized(c, Number(episode_id))
+  if (!auth || auth.drama.id !== Number(drama_id)) {
+    logTaskError('Agent', agentType, { reason: 'unauthorized or episode not found', episode_id, drama_id })
+    return notFound(c, '剧集不存在')
+  }
+
+  if (body.config_id) {
+    const cfg = await getConfigById(Number(body.config_id), auth.drama.ownerUserId)
+    if (!cfg) {
+      return notFound(c, 'AI 配置不存在')
+    }
   }
 
   const agent = mastra.getAgent(agentType)

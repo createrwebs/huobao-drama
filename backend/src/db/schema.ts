@@ -7,6 +7,7 @@ import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core'
 
 export const dramas = sqliteTable('dramas', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerUserId: integer('owner_user_id'),
   title: text('title').notNull(),
   description: text('description'),
   genre: text('genre'),
@@ -153,6 +154,7 @@ export const storyboardProps = sqliteTable('storyboard_props', {
 
 export const aiServiceConfigs = sqliteTable('ai_service_configs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerUserId: integer('owner_user_id'),
   serviceType: text('service_type').notNull(),
   provider: text('provider'),
   name: text('name').notNull(),
@@ -200,6 +202,7 @@ export const stylePresets = sqliteTable('style_presets', {
 // 统一生成任务表：图片/视频生成共用，type 区分，生成参数存 params(JSON)
 export const sysTask = sqliteTable('sys_task', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerUserId: integer('owner_user_id'),
   type: text('type').notNull(), // image | video
   storyboardId: integer('storyboard_id'),
   dramaId: integer('drama_id'),
@@ -258,6 +261,7 @@ export const props = sqliteTable('props', {
 
 export const assets = sqliteTable('assets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerUserId: integer('owner_user_id'),
   dramaId: integer('drama_id'),
   episodeId: integer('episode_id'),
   storyboardId: integer('storyboard_id'),
@@ -289,3 +293,27 @@ export const appSettings = sqliteTable('app_settings', {
   value: text('value').notNull(),
   updatedAt: text('updated_at').notNull(),
 })
+
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  issuer: text('issuer').notNull(),
+  externalUserId: integer('external_user_id').notNull(),
+  username: text('username'),
+  displayName: text('display_name'),
+  status: text('status').default('active'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
+export const authSessions = sqliteTable('auth_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  sessionTokenHash: text('session_token_hash').notNull().unique(),
+  userId: integer('user_id').notNull(),
+  tokenId: integer('token_id'),
+  encryptedCredential: text('encrypted_credential'),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  revokedAt: text('revoked_at'),
+  lastSeenAt: text('last_seen_at'),
+})
+

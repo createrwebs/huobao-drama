@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
-import { success, badRequest } from '../utils/response.js'
+import { success, badRequest, now } from '../utils/response.js'
 import { saveUploadedFile, generateImageThumb } from '../utils/storage.js'
 import { extractVideoPoster } from '../utils/video-poster.js'
+import { db, schema } from '../db/index.js'
+import { getActor } from '../middleware/auth.js'
 
 const app = new Hono()
 
@@ -18,6 +20,18 @@ app.post('/image', async (c) => {
   const path = await saveUploadedFile(buffer, 'uploads', file.name)
   // 同步生成列表页缩略图，上传图与生图走同一套展示链路（失败不影响上传结果）
   await generateImageThumb(path)
+
+  const actor = getActor(c)
+  await db.insert(schema.assets).values({
+    ownerUserId: actor?.userId ?? null,
+    name: file.name,
+    type: 'image',
+    url: `/${path}`,
+    localPath: path,
+    createdAt: now(),
+    updatedAt: now(),
+  })
+
   return success(c, { url: `/${path}`, path })
 })
 
@@ -65,6 +79,18 @@ async function saveMediaUpload(
       console.warn('[Upload] Failed to extract video poster:', e)
     }
   }
+
+  const actor = getActor(c)
+  await db.insert(schema.assets).values({
+    ownerUserId: actor?.userId ?? null,
+    name: file.name,
+    type: kind,
+    url: `/${path}`,
+    localPath: path,
+    createdAt: now(),
+    updatedAt: now(),
+  })
+
   return success(c, { url: `/${path}`, path })
 }
 

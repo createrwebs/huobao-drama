@@ -27,6 +27,7 @@
       </nav>
 
       <div class="header-right">
+        <UserBadge />
         <a
           class="github-link"
           href="https://github.com/chatfire-AI/huobao-drama"
@@ -58,6 +59,7 @@
 <script setup>
 import { LayoutGrid, Settings, TriangleAlert, Github } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import UserBadge from '~/components/UserBadge.vue'
 import { aiConfigAPI } from '~/composables/useApi'
 import brandLogo from '~/assets/brand-logo.png'
 

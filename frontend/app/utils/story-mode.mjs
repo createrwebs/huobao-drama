@@ -39,11 +39,14 @@ export function sanitizeMediaUrl(rawUrl) {
 
   // Safe local static paths: resolve native static/... and /static/... exactly once
   const clean = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
-  if (clean.startsWith('static/')) {
+  if (clean.startsWith('storyvdo/')) {
     return `/${clean}`
   }
+  if (clean.startsWith('static/')) {
+    return `/storyvdo/${clean}`
+  }
 
-  return `/static/${clean}`
+  return `/storyvdo/static/${clean}`
 }
 
 function parseStrictDuration(raw) {

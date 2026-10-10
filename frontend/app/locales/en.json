@@ -1078,5 +1078,18 @@
     "noVideo": "No video generated yet",
     "status": "Status: {status}",
     "readiness": "Episode Readiness: {percent}%"
+  },
+  "auth": {
+    "loginTitle": "Sign In with Tora API",
+    "loginSubtitle": "Connect your Tora account to access your projects and manage credits.",
+    "keyLabel": "Tora API Key",
+    "keyPlaceholder": "sk-...",
+    "loginBtn": "Sign In",
+    "loggingIn": "Signing in...",
+    "logoutBtn": "Sign Out",
+    "creditsLabel": "Spendable Credits",
+    "zeroCreditsNotice": "Zero-credit accounts can access existing projects and use direct provider keys (BYOK). Tora managed jobs require remaining credits.",
+    "connectTora": "Connect Tora",
+    "invalidKey": "Invalid or revoked API key"
   }
 }

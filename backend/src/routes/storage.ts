@@ -10,6 +10,7 @@ import { DATA_ROOT, STORAGE_ROOT } from '../utils/paths.js'
 import { dbPath } from '../db/index.js'
 import { dirUsage, volumeFreeBytes } from '../utils/dirsize.js'
 import { success } from '../utils/response.js'
+import { isServerMode } from '../middleware/auth.js'
 
 const app = new Hono()
 
@@ -53,11 +54,12 @@ app.get('/', async (c) => {
   }
 
   const mode = process.env.HUOBAO_DESKTOP === '1' ? 'desktop' : 'server'
+  const inServer = isServerMode()
   return success(c, {
     mode,
-    dataDir: DATA_ROOT,
-    storageRoot: STORAGE_ROOT,
-    sqlitePath: dbPath,
+    dataDir: inServer ? undefined : DATA_ROOT,
+    storageRoot: inServer ? undefined : STORAGE_ROOT,
+    sqlitePath: inServer ? undefined : dbPath,
     usage: cache.usage,
     usageStale: usageStale || cache.computing,
     computedAt: cache.computedAt,

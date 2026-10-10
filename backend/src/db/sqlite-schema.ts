@@ -9,6 +9,7 @@ import type Database from 'better-sqlite3'
 export const sqliteSchemaStatements = [
   `CREATE TABLE IF NOT EXISTS dramas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_user_id INTEGER,
     title TEXT NOT NULL,
     description TEXT,
     genre TEXT,
@@ -294,6 +295,32 @@ export const sqliteSchemaStatements = [
     value TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
+
+  // 多用户与认证：租户用户表与服务端会话表
+  `CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    issuer TEXT NOT NULL,
+    external_user_id INTEGER NOT NULL,
+    username TEXT,
+    display_name TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(issuer, external_user_id)
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS auth_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_token_hash TEXT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
+    token_id INTEGER,
+    encrypted_credential TEXT,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT,
+    last_seen_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`,
 ]
 
 /**
@@ -382,6 +409,33 @@ const REMOVE_SQL = 'DELETE FROM style_presets WHERE "value" = ? AND "prompt" = ?
 export function initSqliteSchema(sqlite: Database.Database) {
   for (const statement of sqliteSchemaStatements) {
     sqlite.exec(statement)
+  }
+
+  // Ensure owner_user_id exists on tables if upgrading existing DB
+  const tablesToEnsureOwner = ['dramas', 'sys_task', 'ai_service_configs', 'assets']
+  for (const table of tablesToEnsureOwner) {
+    try {
+      const cols = sqlite.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+      if (cols.length > 0 && !cols.some(c => c.name === 'owner_user_id')) {
+        sqlite.exec(`ALTER TABLE ${table} ADD COLUMN owner_user_id INTEGER`)
+      }
+    } catch (e: any) {
+      console.warn(`Could not check/add owner_user_id on ${table}:`, e?.message)
+    }
+  }
+
+  // Multi-user and session indexes
+  const indexes = [
+    'CREATE INDEX IF NOT EXISTS idx_users_issuer_external ON users (issuer, external_user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_auth_sessions_hash ON auth_sessions (session_token_hash)',
+    'CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions (user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_dramas_owner ON dramas (owner_user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_sys_task_owner ON sys_task (owner_user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_ai_service_configs_owner ON ai_service_configs (owner_user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_assets_owner ON assets (owner_user_id)',
+  ]
+  for (const idx of indexes) {
+    try { sqlite.exec(idx) } catch {}
   }
   const insertSeed = sqlite.prepare(SEED_SQL)
   const upgradeSeed = sqlite.prepare(UPGRADE_SQL)

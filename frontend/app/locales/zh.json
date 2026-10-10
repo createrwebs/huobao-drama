@@ -1078,5 +1078,18 @@
     "noVideo": "暂无生成视频",
     "status": "状态：{status}",
     "readiness": "剧集就绪度：{percent}%"
+  },
+  "auth": {
+    "loginTitle": "登录 Tora API",
+    "loginSubtitle": "连接 Tora 账户以访问您的项目并管理额度。",
+    "keyLabel": "Tora API Key",
+    "keyPlaceholder": "sk-...",
+    "loginBtn": "登录",
+    "loggingIn": "登录中...",
+    "logoutBtn": "退出登录",
+    "creditsLabel": "可用额度",
+    "zeroCreditsNotice": "零额度账户可正常查看已有项目及使用直连 BYOK Key；Tora 托管任务需要有效额度。",
+    "connectTora": "连接 Tora",
+    "invalidKey": "API Key 无效或已吊销"
   }
 }

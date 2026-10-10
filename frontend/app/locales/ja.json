@@ -990,5 +990,18 @@
     "noVideo": "動画未生成",
     "status": "状態: {status}",
     "readiness": "エピソード準備状況: {percent}%"
+  },
+  "auth": {
+    "loginTitle": "Tora API ログイン",
+    "loginSubtitle": "Toraアカウントを連携してプロジェクトへのアクセスとクレジット管理を行います。",
+    "keyLabel": "Tora API Key",
+    "keyPlaceholder": "sk-...",
+    "loginBtn": "ログイン",
+    "loggingIn": "ログイン中...",
+    "logoutBtn": "ログアウト",
+    "creditsLabel": "利用可能クレジット",
+    "zeroCreditsNotice": "クレジット0でも既存プロジェクト閲覧および直接BYOKキーの使用が可能です。Toraマネージドタスクにはクレジット残高が必要です。",
+    "connectTora": "Tora 連携",
+    "invalidKey": "APIキーが無効または失効しています"
   }
 }

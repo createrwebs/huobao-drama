@@ -1078,5 +1078,18 @@
     "noVideo": "ยังไม่มีวิดีโอ",
     "status": "สถานะ: {status}",
     "readiness": "ความพร้อมของตอน: {percent}%"
+  },
+  "auth": {
+    "loginTitle": "เข้าสู่ระบบ Tora API",
+    "loginSubtitle": "เชื่อมต่อบัญชี Tora เพื่อเข้าถึงโปรเจกต์และจัดการเครดิตของคุณ",
+    "keyLabel": "Tora API Key",
+    "keyPlaceholder": "sk-...",
+    "loginBtn": "เข้าสู่ระบบ",
+    "loggingIn": "กำลังเข้าสู่ระบบ...",
+    "logoutBtn": "ออกจากระบบ",
+    "creditsLabel": "เครดิตคงเหลือ",
+    "zeroCreditsNotice": "บัญชีที่มีเครดิตศูนย์ยังสามารถเปิดดูงานเดิมและใช้ direct provider key (BYOK) ได้ หากสร้างผ่าน Tora ต้องมีเครดิตคงเหลือ",
+    "connectTora": "เชื่อมต่อ Tora",
+    "invalidKey": "API Key ไม่ถูกต้องหรือถูกเพิกถอน"
   }
 }

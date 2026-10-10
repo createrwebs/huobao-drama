@@ -58,20 +58,35 @@ export function getTextProviderBaseUrl(config: AIConfig) {
   return config.baseUrl
 }
 
+import { isServerMode } from '../middleware/auth.js'
+
 // Agent 多步循环会逐步重复解析同一配置，相同配置只打一次日志避免刷屏
 const lastLoggedActiveConfigKey = new Map<string, string>()
 const lastLoggedConfigByIdKey = new Map<number, string>()
 
-export async function getActiveConfig(serviceType: ServiceType): Promise<AIConfig | null> {
-  const rows = (await db.select().from(schema.aiServiceConfigs)
+export async function getActiveConfig(serviceType: ServiceType, ownerUserId?: number | null): Promise<AIConfig | null> {
+  let rows = (await db.select().from(schema.aiServiceConfigs)
     .where(eq(schema.aiServiceConfigs.serviceType, serviceType))
   )
     .filter(r => r.isActive && isOfficialProvider(serviceType, r.provider))
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0)) // 高优先级优先
+
+  if (isServerMode()) {
+    if (ownerUserId !== undefined && ownerUserId !== null) {
+      rows = rows.filter(r => r.ownerUserId === ownerUserId)
+    } else {
+      rows = rows.filter(r => r.ownerUserId === null)
+    }
+  } else {
+    if (ownerUserId !== undefined && ownerUserId !== null) {
+      rows = rows.filter(r => r.ownerUserId === ownerUserId || r.ownerUserId === null)
+    }
+  }
+
+  rows.sort((a, b) => (b.priority || 0) - (a.priority || 0)) // 高优先级优先
 
   const active = rows[0]
   if (!active) {
-    logTaskWarn('AIConfig', 'active-config-missing', { serviceType })
+    logTaskWarn('AIConfig', 'active-config-missing', { serviceType, ownerUserId })
     return null
   }
 
@@ -96,8 +111,8 @@ export async function getActiveConfig(serviceType: ServiceType): Promise<AIConfi
   }
 }
 
-export async function getTextConfig(): Promise<AIConfig> {
-  const config = await getActiveConfig('text')
+export async function getTextConfig(ownerUserId?: number | null): Promise<AIConfig> {
+  const config = await getActiveConfig('text', ownerUserId)
   if (!config) {
     const lang = getContentLanguage()
     const msg = lang === 'th'
@@ -113,21 +128,45 @@ export async function getTextConfig(): Promise<AIConfig> {
 /**
  * 取某服务类型当前启用且优先级最高的官方配置 ID（创建集时自动锁定用）
  */
-export async function getActiveConfigId(serviceType: ServiceType): Promise<number | null> {
-  const rows = (await db.select().from(schema.aiServiceConfigs)
+export async function getActiveConfigId(serviceType: ServiceType, ownerUserId?: number | null): Promise<number | null> {
+  let rows = (await db.select().from(schema.aiServiceConfigs)
     .where(eq(schema.aiServiceConfigs.serviceType, serviceType))
   )
     .filter(r => r.isActive && isOfficialProvider(serviceType, r.provider))
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+
+  if (isServerMode()) {
+    if (ownerUserId !== undefined && ownerUserId !== null) {
+      rows = rows.filter(r => r.ownerUserId === ownerUserId)
+    } else {
+      rows = rows.filter(r => r.ownerUserId === null)
+    }
+  } else {
+    if (ownerUserId !== undefined && ownerUserId !== null) {
+      rows = rows.filter(r => r.ownerUserId === ownerUserId || r.ownerUserId === null)
+    }
+  }
+
+  rows.sort((a, b) => (b.priority || 0) - (a.priority || 0))
   return rows[0]?.id ?? null
 }
 
-export async function getConfigById(id: number): Promise<AIConfig | null> {
+export async function getConfigById(id: number, ownerUserId?: number | null): Promise<AIConfig | null> {
   const [row] = await db.select().from(schema.aiServiceConfigs)
     .where(eq(schema.aiServiceConfigs.id, id))
   if (!row || !row.isActive) {
     logTaskWarn('AIConfig', 'config-by-id-missing', { configId: id })
     return null
+  }
+  if (isServerMode()) {
+    if (ownerUserId !== undefined && ownerUserId !== null && row.ownerUserId !== ownerUserId) {
+      logTaskWarn('AIConfig', 'config-by-id-owner-mismatch', { configId: id, ownerUserId, configOwner: row.ownerUserId })
+      return null
+    }
+  } else {
+    if (ownerUserId !== undefined && ownerUserId !== null && row.ownerUserId !== null && row.ownerUserId !== ownerUserId) {
+      logTaskWarn('AIConfig', 'config-by-id-owner-mismatch', { configId: id, ownerUserId, configOwner: row.ownerUserId })
+      return null
+    }
   }
   if (!isOfficialProvider(row.serviceType as ServiceType, row.provider)) {
     logTaskWarn('AIConfig', 'config-by-id-unsupported-provider', {

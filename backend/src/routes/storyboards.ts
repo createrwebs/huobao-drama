@@ -1,16 +1,15 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
-import { success, created, now, badRequest } from '../utils/response.js'
+import { success, created, now, badRequest, notFound } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
 import { logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
+import { getEpisodeIfAuthorized, getStoryboardIfAuthorized } from '../utils/ownership.js'
 
 const app = new Hono()
 
 async function syncStoryboardCharacters(storyboardId: number, characterIds: number[]) {
-  await db.delete(schema.storyboardCharacters)
-    .where(eq(schema.storyboardCharacters.storyboardId, storyboardId))
-
+  await db.delete(schema.storyboardCharacters).where(eq(schema.storyboardCharacters.storyboardId, storyboardId))
 
   const uniqueIds = [...new Set((characterIds || []).filter(Boolean))]
   if (!uniqueIds.length) return
@@ -24,14 +23,15 @@ async function syncStoryboardCharacters(storyboardId: number, characterIds: numb
 }
 
 async function getStoryboardCharacterIds(storyboardId: number) {
-  const links = await db.select().from(schema.storyboardCharacters)
+  const links = await db
+    .select()
+    .from(schema.storyboardCharacters)
     .where(eq(schema.storyboardCharacters.storyboardId, storyboardId))
-  return links.map(link => link.characterId)
+  return links.map((link) => link.characterId)
 }
 
 async function syncStoryboardProps(storyboardId: number, propIds: number[]) {
-  await db.delete(schema.storyboardProps)
-    .where(eq(schema.storyboardProps.storyboardId, storyboardId))
+  await db.delete(schema.storyboardProps).where(eq(schema.storyboardProps.storyboardId, storyboardId))
 
   const uniqueIds = [...new Set((propIds || []).filter(Boolean))]
   if (!uniqueIds.length) return
@@ -45,51 +45,65 @@ async function syncStoryboardProps(storyboardId: number, propIds: number[]) {
 }
 
 async function getStoryboardPropIds(storyboardId: number) {
-  const links = await db.select().from(schema.storyboardProps)
-    .where(eq(schema.storyboardProps.storyboardId, storyboardId))
-  return links.map(link => link.propId)
+  const links = await db.select().from(schema.storyboardProps).where(eq(schema.storyboardProps.storyboardId, storyboardId))
+  return links.map((link) => link.propId)
 }
 
-async function validateStoryboardBindings(episodeId: number, sceneId: number | null | undefined, characterIds: number[] | undefined, propIds?: number[] | undefined) {
-  const sceneLinks = await db.select().from(schema.episodeScenes)
-    .where(eq(schema.episodeScenes.episodeId, episodeId))
-  const episodeSceneIds = new Set(sceneLinks.map(link => link.sceneId))
-  const characterLinks = await db.select().from(schema.episodeCharacters)
+async function validateStoryboardBindings(
+  episodeId: number,
+  sceneId: number | null | undefined,
+  characterIds: number[] | undefined,
+  propIds?: number[] | undefined
+) {
+  const sceneLinks = await db.select().from(schema.episodeScenes).where(eq(schema.episodeScenes.episodeId, episodeId))
+  const episodeSceneIds = new Set(sceneLinks.map((link) => link.sceneId))
+  const characterLinks = await db
+    .select()
+    .from(schema.episodeCharacters)
     .where(eq(schema.episodeCharacters.episodeId, episodeId))
-  const episodeCharacterIds = new Set(characterLinks.map(link => link.characterId))
-  const propLinks = await db.select().from(schema.episodeProps)
-    .where(eq(schema.episodeProps.episodeId, episodeId))
-  const episodePropIds = new Set(propLinks.map(link => link.propId))
+  const episodeCharacterIds = new Set(characterLinks.map((link) => link.characterId))
+  const propLinks = await db.select().from(schema.episodeProps).where(eq(schema.episodeProps.episodeId, episodeId))
+  const episodePropIds = new Set(propLinks.map((link) => link.propId))
 
   if (sceneId != null && !episodeSceneIds.has(sceneId)) {
     throw new Error('scene_id 必须来自当前集已关联场景')
   }
 
-  const invalidCharacterIds = (characterIds || []).filter(id => !episodeCharacterIds.has(id))
+  const invalidCharacterIds = (characterIds || []).filter((id) => !episodeCharacterIds.has(id))
   if (invalidCharacterIds.length) {
     throw new Error('character_ids 必须来自当前集已关联角色')
   }
 
-  const invalidPropIds = (propIds || []).filter(id => !episodePropIds.has(id))
+  const invalidPropIds = (propIds || []).filter((id) => !episodePropIds.has(id))
   if (invalidPropIds.length) {
     throw new Error('prop_ids 必须来自当前集已关联道具')
   }
 }
 
-// POST /storyboards
+// POST /storyboards - Create storyboard (guarded by episode/drama ownership)
 app.post('/', async (c) => {
   const body = await c.req.json()
+  const episodeId = Number(body.episode_id)
+  const authorizedEpisode = await getEpisodeIfAuthorized(c, episodeId)
+  if (!authorizedEpisode) return notFound(c, '剧集不存在')
+
   const ts = now()
   logTaskStart('StoryboardAPI', 'create', {
-    episodeId: body.episode_id,
+    episodeId,
     shotNumber: body.storyboard_number || 1,
     sceneId: body.scene_id,
     characterIds: body.character_ids,
   })
   logTaskPayload('StoryboardAPI', 'create body', body)
-  await validateStoryboardBindings(body.episode_id, body.scene_id, body.character_ids, body.prop_ids)
+
+  try {
+    await validateStoryboardBindings(episodeId, body.scene_id, body.character_ids, body.prop_ids)
+  } catch (err: any) {
+    return badRequest(c, err.message)
+  }
+
   const res = await db.insert(schema.storyboards).values({
-    episodeId: body.episode_id,
+    episodeId,
     storyboardNumber: body.storyboard_number || 1,
     title: body.title,
     description: body.description,
@@ -98,10 +112,14 @@ app.post('/', async (c) => {
     createdAt: ts,
     updatedAt: ts,
   })
+
   await syncStoryboardCharacters(getInsertId(res), body.character_ids || [])
   await syncStoryboardProps(getInsertId(res), body.prop_ids || [])
-  const [result] = await db.select().from(schema.storyboards)
+  const [result] = await db
+    .select()
+    .from(schema.storyboards)
     .where(eq(schema.storyboards.id, getInsertId(res)))
+
   logTaskSuccess('StoryboardAPI', 'create', {
     storyboardId: result.id,
     episodeId: result.episodeId,
@@ -114,12 +132,14 @@ app.post('/', async (c) => {
   })
 })
 
-// PUT /storyboards/:id
+// PUT /storyboards/:id - Update storyboard (guarded by episode/drama ownership)
 app.put('/:id', async (c) => {
   const id = Number(c.req.param('id'))
+  const authorized = await getStoryboardIfAuthorized(c, id)
+  if (!authorized) return notFound(c, '镜头不存在')
+
   const body = await c.req.json()
-  const [storyboard] = await db.select().from(schema.storyboards).where(eq(schema.storyboards.id, id))
-  if (!storyboard) return badRequest(c, '镜头不存在')
+  const storyboard = authorized.storyboard
   logTaskStart('StoryboardAPI', 'update', {
     storyboardId: id,
     episodeId: storyboard.episodeId,
@@ -128,12 +148,21 @@ app.put('/:id', async (c) => {
   logTaskPayload('StoryboardAPI', 'update body', body)
 
   const fieldMap: Record<string, string> = {
-    title: 'title', description: 'description', shot_type: 'shotType',
-    angle: 'angle', movement: 'movement', duration: 'duration',
+    title: 'title',
+    description: 'description',
+    shot_type: 'shotType',
+    angle: 'angle',
+    movement: 'movement',
+    duration: 'duration',
     video_prompt: 'videoPrompt',
-    image_prompt: 'imagePrompt', scene_id: 'sceneId', location: 'location',
-    time: 'time', atmosphere: 'atmosphere', result: 'result',
-    bgm_prompt: 'bgmPrompt', sound_effect: 'soundEffect',
+    image_prompt: 'imagePrompt',
+    scene_id: 'sceneId',
+    location: 'location',
+    time: 'time',
+    atmosphere: 'atmosphere',
+    result: 'result',
+    bgm_prompt: 'bgmPrompt',
+    sound_effect: 'soundEffect',
     video_url: 'videoUrl',
     first_frame_image: 'firstFrameImage',
     last_frame_image: 'lastFrameImage',
@@ -145,12 +174,16 @@ app.put('/:id', async (c) => {
     if (snakeKey in body) updates[camelKey] = body[snakeKey]
   }
 
-  await validateStoryboardBindings(
-    storyboard.episodeId,
-    'scene_id' in body ? body.scene_id : storyboard.sceneId,
-    'character_ids' in body ? body.character_ids : await getStoryboardCharacterIds(id),
-    'prop_ids' in body ? body.prop_ids : await getStoryboardPropIds(id),
-  )
+  try {
+    await validateStoryboardBindings(
+      storyboard.episodeId,
+      'scene_id' in body ? body.scene_id : storyboard.sceneId,
+      'character_ids' in body ? body.character_ids : await getStoryboardCharacterIds(id),
+      'prop_ids' in body ? body.prop_ids : await getStoryboardPropIds(id)
+    )
+  } catch (err: any) {
+    return badRequest(c, err.message)
+  }
 
   await db.update(schema.storyboards).set(updates).where(eq(schema.storyboards.id, id))
   if ('character_ids' in body) await syncStoryboardCharacters(id, body.character_ids || [])
@@ -164,9 +197,12 @@ app.put('/:id', async (c) => {
   return success(c)
 })
 
-// DELETE /storyboards/:id
+// DELETE /storyboards/:id - Delete storyboard (guarded by episode/drama ownership)
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
+  const authorized = await getStoryboardIfAuthorized(c, id)
+  if (!authorized) return notFound(c, '镜头不存在')
+
   logTaskStart('StoryboardAPI', 'delete', { storyboardId: id })
   await db.delete(schema.storyboardCharacters).where(eq(schema.storyboardCharacters.storyboardId, id))
   await db.delete(schema.storyboardProps).where(eq(schema.storyboardProps.storyboardId, id))

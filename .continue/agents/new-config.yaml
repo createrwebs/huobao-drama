@@ -1,0 +1,53 @@
+# This is an example configuration file
+# To learn more, see the full config.yaml reference: https://docs.continue.dev/reference
+
+name: Example Config
+version: 1.0.0
+schema: v1
+
+# Define which models can be used
+# https://docs.continue.dev/customization/models
+models:
+  - name: 'ModelFlare Cheapest'
+    provider: openai
+    model: gpt-6.1-sol
+    apiBase: https://modelflare.dev/v1
+    apiKey: sk-nWtB2vE7rj7mgBzIUrek4pyardySaLskFwxIkPOUgai00BbW
+    roles:
+      - chat
+      - edit
+      - apply
+
+  - name: 'OpenRouter Free'
+    provider: openai
+    model: openrouter/free
+    apiBase: https://openrouter.ai/api/v1
+    apiKey: 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
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete
+      - rerank
+  - name: qwen2.5-coder 7b
+    provider: ollama
+    model: qwen2.5-coder:7b
+    roles:
+      - apply
+      - autocomplete
+      - chat
+      - edit
+  - name: Claude 4 Sonnet
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    apiKey: ${{ secrets.ANTHROPIC_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      contextLength: 200000
+      maxTokens: 64000
+    capabilities:
+      - tool_use
+      - image_input

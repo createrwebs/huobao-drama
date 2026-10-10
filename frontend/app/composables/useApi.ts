@@ -1,11 +1,31 @@
-const BASE = '/api/v1'
+const BASE = (typeof window !== 'undefined' && window.location.pathname.startsWith('/storyvdo') ? '/storyvdo' : (process.env.NUXT_APP_BASE_URL || '/storyvdo').replace(/\/$/, '')) + '/api/v1'
+
+function sanitizeForLog(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(sanitizeForLog)
+  const result: Record<string, any> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    if (/key|token|password|secret|credential/i.test(k) && typeof v === 'string') {
+      result[k] = '***REDACTED***'
+    } else if (typeof v === 'object' && v !== null) {
+      result[k] = sanitizeForLog(v)
+    } else {
+      result[k] = v
+    }
+  }
+  return result
+}
 
 async function req<T = any>(method: string, path: string, body?: any): Promise<T> {
-  const opts: RequestInit = { method, headers: { 'Content-Type': 'application/json' } }
+  const opts: RequestInit = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  }
   if (body) opts.body = JSON.stringify(body)
 
   const start = performance.now()
-  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', body || '')
+  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', sanitizeForLog(body) || '')
 
   try {
     const resp = await fetch(`${BASE}${path}`, opts)
@@ -14,6 +34,9 @@ async function req<T = any>(method: string, path: string, body?: any): Promise<T
 
     if (!resp.ok || (json.code && json.code >= 400)) {
       console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888', json.message || '')
+      if (resp.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/')) {
+        window.dispatchEvent(new CustomEvent('huobao:unauthorized'))
+      }
       throw new Error(json.message || json.msg || json.error?.message || `${resp.status}`)
     }
 
@@ -188,3 +211,10 @@ export const serverUpdateAPI = {
   check: () => api.post('/server-update/check'),
   apply: () => api.post('/server-update/apply'),
 }
+
+export const authAPI = {
+  login: (apiKey: string) => api.post<{ user: any; token: any; credits: any; sessionToken?: string }>('/auth/login', { apiKey }),
+  me: () => api.get<{ user: any; token: any; credits: any; isAuthenticated: boolean; isServerMode: boolean }>('/auth/me'),
+  logout: () => api.post<{ message: string }>('/auth/logout'),
+}
+

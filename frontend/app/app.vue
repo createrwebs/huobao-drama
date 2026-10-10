@@ -4,6 +4,7 @@
   </NuxtLayout>
   <Toaster position="top-right" :duration="3000" :theme="resolvedTheme" />
   <MigrateOverlay />
+  <LoginDialog />
 </template>
 
 <script setup lang="ts">
@@ -11,12 +12,15 @@ import { onMounted } from 'vue'
 import { Toaster, toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import MigrateOverlay from '~/components/MigrateOverlay.vue'
+import LoginDialog from '~/components/LoginDialog.vue'
 import { useDesktopBridge } from '~/composables/useDesktopBridge'
 import { useMigrateState } from '~/composables/useMigrateState'
 import { useTheme } from '~/composables/useTheme'
+import { useAuth } from '~/composables/useAuth'
 
 const { t } = useI18n()
 const { resolvedTheme } = useTheme()
+const { checkAuth } = useAuth()
 
 // 响应式文档标题（nuxt.config.ts 的静态 title 仅作 SSR/兜底）
 useHead(() => ({ title: t('app.title') }))
@@ -25,6 +29,7 @@ const bridge = useDesktopBridge()
 const { state, begin, update, end } = useMigrateState()
 
 onMounted(() => {
+  checkAuth()
   if (!bridge) return
   bridge.onMigrateProgress((p) => {
     if (p.phase === 'done') {

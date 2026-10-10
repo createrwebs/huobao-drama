@@ -651,10 +651,10 @@
                     />
                     <img
                       v-else-if="hasSbImg(task.storyboard)"
-                      :src="thumbOf('/' + getSbImgUrl(task.storyboard))"
+                      :src="thumbOf(getSbImgSrc(task.storyboard))"
                       alt=""
                       loading="lazy"
-                      @error="thumbFallback($event, '/' + getSbImgUrl(task.storyboard))"
+                      @error="thumbFallback($event, getSbImgSrc(task.storyboard))"
                     />
                     <div v-else class="video-task-empty">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -801,13 +801,13 @@
                       <div class="sb-frame-preview-box">
                         <template v-if="hasSbImg(selectedSb)">
                           <img
-                            :src="'/' + getSbImgUrl(selectedSb)"
+                            :src="getSbImgSrc(selectedSb)"
                             class="sb-frame-img previewable-image"
                             alt="Storyboard Frame"
-                            @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
+                            @click="openImageViewer(getSbImgSrc(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
                           />
                           <div class="sb-frame-overlay-actions">
-                            <button type="button" class="btn btn-xs" @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)">ดูภาพใหญ่</button>
+                            <button type="button" class="btn btn-xs" @click="openImageViewer(getSbImgSrc(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)">ดูภาพใหญ่</button>
                             <button type="button" class="btn btn-xs" @click="clearSbImage(selectedSb)">ลบภาพ</button>
                           </div>
                         </template>
@@ -928,10 +928,10 @@
                 <div v-else class="video-player-empty">
                   <img
                     v-if="hasSbImg(selectedSb)"
-                    :src="'/' + getSbImgUrl(selectedSb)"
+                    :src="getSbImgSrc(selectedSb)"
                     class="video-player-sb-preview previewable-image"
                     alt="Storyboard Preview"
-                    @click="openImageViewer('/' + getSbImgUrl(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
+                    @click="openImageViewer(getSbImgSrc(selectedSb), `ภาพสตอรี่บอร์ด ช็อต #${selectedVideoTaskNumber}`)"
                   />
                   <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   <div class="video-player-empty-copy">
@@ -2324,8 +2324,10 @@ async function saveAssetDetail() {
 function assetImageSrc(item) {
   const raw = item?.image_url || item?.imageUrl || ''
   if (!raw) return ''
-  if (/^https?:\/\//i.test(raw) || raw.startsWith('/')) return raw
-  return `/${raw}`
+  if (/^https?:\/\//i.test(raw)) return raw
+  const clean = raw.startsWith('/') ? raw.slice(1) : raw
+  if (clean.startsWith('storyvdo/')) return `/${clean}`
+  return `/storyvdo/${clean}`
 }
 
 function assetDetailTitle(detail) {
@@ -2780,10 +2782,13 @@ function genTaskStateClass(status) {
   return 'pending'
 }
 
-// local_path 为站内相对路径补 '/',远端 result_url 原样使用
+// local_path 为站内相对路径补 /storyvdo/,远端 result_url 原样使用
 function genTaskPreviewSrc(url) {
   if (!url) return ''
-  return /^https?:\/\//.test(url) ? url : '/' + url
+  if (/^https?:\/\//.test(url)) return url
+  const clean = url.startsWith('/') ? url.slice(1) : url
+  if (clean.startsWith('storyvdo/')) return `/${clean}`
+  return `/storyvdo/${clean}`
 }
 
 function genTaskDuration(row) {
@@ -3439,6 +3444,7 @@ async function batchPropImages() {
 function getVideoUrl(s) { return s?.video_url || s?.videoUrl || s?.composed_video_url || s?.composedVideoUrl || null }
 function hasVid(s) { return !!getVideoUrl(s) }
 function getSbImgUrl(s) { return s?.first_frame_image || s?.firstFrameImage || s?.composed_image || s?.composedImage || s?.image_url || s?.imageUrl || null }
+function getSbImgSrc(s) { const u = getSbImgUrl(s); return u ? genTaskPreviewSrc(u) : '' }
 function hasSbImg(s) { return !!getSbImgUrl(s) }
 function isPendingSbImage(id) { return pendingSbImageIds.value.includes(id) }
 
