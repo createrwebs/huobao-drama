@@ -54,7 +54,7 @@ export interface VideoProviderAdapter {
 
   buildPollRequest(config: AIConfig, taskId: string): ProviderRequest
 
-  parsePollResponse(result: any): VideoPollResponse
+  parsePollResponse(result: any, config?: AIConfig, taskId?: string): VideoPollResponse
 
   extractVideoUrl(result: any): string | null
 }

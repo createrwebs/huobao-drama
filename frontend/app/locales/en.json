@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Huobao Shorts",
+    "title": "ToraAPI",
     "updateAvailable": "New version v{version} is available. Upgrade in Settings → About."
   },
   "common": {
@@ -275,7 +275,6 @@
       "tabFlow": "Google Flow (Free/Google One)",
       "tabGemini": "Google Gemini (Free)",
       "tabOpenai": "OpenAI (Official)",
-      "tabFiremux": "Firemux Relay (Video)",
       "antigravityQuickDesc": "Connect directly to Google Antigravity models (Gemini 3.8 Flash, Gemini Pro, Claude) via your authenticated account with zero API fees and no prepaid balance required.",
       "applyAntigravity": "Enable Google Antigravity (Free Text)",
       "antigravityStatusConnected": "Google Antigravity connected (Port 8317 ready)",
@@ -289,7 +288,7 @@
       "applyFlowNative": "Method 1: Enable Google Flow (Native - Recommended)",
       "applyFlowProxy": "Method 2: Enable via Local OpenAI Proxy",
       "flowQuickApplied": "Google Flow configs saved and enabled successfully",
-      "flowMethod1Desc": "Method 1 (Native Adapter): Huobao Drama directly runs local engine to generate media, providing highest speed and stability.",
+      "flowMethod1Desc": "Method 1 (Native Adapter): ToraAPI directly runs local engine to generate media, providing highest speed and stability.",
       "flowMethod2Desc": "Method 2 (OpenAI Compatible Bridge): Exposes OpenAI-compatible endpoints at http://127.0.0.1:5679/api/v1/flow-bridge for external tools.",
       "flowAccountsTitle": "Connected Google Flow Accounts",
       "flowActiveBadge": "Active",
@@ -316,11 +315,11 @@
       "applyOpenai": "Apply OpenAI (Text + Image)",
       "openaiApiKeyRequired": "Please enter an OpenAI API Key",
       "openaiQuickApplied": "OpenAI (Text + Image) configs saved successfully",
-      "quickDesc": "Enter a Huobao / Firemux API Key to configure Chinese video models (Wan 3.0 / Seedance / MiniMax) via proxy relay.",
-      "getKey": "Get a Huobao API key",
+      "quickDesc": "Enter a ToraAPI API Key to configure Chinese video models (Wan 3.0 / Seedance / MiniMax) via proxy relay.",
+      "getKey": "Get a ToraAPI API key",
       "regionCn": "China",
       "regionCom": "Global",
-      "applyQuick": "Apply Firemux Config",
+      "applyQuick": "Apply ToraAPI Config",
       "manualTitle": "Manual Templates",
       "manualDesc": "Pick a service type, then fill the recommended `provider / base URL / model` from a template.",
       "activeCount": "{n} active",
@@ -330,8 +329,8 @@
       "setDefault": "Set as default model for this type",
       "noBaseUrl": "Base URL not set",
       "test": "Test",
-      "apiKeyRequired": "Please enter a Huobao API Key",
-      "quickApplied": "Huobao quick config written",
+      "apiKeyRequired": "Please enter a ToraAPI API Key",
+      "quickApplied": "ToraAPI quick config written",
       "defaultModelSwitched": "Default {type} model switched to {model}",
       "meta": {
         "text": "Text capabilities: script rewriting, asset extraction, storyboard breaking",
@@ -347,9 +346,29 @@
         "seedanceOfficial": "Seedance 2.0 Official",
         "minimaxOfficial": "MiniMax H3 Official"
       },
-      "quickServiceText": "Huobao Text",
-      "quickServiceImage": "Huobao Image",
-      "quickServiceVideo": "Huobao Video"
+      "quickServiceText": "ToraAPI Text",
+      "quickServiceImage": "ToraAPI Image",
+      "quickServiceVideo": "ToraAPI Video",
+      "toraKeyLabel": "ToraAPI account key",
+      "toraDesc": "Enter your ToraAPI key to load its live model catalog and separate Chat, Image, and VDO models. Runtime selections use only IDs returned for this key.",
+      "toraLogin": "Sign in to ToraAPI",
+      "toraLogout": "Sign out",
+      "toraChecking": "Checking ToraAPI session…",
+      "toraConnected": "Connected to ToraAPI",
+      "toraDisconnected": "Not connected to ToraAPI",
+      "toraLoggedIn": "ToraAPI signed in and models loaded",
+      "toraLoggedOut": "ToraAPI signed out",
+      "toraLoginFailed": "Sign-in failed. Check your key and try again.",
+      "toraSessionFailed": "Could not check the ToraAPI session.",
+      "toraLogoutFailed": "Could not sign out of ToraAPI.",
+      "toraSecurityNote": "Your key is sent to this server for sign-in and is not saved in the browser.",
+      "toraLocalLimit": "This local integration enables text and image protocols first. Video is not enabled until its API contract is verified. Sign in again after 8 hours or a server restart.",
+      "toraModelsFailed": "Signed in, but models could not be loaded. Refresh the catalog and try again.",
+      "toraSessionExpired": "ToraAPI session expired. Sign in again.",
+      "toraCatalogTitle": "Models available to this API key",
+      "toraCatalogRefresh": "Refresh models",
+      "toraCatalogEmpty": "No models in this category for this key.",
+      "tabTora": "ToraAPI"
     },
     "styles": {
       "title": "Style Presets",
@@ -469,7 +488,7 @@
       "addTitle": "Add {type} Service",
       "sub": "Pick a template first — a sensible `Base URL` and default models will be filled in automatically.",
       "name": "Config name",
-      "namePlaceholder": "e.g. Huobao default image service",
+      "namePlaceholder": "e.g. ToraAPI default image service",
       "provider": "Provider",
       "providerPlaceholder": "Select a provider",
       "priority": "Priority",
@@ -485,7 +504,12 @@
       "reachable": "Endpoint responded",
       "unreachable": "Endpoint failed the test",
       "providerRequired": "Select a provider",
-      "tempInvalid": "Temperature must be a number between 0 and 2"
+      "tempInvalid": "Temperature must be a number between 0 and 2",
+      "fetchModels": "Fetch Models",
+      "fetchModelsSuccess": "Successfully fetched {n} models",
+      "fetchModelsFailed": "Failed to fetch models: {error}",
+      "fetchModelsEmpty": "No available models found or endpoint returned empty",
+      "fetchAndApply": "Fetch Models & Apply"
     },
     "styleDialog": {
       "editTitle": "Edit Style Preset",
@@ -1003,7 +1027,7 @@
     "helpTitle": "Guide",
     "index": {
       "welcome": {
-        "title": "👋 Welcome to Huobao Drama",
+        "title": "👋 Welcome to ToraAPI Drama",
         "desc": "Novel → script → assets → storyboard → video → final cut, all in one place. Configure AI services first, then create your first project."
       },
       "create": {
@@ -1012,13 +1036,13 @@
       },
       "settings": {
         "title": "Step 1 · Configure AI services",
-        "desc": "Every AI feature needs this first. Open Settings and paste a Huobao API Key to set up text/image/video in one click."
+        "desc": "Every AI feature needs this first. Open Settings and paste a ToraAPI API Key to set up text/image/video in one click."
       }
     },
     "settings": {
       "quick": {
         "title": "Fastest setup: Quick Setup",
-        "desc": "Paste a Huobao API Key to write the three recommended configs (text/image/video) at once, with connectivity testing."
+        "desc": "Connect your ToraAPI account. The server securely saves the session and sets up available text, image, and video models."
       },
       "nav": {
         "title": "Everything lives here",

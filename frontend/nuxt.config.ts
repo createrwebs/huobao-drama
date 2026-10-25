@@ -26,13 +26,14 @@ export default defineNuxtConfig({
     },
   },
   app: {
+    baseURL: process.env.NUXT_APP_BASE_URL || '/',
     head: {
       title: '火宝短剧',
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
       link: [
         // v 参数用于 favicon 缓存穿透（浏览器对 favicon 缓存独立于 HTTP 缓存，换图必须 bump）
-        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.png?v=20261002' },
-        { rel: 'shortcut icon', type: 'image/png', href: '/favicon.png?v=20261002' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: `${process.env.NUXT_APP_BASE_URL || '/'}favicon.png?v=20261002` },
+        { rel: 'shortcut icon', type: 'image/png', href: `${process.env.NUXT_APP_BASE_URL || '/'}favicon.png?v=20261002` },
       ],
     },
   },
@@ -46,3 +47,4 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2025-05-15',
 })
+

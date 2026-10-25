@@ -9,10 +9,12 @@ import { now } from '../utils/response.js'
 import { downloadFile, fetchImageAsCompressedDataUrl, generateImageThumb, readImageAsCompressedDataUrl, readImageAsDataUrl, saveBase64Image } from '../utils/storage.js'
 import { extractVideoPoster } from '../utils/video-poster.js'
 import { getImageAdapter, getVideoAdapter } from './adapters/registry'
+import { joinProviderUrl } from './adapters/url.js'
 import type { AIConfig } from './adapters/types'
 import { enrichStoryboardVideoPrompt } from './video-prompts.js'
 import { prepareAssetImagePrompt } from './asset-image-prompt.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess, logTaskWarn, redactUrl } from '../utils/task-logger.js'
+import { extractDurationFromPrompt } from '../utils/duration.js'
 
 type TaskType = 'image' | 'video'
 
@@ -62,12 +64,55 @@ interface GenerateVideoParams {
   configId?: number
 }
 
+function sanitizeModelName(model?: string): string | undefined {
+  if (!model) return undefined
+  const slashIdx = model.indexOf('/')
+  if (slashIdx > 0 && !model.startsWith('models/')) {
+    return model.slice(slashIdx + 1)
+  }
+  return model
+}
+
+export function normalizeImageResolution(size?: string | null): string {
+  if (!size) return '1920x1080'
+  const trimmed = size.trim().toLowerCase()
+
+  if (trimmed === '16:9' || trimmed === '16/9') return '1920x1080'
+  if (trimmed === '9:16' || trimmed === '9/16') return '1080x1920'
+  if (trimmed === '1:1' || trimmed === '1/1') return '1024x1024'
+  if (trimmed === '4:3' || trimmed === '4/3') return '1024x768'
+  if (trimmed === '3:4' || trimmed === '3/4') return '768x1024'
+  if (trimmed === '21:9' || trimmed === '21/9') return '2560x1080'
+
+  if (/^\d+\*\d+$/.test(trimmed)) {
+    return trimmed.replace('*', 'x')
+  }
+
+  if (/^\d+x\d+$/.test(trimmed)) {
+    return trimmed
+  }
+
+  if (trimmed.includes(':') || trimmed.includes('/')) {
+    const sep = trimmed.includes(':') ? ':' : '/'
+    const [w, h] = trimmed.split(sep).map(Number)
+    if (w && h) {
+      if (w === h) return '1024x1024'
+      if (w > h) return `${Math.round((1080 * w) / h)}x1080`
+      return `1080x${Math.round((1080 * h) / w)}`
+    }
+  }
+
+  return '1920x1080'
+}
+
 export async function generateImage(params: GenerateImageParams): Promise<number> {
   // 指定配置（集锁定）可能已停用/删除/厂商收敛，失效时回退到当前启用配置，避免生成被旧引用卡死
   const config = params.configId
     ? (await getConfigById(params.configId)) ?? await getActiveConfig('image')
     : await getActiveConfig('image')
   if (!config) throw new Error('未配置图片模型，请先到「设置」页添加并启用 AI 服务')
+
+  const resolvedSize = normalizeImageResolution(params.size)
 
   const id = await createTask('image', config, {
     storyboardId: params.storyboardId,
@@ -76,9 +121,9 @@ export async function generateImage(params: GenerateImageParams): Promise<number
     characterId: params.characterId,
     propId: params.propId,
     prompt: prepareAssetImagePrompt(params.prompt, params.characterId ? 'character' : params.sceneId ? 'scene' : params.propId ? 'prop' : undefined),
-    model: params.model || config.model,
+    model: sanitizeModelName(params.model) || config.model,
   }, {
-    size: params.size || '1920x1080',
+    size: resolvedSize,
     frameType: params.frameType,
     referenceImages: params.referenceImages,
   })
@@ -107,23 +152,41 @@ export async function generateVideo(params: GenerateVideoParams): Promise<number
     : await getActiveConfig('video')
   if (!config) throw new Error('未配置视频模型，请先到「设置」页添加并启用 AI 服务')
 
+  const promptDuration = extractDurationFromPrompt(params.prompt)
+  const finalDuration = promptDuration || params.duration || 10
+
+  if (params.storyboardId && promptDuration) {
+    await db.update(schema.storyboards)
+      .set({ duration: promptDuration, updatedAt: now() })
+      .where(eq(schema.storyboards.id, params.storyboardId))
+  }
+
+  // 严格参考模式：Storyboard 图片作为参考图(Reference)传入，绝不充当 First Frame
+  let refImgs = Array.isArray(params.referenceImageUrls) ? [...params.referenceImageUrls] : []
+  const firstFrame = params.firstFrameUrl || params.imageUrl
+  const isFirstFrame = params.referenceMode === 'first_frame' && Boolean(firstFrame)
+
+  if (!isFirstFrame && firstFrame && !refImgs.includes(firstFrame)) {
+    refImgs.push(firstFrame)
+  }
+
   const id = await createTask('video', config, {
     storyboardId: params.storyboardId,
     dramaId: params.dramaId,
     prompt: params.prompt,
-    model: params.model || config.model,
+    model: sanitizeModelName(params.model) || config.model,
   }, {
-    referenceMode: params.referenceMode || 'reference',
-    imageUrl: params.imageUrl,
-    firstFrameUrl: params.firstFrameUrl,
-    lastFrameUrl: params.lastFrameUrl,
-    referenceImageUrls: params.referenceImageUrls,
+    referenceMode: isFirstFrame ? 'first_frame' : 'reference',
+    imageUrl: isFirstFrame ? firstFrame : undefined,
+    firstFrameUrl: isFirstFrame ? firstFrame : undefined,
+    lastFrameUrl: isFirstFrame ? params.lastFrameUrl : undefined,
+    referenceImageUrls: refImgs,
     referenceVideoUrls: params.referenceVideoUrls,
     referenceAudioUrls: params.referenceAudioUrls,
     referenceFileUrl: params.referenceFileUrl,
     referenceLinkUrl: params.referenceLinkUrl,
     generateAudio: params.generateAudio === false ? 0 : 1,
-    duration: params.duration,
+    duration: finalDuration,
     aspectRatio: params.aspectRatio,
     // 统一存为项目内部格式，各适配器再转换为官方大小写与枚举。
     resolution: normalizeStoredVideoResolution(params.resolution),
@@ -137,13 +200,13 @@ export async function generateVideo(params: GenerateVideoParams): Promise<number
     provider: config.provider,
     storyboardId: params.storyboardId,
     dramaId: params.dramaId,
-    referenceMode: params.referenceMode || 'reference',
-    duration: params.duration || 5,
+    referenceMode: isFirstFrame ? 'first_frame' : 'reference',
+    duration: finalDuration,
   })
   logTaskPayload('VideoTask', 'enqueue params', {
     id,
     config: { provider: config.provider, model: config.model, baseUrl: config.baseUrl },
-    params,
+    params: { ...params, duration: finalDuration, referenceImageUrls: refImgs },
   })
   return id
 }
@@ -212,13 +275,17 @@ async function processTask(id: number, config: AIConfig) {
       const resolvedReferenceImages = await normalizeReferenceImages(params.referenceImages)
       let effectivePrompt = record.prompt || ''
       if (resolvedReferenceImages.length > 0 && !effectivePrompt.includes('Maintain 100% facial likeness')) {
-        effectivePrompt = `Do not change the reference facial features. Maintain 100% facial likeness, original facial proportions, skin tone, natural lip shape, and eye shape. ${effectivePrompt}`.trim()
+        if (effectivePrompt.toLowerCase().includes('2x3')) {
+          effectivePrompt = `${effectivePrompt} Maintain 100% facial likeness and consistency with reference character and scene.`.trim()
+        } else {
+          effectivePrompt = `Do not change the reference facial features. Maintain 100% facial likeness, original facial proportions, skin tone, natural lip shape, and eye shape. ${effectivePrompt}`.trim()
+        }
       }
       ;({ url, method, headers, body } = adapter.buildGenerateRequest(config, {
         id: record.id,
         model: record.model,
         prompt: effectivePrompt,
-        size: params.size,
+        size: normalizeImageResolution(params.size),
         frameType: params.frameType,
         referenceImages: resolvedReferenceImages.length ? JSON.stringify(resolvedReferenceImages) : null,
       }))
@@ -391,7 +458,7 @@ async function pollTask(record: SysTaskRecord, config: AIConfig, taskId: string)
       const result = await resp.json() as any
 
       // 图片/视频 PollResponse 结构不同，这里统一按 any 取值后按 type 分支
-      const pollResp: any = adapter.parsePollResponse(result)
+      const pollResp: any = (adapter as any).parsePollResponse(result, config, taskId)
 
       if (pollResp.status === 'completed') {
         if (type === 'image') {
@@ -409,10 +476,20 @@ async function pollTask(record: SysTaskRecord, config: AIConfig, taskId: string)
               return
             }
           }
-        } else if (pollResp.videoUrl) {
-          logTaskSuccess(label, 'poll-complete', { id: record.id, taskId, videoUrl: pollResp.videoUrl })
-          await handleVideoComplete(record, pollResp.videoUrl, pollResp.duration)
-          return
+        } else {
+          let videoUrl = pollResp.videoUrl
+          if (!videoUrl && config?.baseUrl && taskId) {
+            videoUrl = joinProviderUrl(config.baseUrl, '/v1', `/videos/${taskId}/content`)
+          }
+          if (videoUrl) {
+            const isProviderUrl = videoUrl.startsWith(config.baseUrl) || videoUrl.includes('/videos/')
+            const downloadHeaders = (isProviderUrl && !videoUrl.includes('aliyuncs.com') && !videoUrl.includes('oss-') && !videoUrl.includes('s3.'))
+              ? { 'Authorization': `Bearer ${config.apiKey}` }
+              : undefined
+            logTaskSuccess(label, 'poll-complete', { id: record.id, taskId, videoUrl })
+            await handleVideoComplete(record, videoUrl, pollResp.duration, downloadHeaders)
+            return
+          }
         }
       }
       if (pollResp.status === 'failed') {
@@ -481,8 +558,13 @@ async function writeBackImageAssets(record: SysTaskRecord, localPath: string) {
   }
 }
 
-async function handleVideoComplete(record: SysTaskRecord, videoUrl: string, duration: number | null | undefined) {
-  const localPath = await downloadFile(videoUrl, 'videos')
+async function handleVideoComplete(
+  record: SysTaskRecord,
+  videoUrl: string,
+  duration: number | null | undefined,
+  headers?: Record<string, string>,
+) {
+  const localPath = await downloadFile(videoUrl, 'videos', headers)
   // 海报帧供列表/封面展示，避免前端为显示首帧缓冲整个视频
   await extractVideoPoster(localPath)
   await db.update(schema.sysTask)

@@ -10,16 +10,27 @@ import { STORAGE_ROOT } from './paths.js'
 /**
  * 下载远程文件到本地存储
  */
-export async function downloadFile(url: string, subDir: string): Promise<string> {
+export async function downloadFile(url: string, subDir: string, headers?: Record<string, string>): Promise<string> {
   const dir = path.join(STORAGE_ROOT, subDir)
   fs.mkdirSync(dir, { recursive: true })
 
-  const ext = getExtFromUrl(url)
+  const resp = await fetch(url, { headers })
+  if (!resp.ok) throw new Error(`Download failed: ${resp.status}`)
+
+  let ext = getExtFromUrl(url)
+  if (ext === '.bin') {
+    const contentType = resp.headers.get('content-type') || ''
+    if (contentType.includes('video/mp4')) ext = '.mp4'
+    else if (contentType.includes('video/webm')) ext = '.webm'
+    else if (contentType.includes('image/png')) ext = '.png'
+    else if (contentType.includes('image/jpeg')) ext = '.jpg'
+    else if (contentType.includes('image/webp')) ext = '.webp'
+    else if (subDir === 'videos') ext = '.mp4'
+    else if (subDir === 'images') ext = '.png'
+  }
+
   const filename = `${uuid()}${ext}`
   const filePath = path.join(dir, filename)
-
-  const resp = await fetch(url)
-  if (!resp.ok) throw new Error(`Download failed: ${resp.status}`)
 
   const buffer = Buffer.from(await resp.arrayBuffer())
   fs.writeFileSync(filePath, buffer)

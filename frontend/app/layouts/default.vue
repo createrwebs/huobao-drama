@@ -5,12 +5,12 @@
       <div class="header-left">
         <button class="brand" @click="navigateTo('/')">
           <div class="brand-mark">
-            <img v-if="showBrandImage" :src="brandLogo" :alt="t('common.title')" class="brand-logo" @error="showBrandImage = false" />
-            <span v-else class="brand-fallback">火</span>
+            <img v-if="showBrandImage" :src="brandLogo" :alt="t('app.title')" class="brand-logo" @error="showBrandImage = false" />
+            <span v-else class="brand-fallback">T</span>
           </div>
           <div class="brand-text">
-            <span class="brand-name">{{ t('common.title') }}</span>
-            <span class="brand-sub">Huobao Shorts</span>
+            <span class="brand-name">{{ t('app.title') }}</span>
+            <span class="brand-sub">AI Short Drama Studio</span>
           </div>
         </button>
       </div>
@@ -146,7 +146,7 @@ watch(locale, checkAiConfigs)
 .brand-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
 .brand-name {
   font-size: 15px; font-weight: 700;
-  /* ChatFire 签名：品牌字标火焰橙渐变 */
+  /* ToraAPI brand wordmark gradient */
   background: var(--accent-gradient);
   -webkit-background-clip: text;
   background-clip: text;

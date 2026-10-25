@@ -29,6 +29,7 @@ import { db, schema } from './db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from './utils/response.js'
 import { DATA_ROOT } from './utils/paths.js'
+import { toraAuth, isToraWebMode } from './services/tora-auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(__dirname, '../..')
@@ -37,7 +38,7 @@ const app = new Hono()
 
 // Middleware
 app.use('*', cors({
-  origin: ['http://localhost:3013', 'http://localhost:5679'],
+  origin: (origin) => origin || '*',
   credentials: true,
 }))
 app.use('*', requestLogger)
@@ -52,6 +53,7 @@ app.get('/api/v1/health', (c) => c.json({
 
 // API routes
 const api = new Hono()
+api.route('/auth', toraAuth.routes)
 api.route('/dramas', dramas)
 api.route('/episodes', episodes)
 api.route('/storyboards', storyboards)
@@ -80,11 +82,17 @@ app.use('/static/*', async (c, next) => {
   await next()
   if (c.res.ok) c.header('Cache-Control', 'public, max-age=31536000, immutable')
 })
-app.use('/static/*', serveStatic({ root: DATA_ROOT }))
+app.use('/static/*', serveStatic({
+  root: DATA_ROOT,
+  rewriteRequestPath: (p) => p.replace(/^\/storyvdo/, ''),
+}))
 
 // Serve frontend (production build) — 桌面版由主进程注入 FRONTEND_DIST（resources/frontend）
 const distPath = process.env.FRONTEND_DIST || path.join(projectRoot, 'frontend', 'dist')
-app.use('*', serveStatic({ root: distPath }))
+app.use('*', serveStatic({
+  root: distPath,
+  rewriteRequestPath: (p) => p.replace(/^\/storyvdo/, ''),
+}))
 app.get('*', serveStatic({ root: distPath, path: 'index.html' }))
 
 const port = Number(process.env.PORT || 5679)
@@ -101,4 +109,8 @@ db.update(schema.sysTask)
   })
   .catch(err => console.error('清理中断任务失败:', err?.message))
 
-serve({ fetch: app.fetch, port })
+const root = new Hono()
+root.route('/storyvdo', app)
+root.route('/', app)
+
+serve({ fetch: root.fetch, port, hostname: isToraWebMode() ? '127.0.0.1' : undefined })

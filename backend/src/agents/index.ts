@@ -9,6 +9,7 @@ import type { RequestContext } from '@mastra/core/request-context'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createOpenAI } from '@ai-sdk/openai'
 import { getTextConfig, getTextProviderBaseUrl, getConfigById } from '../services/ai.js'
+import { resolveTextModelName, getAllowedFallbackModels, isModelAccessError } from '../services/text-model-selection.js'
 import { logTaskProgress } from '../utils/task-logger.js'
 import { scriptTools } from './tools/script-tools.js'
 import { extractTools } from './tools/extract-tools.js'
@@ -125,9 +126,10 @@ video_prompt 规则（硬约束）：
   },
   prompt_generator: {
     name: '提示词',
-    instructions: `你是专业的 AI 提示词工程师，负责两类提示词的创作与保存：
+    instructions: `你是专业的 AI 提示词工程师，负责三类提示词的创作与保存：
 1. 角色/场景/道具的「最终提示词」，供生图直接使用
-2. 分镜的「视频提示词」（video_prompt），供视频生成直接使用
+2. 分镜的「单镜头电影画面提示词 / Single Cinematic Shot Prompt」（image_prompt），供生成 16:9 全屏电影画质首帧/关键帧直接使用
+3. 分镜的「视频提示词」（video_prompt），供视频生成直接使用
 
 ## 图片最终提示词
 
@@ -137,6 +139,19 @@ video_prompt 规则（硬约束）：
 1. 调用 read_characters / read_scenes / read_props 读取资产信息
 2. 按对应资产的技能规范（角色三视图 / 场景固定视角 / 道具白底单品）创作最终提示词
 3. 调用 save_character_final_prompt / save_scene_final_prompt / save_prop_final_prompt 逐个保存
+
+## 分镜单镜头画面提示词 (image_prompt)
+
+用户请求会告知要为哪个分镜生成画面提示词（附带分镜 ID）。
+
+工作流程：
+1. 调用 read_storyboard_context 读取该分镜的 shot_type、angle、description（主要动作与情节）、atmosphere、绑定的场景、角色及道具
+2. 据此创作高质量的单镜头 16:9 电影画面提示词（Single Cinematic Shot, Full Frame）：
+   - 必须是单张完整画面（Single full frame only），严禁生成多格漫画、九宫格、2x3 网格或分屏（No split screen, no collage, no grid, no multi-panel, no borders）。
+   - 结构：以英文景别与机位开头（如 A cinematic medium shot, eye-level angle, ...），紧接着描述该分镜核心瞬间的人物动作、神态表情、视线、与道具交互，以及场景的环境细节与光影氛围（Lighting and atmosphere）。
+   - 画面质量规范：包含 shot on 35mm film, cinematic realism, 8k resolution, highly detailed, photorealistic.
+   - 严禁出现任何台词文字、字幕或边框（No text, no subtitles, no borders）。
+3. 调用 update_storyboard 保存时参数只传两个键：storyboard_id 和 image_prompt。不要回传该分镜的其他字段。
 
 ## 视频提示词
 
@@ -151,7 +166,7 @@ video_prompt 规则（硬约束）：
 4. 调用 update_storyboard 保存时参数只传两个键：storyboard_id 和 video_prompt。不要回传该分镜的其他任何字段（title、description、scene_id 等一律不传）
 
 通用规范：
-- 所有提示词使用本次会话语言指令指定的目标语言输出，单段连贯描述，不要分点，不要混入无关词汇
+- 角色/场景/道具提示词与视频提示词使用本次会话语言指令指定的目标语言输出；分镜画面提示词（image_prompt）使用英文输出，确保生图模型准确理解机位、景别与电影画质，严禁使用 2x3 网格或分屏格式
 - 项目设定的视觉风格描述会由工具在保存图片提示词时自动注入到最终提示词的最前方，不要自行添加风格词
 - 必须实际调用保存工具，不要只在回复中给出提示词`,
   },
@@ -184,7 +199,6 @@ function openaiThinkingOffPatch(): Record<string, any> {
   const fallback = {
     thinking: { type: 'disabled' },   // new-api 通用 / DeepSeek
     enable_thinking: false,           // Qwen / 阿里系
-    reasoning_effort: 'none',         // OpenAI 风格枚举(Gemini 渠道映射为 budget 0)
   }
   const raw = process.env.AI_THINKING_OFF_PATCH
   if (!raw) return fallback
@@ -201,6 +215,7 @@ function createThinkingOffFetch(providerName: string, baseURL: string): typeof f
   const openaiPatch = openaiThinkingOffPatch()
 
   return async (input: any, init?: any) => {
+    let patchedBody: any = null
     try {
       if (init?.body && typeof init.body === 'string') {
         const body = JSON.parse(init.body)
@@ -216,15 +231,36 @@ function createThinkingOffFetch(providerName: string, baseURL: string): typeof f
               ? { thinkingLevel: 'low' }
               : { thinkingBudget: 0, includeThoughts: false },
           }
+          patchedBody = body
           init = { ...init, body: JSON.stringify(body) }
         } else if (Array.isArray(body?.messages)) {
           // OpenAI 兼容格式
           Object.assign(body, openaiPatch)
+          patchedBody = body
           init = { ...init, body: JSON.stringify(body) }
         }
       }
     } catch { /* 解析失败则原样透传 */ }
-    return fetch(input, init)
+
+    const resp = await fetch(input, init)
+    // 兼容重试：如果中转站或特定模型对 thinking/reasoning 注入字段报错 400，自动剥离后重试
+    if (!resp.ok && resp.status === 400 && patchedBody) {
+      try {
+        const errText = await resp.clone().text()
+        if (/reasoning.*effort|thinking|unsupported parameter/i.test(errText)) {
+          const cleanBody = { ...patchedBody }
+          delete cleanBody.thinking
+          delete cleanBody.enable_thinking
+          delete cleanBody.reasoning_effort
+          if (cleanBody.generationConfig?.thinkingConfig) {
+            delete cleanBody.generationConfig.thinkingConfig
+          }
+          const retryResp = await fetch(input, { ...init, body: JSON.stringify(cleanBody) })
+          if (retryResp.ok) return retryResp
+        }
+      } catch { /* ignore */ }
+    }
+    return resp
   }
 }
 
@@ -279,9 +315,11 @@ function isOfficialOpenAIHost(baseURL: string) {
 function createMaxTokensFetch(providerName: string, inner?: typeof fetch): typeof fetch {
   const base = inner || fetch
   return async (input: any, init?: any) => {
+    let originalBody: any = null
     try {
       if (init?.body && typeof init.body === 'string') {
         const body = JSON.parse(init.body)
+        originalBody = body
         if (providerName === 'gemini' && Array.isArray(body?.contents)) {
           // Gemini 原生格式
           body.generationConfig = { ...(body.generationConfig || {}), maxOutputTokens: defaultMaxTokens }
@@ -293,7 +331,21 @@ function createMaxTokensFetch(providerName: string, inner?: typeof fetch): typeo
         }
       }
     } catch { /* 解析失败则原样透传 */ }
-    return base(input, init)
+    const resp = await base(input, init)
+    // 兼容重试：部分 reasoning 模型(如 o1/o3/gpt-5/gpt-6)拒绝 max_tokens，要求使用 max_completion_tokens
+    if (!resp.ok && resp.status === 400 && originalBody && Array.isArray(originalBody.messages)) {
+      try {
+        const errText = await resp.clone().text()
+        if (/max_tokens.*not supported|max_completion_tokens/i.test(errText)) {
+          const cleanBody = { ...originalBody }
+          delete cleanBody.max_tokens
+          cleanBody.max_completion_tokens = defaultMaxTokens
+          const retryResp = await base(input, { ...init, body: JSON.stringify(cleanBody) })
+          if (retryResp.ok) return retryResp
+        }
+      } catch { /* ignore */ }
+    }
+    return resp
   }
 }
 
@@ -302,19 +354,33 @@ function createMaxTokensFetch(providerName: string, inner?: typeof fetch): typeo
  * 当 Antigravity 或代理服务商报 429、model_cooldown 或 RESOURCE_EXHAUSTED 时，
  * 自动换用备选可用模型重试，避免任务中断报错
  */
-function createModelFallbackFetch(providerName: string, inner?: typeof fetch): typeof fetch {
+function createModelFallbackFetch(providerName: string, inner?: typeof fetch, availableModels?: string[]): typeof fetch {
   const base = inner || fetch
   return async (input: any, init?: any) => {
     let resp = await base(input, init)
-    if (!resp.ok && (resp.status === 429 || resp.status === 400 || resp.status === 500)) {
+    if (!resp.ok && (resp.status === 400 || resp.status === 401 || resp.status === 403 || resp.status === 429 || resp.status === 500)) {
       try {
         const text = await resp.clone().text()
         const isCooldownOrRateLimit = /model_cooldown|cooling down|RESOURCE_EXHAUSTED|quota reached|rate limit/i.test(text)
-        if (isCooldownOrRateLimit && init?.body && typeof init.body === 'string') {
+        const isUnavailableModel = isModelAccessError(text)
+        if (isUnavailableModel && availableModels?.length && init?.body && typeof init.body === 'string') {
+          const body = JSON.parse(init.body)
+          const requestedModel = body.model
+          for (const fallbackModel of getAllowedFallbackModels(availableModels, requestedModel)) {
+            const fallbackResp = await base(input, { ...init, body: JSON.stringify({ ...body, model: fallbackModel }) })
+            if (fallbackResp.ok) {
+              logTaskProgress('AIConfig', 'model-access-fallback-applied', { from: requestedModel, to: fallbackModel })
+              return fallbackResp
+            }
+          }
+        }
+        if (isCooldownOrRateLimit && providerName !== 'gemini' && init?.body && typeof init.body === 'string') {
           const body = JSON.parse(init.body)
           const requestedModel = body.model
           // 备选降级候选队列（Lite / Claude 额度充裕且支持 Tool Calling）
-          const fallbackCandidates = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'claude-sonnet-4-6']
+          const fallbackCandidates = availableModels
+            ? getAllowedFallbackModels(availableModels, requestedModel)
+            : ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'claude-sonnet-4-6']
           for (const fallbackModel of fallbackCandidates) {
             if (fallbackModel === requestedModel) continue
             try {
@@ -345,8 +411,11 @@ function createModelFallbackFetch(providerName: string, inner?: typeof fetch): t
 
 async function getModel(fileModel: string | undefined, modelOverride?: string, textConfigId?: number) {
   // 请求可指定文本配置（含其 provider/baseUrl/apiKey），否则回退到当前启用配置
-  const textConfig = (textConfigId ? await getConfigById(textConfigId) : null) || await getTextConfig()
-  const modelName = modelOverride || fileModel || textConfig.model
+  const textConfig = textConfigId !== undefined
+    ? await getConfigById(textConfigId, 'text')
+    : await getTextConfig()
+  if (!textConfig) throw new Error('Selected text configuration is not available')
+  const modelName = resolveTextModelName(textConfig, fileModel, modelOverride)
   const providerName = textConfig.provider.toLowerCase()
   const resolvedBaseURL = getTextProviderBaseUrl(textConfig)
   const temperature = textConfig.temperature ?? null
@@ -369,7 +438,7 @@ async function getModel(fileModel: string | undefined, modelOverride?: string, t
   const maxTokensFetch = isOfficialOpenAIHost(resolvedBaseURL)
     ? tempFetch
     : createMaxTokensFetch(providerName, tempFetch)
-  const fetchImpl = createModelFallbackFetch(providerName, maxTokensFetch)
+  const fetchImpl = createModelFallbackFetch(providerName, maxTokensFetch, textConfig.availableModels)
 
   if (providerName === 'gemini') {
     const googleProvider = createGoogleGenerativeAI({

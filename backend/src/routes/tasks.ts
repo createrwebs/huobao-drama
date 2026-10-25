@@ -6,6 +6,7 @@ import { generateImage, generateVideo } from '../services/generation.js'
 import { getActiveConfig, getConfigById } from '../services/ai.js'
 import { getDramaStylePrompt, applyDramaStyleToPrompt } from '../services/style-preset.js'
 import { logTaskError, logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
+import { extractDurationFromPrompt } from '../utils/duration.js'
 
 const app = new Hono()
 
@@ -178,29 +179,38 @@ app.post('/', async (c) => {
         frameType: body.frame_type,
         configId,
       })
-      : await generateVideo({
-        storyboardId: body.storyboard_id,
-        dramaId: body.drama_id,
-        prompt: videoPrompt,
-        model: videoBody!.model,
-        referenceMode: videoBody!.reference_mode || 'reference',
-        imageUrl: videoBody!.image_url,
-        firstFrameUrl: videoBody!.first_frame_url,
-        lastFrameUrl: videoBody!.last_frame_url,
-        referenceImageUrls: videoBody!.reference_image_urls,
-        referenceVideoUrls: videoBody!.reference_video_urls,
-        referenceAudioUrls: videoBody!.reference_audio_urls,
-        referenceFileUrl: videoBody!.file_url,
-        referenceLinkUrl: videoBody!.link_url,
-        generateAudio: videoBody!.generate_audio,
-        duration: videoBody!.duration,
-        aspectRatio: videoBody!.aspect_ratio,
-        resolution: episodeResolution || videoBody!.resolution,
-        seed: videoBody!.seed,
-        promptExtend: videoBody!.prompt_extend,
-        watermark: videoBody!.watermark,
-        configId,
-      })
+      : await (async () => {
+        const promptDuration = extractDurationFromPrompt(videoPrompt)
+        const finalDuration = promptDuration || videoBody!.duration || 10
+        if (body.storyboard_id && promptDuration) {
+          await db.update(schema.storyboards)
+            .set({ duration: promptDuration, updatedAt: new Date().toISOString() })
+            .where(eq(schema.storyboards.id, Number(body.storyboard_id)))
+        }
+        return generateVideo({
+          storyboardId: body.storyboard_id,
+          dramaId: body.drama_id,
+          prompt: videoPrompt,
+          model: videoBody!.model,
+          referenceMode: videoBody!.reference_mode || 'reference',
+          imageUrl: videoBody!.image_url,
+          firstFrameUrl: videoBody!.first_frame_url,
+          lastFrameUrl: videoBody!.last_frame_url,
+          referenceImageUrls: videoBody!.reference_image_urls,
+          referenceVideoUrls: videoBody!.reference_video_urls,
+          referenceAudioUrls: videoBody!.reference_audio_urls,
+          referenceFileUrl: videoBody!.file_url,
+          referenceLinkUrl: videoBody!.link_url,
+          generateAudio: videoBody!.generate_audio,
+          duration: finalDuration,
+          aspectRatio: videoBody!.aspect_ratio,
+          resolution: episodeResolution || videoBody!.resolution,
+          seed: videoBody!.seed,
+          promptExtend: videoBody!.prompt_extend,
+          watermark: videoBody!.watermark,
+          configId,
+        })
+      })()
 
     const [record] = await db.select().from(schema.sysTask)
       .where(eq(schema.sysTask.id, id))

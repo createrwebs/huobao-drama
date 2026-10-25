@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono'
+import { redactRequestBody } from './redact-request.js'
 
 const colors = {
   reset: '\x1b[0m',
@@ -37,7 +38,8 @@ export const requestLogger: MiddlewareHandler = async (c, next) => {
       const clone = c.req.raw.clone()
       const text = await clone.text()
       if (text) {
-        const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text
+        const redacted = redactRequestBody(text)
+        const truncated = redacted.length > 500 ? redacted.slice(0, 500) + '...' : redacted
         bodyInfo = `\n  ${colors.dim}body: ${truncated}${colors.reset}`
       }
     } catch {}

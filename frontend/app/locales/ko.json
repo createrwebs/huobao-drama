@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "화바오 숏드라마",
+    "title": "ToraAPI",
     "updateAvailable": "새 버전 v{version}을 사용할 수 있습니다. 「설정 → 업데이트 정보」에서 업그레이드하세요"
   },
   "common": {
@@ -274,7 +274,6 @@
       "tabFlow": "Google Flow (무료/Google One)",
       "tabGemini": "Google Gemini (공식 무료)",
       "tabOpenai": "OpenAI (공식)",
-      "tabFiremux": "Firemux 중계 (영상)",
       "flowQuickDesc": "Chrome에서 동기화된 Google One / Flow 세션을 사용하여 이미지(Imagen 3) 및 영상(Veo)을 무료로 직접 생성합니다.",
       "flowStatusConnected": "Google Flow 연결됨 ({accounts}개 계정, 남은 크레딧: {credits})",
       "flowStatusChecking": "Google Flow 연결 확인 중...",
@@ -282,7 +281,7 @@
       "applyFlowNative": "방법 1: 내장 Google Flow 활성화 (네이티브 추천)",
       "applyFlowProxy": "방법 2: 로컬 OpenAI 프록시로 활성화",
       "flowQuickApplied": "Google Flow 설정이 성공적으로 저장되고 활성화되었습니다",
-      "flowMethod1Desc": "방법 1 (네이티브): Huobao Drama가 로컬 엔진을 직접 호출하여 미디어를 생성합니다(최고 속도 및 안정성).",
+      "flowMethod1Desc": "방법 1 (네이티브): ToraAPI가 로컬 엔진을 직접 호출하여 미디어를 생성합니다(최고 속도 및 안정성).",
       "flowMethod2Desc": "방법 2 (OpenAI 호환 브리지): http://127.0.0.1:5679/api/v1/flow-bridge에서 표준 인터페이스를 제공합니다.",
       "geminiQuickDesc": "Google AI Studio 공식 Gemini API Key(무료 티어 지원)를 사용하여 텍스트 및 이미지 생성 모델을 한 번에 설정합니다.",
       "getGeminiKey": "Google에서 무료 Key 발급",
@@ -294,11 +293,11 @@
       "applyOpenai": "OpenAI 설정 적용 (텍스트 + 이미지)",
       "openaiApiKeyRequired": "OpenAI API Key를 입력해주세요",
       "openaiQuickApplied": "OpenAI 설정이 성공적으로 저장되었습니다",
-      "quickDesc": "Huobao / Firemux API Key를 입력하여 중국 영상 모델(Wan 3.0 / Seedance / MiniMax) 중계 서비스를 설정합니다.",
-      "getKey": "Huobao API Key 받기",
+      "quickDesc": "ToraAPI API Key를 입력하여 중국 영상 모델(Wan 3.0 / Seedance / MiniMax) 중계 서비스를 설정합니다.",
+      "getKey": "ToraAPI API Key 받기",
       "regionCn": "중국",
       "regionCom": "해외",
-      "applyQuick": "Firemux 설정 작성",
+      "applyQuick": "ToraAPI 설정 작성",
       "manualTitle": "수동 템플릿",
       "manualDesc": "서비스 유형을 선택하면 추천 `provider / base URL / model`이 템플릿에서 입력됩니다.",
       "activeCount": "{n}개 활성화됨",
@@ -308,8 +307,8 @@
       "setDefault": "이 유형의 기본 모델로 설정",
       "noBaseUrl": "Base URL 미설정",
       "test": "테스트",
-      "apiKeyRequired": "Huobao API Key를 입력하세요",
-      "quickApplied": "화바오 빠른 설정이 작성되었습니다",
+      "apiKeyRequired": "ToraAPI API Key를 입력하세요",
+      "quickApplied": "ToraAPI 빠른 설정이 작성되었습니다",
       "defaultModelSwitched": "기본 {type} 모델이 {model}(으)로 변경되었습니다",
       "presets": {
         "flowOfficial": "Google Flow (무료/Google One)",
@@ -323,7 +322,27 @@
         "text": "대본 재작성, 캐릭터·장면 추출, 스토리보드 분해 등 Agent 텍스트 기능",
         "image": "캐릭터 이미지, 장면 이미지, 샷 이미지 등 정지 이미지 생성",
         "video": "샷 영상 직접 생성(기본 Seedance 2.0)"
-      }
+      },
+      "toraKeyLabel": "ToraAPI 계정 키",
+      "toraDesc": "ToraAPI 키의 실시간 모델 목록을 조회하여 Chat, Image, VDO로 분류합니다. 반환된 모델 ID만 사용합니다.",
+      "toraLogin": "ToraAPI 로그인",
+      "toraLogout": "로그아웃",
+      "toraChecking": "ToraAPI 세션 확인 중…",
+      "toraConnected": "ToraAPI 연결됨",
+      "toraDisconnected": "ToraAPI 연결 안 됨",
+      "toraLoggedIn": "ToraAPI에 로그인하고 모델을 불러왔습니다",
+      "toraLoggedOut": "로그아웃했습니다",
+      "toraLoginFailed": "로그인에 실패했습니다. 키를 확인하고 다시 시도하세요.",
+      "toraSessionFailed": "ToraAPI 세션을 확인할 수 없습니다.",
+      "toraLogoutFailed": "ToraAPI에서 로그아웃할 수 없습니다.",
+      "toraSecurityNote": "로그인 키는 서버로 전송되며 브라우저에 저장되지 않습니다.",
+      "toraLocalLimit": "로컬 연동에서는 텍스트와 이미지 프로토콜을 먼저 활성화합니다. 동영상은 API 계약 검증 후 지원합니다. 8시간 후 또는 서버 재시작 후 다시 로그인하세요.",
+      "toraModelsFailed": "로그인했지만 모델을 불러오지 못했습니다. 목록을 새로고침하세요.",
+      "toraSessionExpired": "ToraAPI 세션이 만료되었습니다. 다시 로그인하세요.",
+      "toraCatalogTitle": "이 API 키로 사용할 수 있는 모델",
+      "toraCatalogRefresh": "모델 새로고침",
+      "toraCatalogEmpty": "이 유형의 모델이 없습니다.",
+      "tabTora": "ToraAPI"
     },
     "styles": {
       "title": "스타일 프리셋",
@@ -421,7 +440,7 @@
       "addTitle": "{type} 서비스 추가",
       "sub": "먼저 템플릿을 선택하면 적절한 `Base URL`과 기본 모델이 자동으로 입력됩니다.",
       "name": "설정 이름",
-      "namePlaceholder": "예: 화바오 기본 이미지 서비스",
+      "namePlaceholder": "예: ToraAPI 기본 이미지 서비스",
       "provider": "제공업체",
       "providerPlaceholder": "제공업체 선택",
       "priority": "우선순위",
@@ -915,7 +934,7 @@
     "helpTitle": "가이드",
     "index": {
       "welcome": {
-        "title": "👋 휘바오 숏드라마에 오신 것을 환영합니다",
+        "title": "👋 ToraAPI 숏드라마에 오신 것을 환영합니다",
         "desc": "소설 → 대본 → 에셋 → 스토리보드 → 영상 → 완성, 모두 한곳에서. 먼저 AI 서비스를 설정하고 첫 프로젝트를 만들어 보세요."
       },
       "create": {
@@ -924,13 +943,13 @@
       },
       "settings": {
         "title": "1단계 · AI 서비스 설정",
-        "desc": "모든 AI 기능에 사전 설정이 필요합니다. 설정 페이지에서 Huobao API 키를 붙여넣어 텍스트/이미지/영상을 한 번에 설정하세요."
+        "desc": "모든 AI 기능에 사전 설정이 필요합니다. 설정 페이지에서 ToraAPI API 키를 붙여넣어 텍스트/이미지/영상을 한 번에 설정하세요."
       }
     },
     "settings": {
       "quick": {
         "title": "가장 빠른 설정: 빠른 설정",
-        "desc": "Huobao API 키를 붙여넣으면 추천 설정 3종(텍스트/이미지/영상)을 한 번에 등록합니다. 연결 테스트 지원."
+        "desc": "ToraAPI 계정에 연결합니다. 서버가 세션을 안전하게 저장하고 사용 가능한 텍스트·이미지·영상 모델을 설정합니다."
       },
       "nav": {
         "title": "모든 설정이 여기에",

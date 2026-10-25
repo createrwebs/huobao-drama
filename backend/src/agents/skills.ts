@@ -44,6 +44,7 @@ const AGENT_SKILL_MAP: Record<string, string[]> = {
     'prompt-generator/character-prompt',
     'prompt-generator/scene-prompt',
     'prompt-generator/prop-prompt',
+    'prompt-generator/storyboard-prompt',
     'prompt-generator/video-prompt',
   ],
 }

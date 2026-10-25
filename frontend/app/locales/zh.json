@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "火宝短剧",
+    "title": "ToraAPI",
     "updateAvailable": "发现新版本 v{version}，可在「设置 → 关于更新」中升级"
   },
   "common": {
@@ -275,7 +275,6 @@
       "tabFlow": "Google Flow (Google One 免费)",
       "tabGemini": "Google Gemini (官方免费)",
       "tabOpenai": "OpenAI (官方)",
-      "tabFiremux": "火宝中转 (视频)",
       "antigravityQuickDesc": "通过本地登录的 Google Antigravity 账号直接使用 Gemini 3.8 Flash、Gemini Pro、Claude 等文本模型，完全免费且无需预付费 API Key。",
       "applyAntigravity": "启用 Google Antigravity (免费文本)",
       "antigravityStatusConnected": "Google Antigravity 已连接 (端口 8317 就绪)",
@@ -289,7 +288,7 @@
       "applyFlowNative": "方式 1: 启用内置 Google Flow (推荐原生)",
       "applyFlowProxy": "方式 2: 启用本地 OpenAI 代理模式",
       "flowQuickApplied": "Google Flow 配置已成功写入并启用",
-      "flowMethod1Desc": "方式 1 (原生适配器): 由 Huobao Drama 直接调度本地 Engine 产出媒体，速度与稳定性最高。",
+      "flowMethod1Desc": "方式 1 (原生适配器): 由 ToraAPI 直接调度本地 Engine 产出媒体，速度与稳定性最高。",
       "flowMethod2Desc": "方式 2 (OpenAI 兼容网关): 在 http://127.0.0.1:5679/api/v1/flow-bridge 开放标准接口，供各类客户端调用。",
       "flowAccountsTitle": "已连接的 Google Flow 账号",
       "flowActiveBadge": "使用中",
@@ -316,11 +315,11 @@
       "applyOpenai": "写入 OpenAI 配置 (文本 + 生图)",
       "openaiApiKeyRequired": "请输入 OpenAI API Key",
       "openaiQuickApplied": "OpenAI 配置已成功写入",
-      "quickDesc": "输入 Huobao / Firemux API Key，一键接入国产视频模型（Wan 3.0 / Seedance / MiniMax）中转服务。",
-      "getKey": "前往火宝获取 Key",
+      "quickDesc": "输入 ToraAPI API Key，一键接入国产视频模型（Wan 3.0 / Seedance / MiniMax）中转服务。",
+      "getKey": "前往ToraAPI获取 Key",
       "regionCn": "国内",
       "regionCom": "国外",
-      "applyQuick": "写入火宝配置",
+      "applyQuick": "写入ToraAPI配置",
       "manualTitle": "手动模板",
       "manualDesc": "选择服务类型后，直接用模板填充推荐的 `provider / base URL / model`。",
       "activeCount": "{n} 已启用",
@@ -330,8 +329,8 @@
       "setDefault": "设为该类型默认模型",
       "noBaseUrl": "未设置 Base URL",
       "test": "测试",
-      "apiKeyRequired": "请填写 Huobao API Key",
-      "quickApplied": "火宝快捷配置已写入",
+      "apiKeyRequired": "请填写 ToraAPI API Key",
+      "quickApplied": "ToraAPI快捷配置已写入",
       "defaultModelSwitched": "默认{type}模型已切换为 {model}",
       "meta": {
         "text": "剧本改写、角色场景提取、分镜拆解等 Agent 文本能力",
@@ -347,9 +346,29 @@
         "seedanceOfficial": "Seedance 2.0 官方",
         "minimaxOfficial": "MiniMax H3 官方"
       },
-      "quickServiceText": "火宝文本服务",
-      "quickServiceImage": "火宝图片服务",
-      "quickServiceVideo": "火宝视频服务"
+      "quickServiceText": "ToraAPI文本服务",
+      "quickServiceImage": "ToraAPI图片服务",
+      "quickServiceVideo": "ToraAPI视频服务",
+      "toraKeyLabel": "ToraAPI 账户密钥",
+      "toraDesc": "输入 ToraAPI key 读取实时模型列表，分别显示 Chat、Image、VDO。运行时仅使用该密钥返回的模型 ID。",
+      "toraLogin": "登录 ToraAPI",
+      "toraLogout": "退出登录",
+      "toraChecking": "正在检查 ToraAPI 会话…",
+      "toraConnected": "已连接 ToraAPI",
+      "toraDisconnected": "尚未连接 ToraAPI",
+      "toraLoggedIn": "已登录 ToraAPI 并加载模型",
+      "toraLoggedOut": "已退出 ToraAPI",
+      "toraLoginFailed": "登录失败，请检查密钥后重试。",
+      "toraSessionFailed": "无法检查 ToraAPI 会话。",
+      "toraLogoutFailed": "无法退出 ToraAPI。",
+      "toraSecurityNote": "密钥将发送至此服务器进行登录，不会保存在浏览器中。",
+      "toraLocalLimit": "本地集成先启用文本和图片协议。视频 API 合约验证完成前不启用视频。8 小时后或服务器重启后需重新登录。",
+      "toraModelsFailed": "已登录，但模型加载失败。请刷新模型列表后重试。",
+      "toraSessionExpired": "ToraAPI 会话已过期，请重新登录。",
+      "toraCatalogTitle": "此 API key 可用的模型",
+      "toraCatalogRefresh": "刷新模型",
+      "toraCatalogEmpty": "此密钥没有该类型的模型。",
+      "tabTora": "ToraAPI"
     },
     "styles": {
       "title": "风格预设",
@@ -469,7 +488,7 @@
       "addTitle": "添加{type}服务",
       "sub": "推荐先选择模板，系统会自动填入更合理的 `Base URL` 与默认模型。",
       "name": "配置名称",
-      "namePlaceholder": "如 火宝默认图像服务",
+      "namePlaceholder": "如 ToraAPI默认图像服务",
       "provider": "服务商",
       "providerPlaceholder": "选择服务商",
       "priority": "优先级",
@@ -485,7 +504,12 @@
       "reachable": "端点已响应",
       "unreachable": "端点未通过测试",
       "providerRequired": "选择服务商",
-      "tempInvalid": "Temperature 需为 0~2 的数字"
+      "tempInvalid": "Temperature 需为 0~2 的数字",
+      "fetchModels": "获取模型列表",
+      "fetchModelsSuccess": "成功获取 {n} 个模型",
+      "fetchModelsFailed": "获取模型列表失败: {error}",
+      "fetchModelsEmpty": "未获取到可用模型或接口未返回",
+      "fetchAndApply": "获取模型并应用"
     },
     "styleDialog": {
       "editTitle": "编辑风格预设",
@@ -1003,7 +1027,7 @@
     "helpTitle": "使用引导",
     "index": {
       "welcome": {
-        "title": "👋 欢迎使用火宝短剧",
+        "title": "👋 欢迎使用ToraAPI短剧",
         "desc": "小说 → 剧本 → 资产 → 分镜 → 视频 → 成片，一站式 AI 短剧制作。先配置 AI 服务，再创建第一个项目。"
       },
       "create": {
@@ -1012,13 +1036,13 @@
       },
       "settings": {
         "title": "第 1 步 · 配置 AI 服务",
-        "desc": "所有 AI 功能都要先配置。点这里进「设置」页，粘贴 Huobao API Key 一键完成文本/图片/视频三条配置。"
+        "desc": "所有 AI 功能都要先配置。点这里进「设置」页，粘贴 ToraAPI API Key 一键完成文本/图片/视频三条配置。"
       }
     },
     "settings": {
       "quick": {
         "title": "最快上手：快捷配置",
-        "desc": "粘贴 Huobao API Key，一键写入文本、图片、视频三条推荐配置，支持连通性测试。"
+        "desc": "连接 ToraAPI 账户。服务器将安全保存会话并配置可用的文本、图片和视频模型。"
       },
       "nav": {
         "title": "全部配置都在这",

@@ -82,51 +82,95 @@
             <div class="quick-card-head">
               <div class="setup-title">{{ t('settings.ai.quickTitle') }}</div>
               <div class="lang-picker ml-auto">
-                <button
-                  type="button"
-                  :class="['lang-option', { on: quickProviderTab === 'antigravity' }]"
+                <button type="button" :class="['lang-option', { on: quickProviderTab === 'tora' }]" @click="quickProviderTab = 'tora'">
+                  {{ t('settings.ai.tabTora') || 'ToraAPI' }}
+                </button>
+                <button type="button" :class="['lang-option', { on: quickProviderTab === 'antigravity' }]"
                   @click="quickProviderTab = 'antigravity'"
                 >
                   <img v-if="providerIconUrl('antigravity')" :src="providerIconUrl('antigravity')" class="quick-tab-icon" alt="" />
                   {{ t('settings.ai.tabAntigravity') }}
                 </button>
-                <button
-                  type="button"
-                  :class="['lang-option', { on: quickProviderTab === 'flow' }]"
+                <button type="button" :class="['lang-option', { on: quickProviderTab === 'flow' }]"
                   @click="quickProviderTab = 'flow'"
                 >
                   <img v-if="providerIconUrl('google_flow')" :src="providerIconUrl('google_flow')" class="quick-tab-icon" alt="" />
                   {{ t('settings.ai.tabFlow') }}
                 </button>
-                <button
-                  type="button"
-                  :class="['lang-option', { on: quickProviderTab === 'gemini' }]"
+                <button type="button" :class="['lang-option', { on: quickProviderTab === 'gemini' }]"
                   @click="quickProviderTab = 'gemini'"
                 >
                   <img v-if="providerIconUrl('gemini')" :src="providerIconUrl('gemini')" class="quick-tab-icon" alt="" />
                   {{ t('settings.ai.tabGemini') }}
                 </button>
-                <button
-                  type="button"
-                  :class="['lang-option', { on: quickProviderTab === 'openai' }]"
+                <button type="button" :class="['lang-option', { on: quickProviderTab === 'openai' }]"
                   @click="quickProviderTab = 'openai'"
                 >
                   <img v-if="providerIconUrl('openai')" :src="providerIconUrl('openai')" class="quick-tab-icon" alt="" />
                   {{ t('settings.ai.tabOpenai') }}
                 </button>
-                <button
-                  type="button"
-                  :class="['lang-option', { on: quickProviderTab === 'firemux' }]"
-                  @click="quickProviderTab = 'firemux'"
-                >
-                  <img v-if="providerIconUrl('firemux')" :src="providerIconUrl('firemux')" class="quick-tab-icon" alt="" />
-                  {{ t('settings.ai.tabFiremux') }}
+              </div>
+            </div>
+
+            <!-- ToraAPI Quick Setup: OpenAI/New-API Gateway (Primary) -->
+            <div v-if="quickProviderTab === 'tora'">
+              <p class="setup-desc">
+                {{ t('settings.ai.toraDesc') || 'ตั้งค่าด่วนสำหรับ ToraAPI Gateway (https://www.toraapi.com) เพื่อใช้โมเดลสร้างข้อความ รูปภาพ และวิดีโอ' }}
+              </p>
+
+              <!-- Credit Balance Banner -->
+              <div class="flow-status-banner mb-3 p-3 rounded border flex items-center justify-between" :style="toraCredit !== null ? 'border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.08);' : 'border-color: rgba(100, 116, 139, 0.3); background: rgba(100, 116, 139, 0.08);'">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full" :style="toraCredit !== null ? 'background: #10b981;' : 'background: #94a3b8;'"></span>
+                  <span v-if="toraCreditChecking" class="text-xs">กำลังตรวจสอบยอดเครดิต...</span>
+                  <span v-else-if="toraCredit !== null" class="text-xs font-medium">
+                    เครดิตคงเหลือ: <strong class="font-mono text-sm" style="color: #10b981;">{{ toraCredit >= 100000000 ? 'ไม่จำกัด (Unlimited)' : '$' + toraCredit.toFixed(2) + ' USD' }}</strong>
+                    
+                  </span>
+                  <span v-else class="text-xs text-muted">
+                    ยังไม่ได้ตรวจสอบยอดเครดิต (กรุณาระบุ Key แล้วกดตรวจสอบหรือดึงโมเดล)
+                  </span>
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs" :disabled="toraCreditChecking" @click="checkToraCredit()">
+                  <RefreshCw :size="12" :class="{ 'animate-spin': toraCreditChecking }" />
+                  ตรวจสอบเครดิต
                 </button>
+              </div>
+
+              <div class="huobao-quick-row">
+                <input v-model="toraApiKey" class="input" type="password" placeholder="ToraAPI Key (sk-...)" :disabled="toraSaving || toraFetching" />
+                <button type="button" class="btn btn-ghost" :disabled="toraFetching || !toraApiKey.trim()" @click="fetchToraQuickModels(true)">
+                  <Loader2 v-if="toraFetching" :size="13" class="animate-spin" />
+                  <RefreshCw v-else :size="13" />
+                  {{ t('settings.ai.fetchModels') || 'ดึงโมเดล' }}
+                </button>
+                <button class="btn btn-primary" :disabled="toraSaving || !toraApiKey.trim()" @click="applyToraQuickConfig">
+                  <Loader2 v-if="toraSaving" :size="13" class="animate-spin" />
+                  <Sparkles v-else :size="13" />
+                  {{ t('settings.ai.applyQuick') || 'นำเข้าการตั้งค่าทันที' }}
+                </button>
+              </div>
+              <div class="huobao-quick-models">
+                <div v-for="q in toraQuickConfigs" :key="q.name" class="hqm-row">
+                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
+                  <span class="hqm-provider">
+                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
+                    {{ q.provider }}
+                  </span>
+                  <span v-if="q.model && q.model.length" class="hqm-models mono">
+                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
+                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
+                    </span>
+                  </span>
+                  <span v-else class="text-xs text-muted" style="font-size: 11px; opacity: 0.65;">
+                    {{ toraFetching ? 'กำลังตรวจสอบ...' : 'ไม่มีโมเดลที่ได้รับสิทธิ์ หรือยังไม่ได้กดดึงโมเดล' }}
+                  </span>
+                </div>
               </div>
             </div>
 
             <!-- Google Antigravity Quick Setup (Free Text / Gemini Models) -->
-            <div v-if="quickProviderTab === 'antigravity'">
+            <div v-else-if="quickProviderTab === 'antigravity'">
               <p class="setup-desc">
                 {{ t('settings.ai.antigravityQuickDesc') }}
               </p>
@@ -315,6 +359,11 @@
               </p>
               <div class="huobao-quick-row">
                 <input v-model="geminiApiKey" class="input" type="password" placeholder="Google Gemini API Key (AIzaSy...)" />
+                <button type="button" class="btn btn-ghost" :disabled="geminiFetching || !geminiApiKey.trim()" @click="fetchGeminiQuickModels(true)">
+                  <Loader2 v-if="geminiFetching" :size="13" class="animate-spin" />
+                  <RefreshCw v-else :size="13" />
+                  {{ t('settings.ai.fetchModels') }}
+                </button>
                 <button class="btn btn-primary" :disabled="geminiSaving" @click="applyGeminiQuickConfig">
                   <Loader2 v-if="geminiSaving" :size="13" class="animate-spin" />
                   <Sparkles v-else :size="13" />
@@ -348,6 +397,11 @@
               </p>
               <div class="huobao-quick-row">
                 <input v-model="openaiApiKey" class="input" type="password" placeholder="OpenAI API Key (sk-...)" />
+                <button type="button" class="btn btn-ghost" :disabled="openaiFetching || !openaiApiKey.trim()" @click="fetchOpenaiQuickModels(true)">
+                  <Loader2 v-if="openaiFetching" :size="13" class="animate-spin" />
+                  <RefreshCw v-else :size="13" />
+                  {{ t('settings.ai.fetchModels') }}
+                </button>
                 <button class="btn btn-primary" :disabled="openaiSaving" @click="applyOpenaiQuickConfig">
                   <Loader2 v-if="openaiSaving" :size="13" class="animate-spin" />
                   <Sparkles v-else :size="13" />
@@ -356,51 +410,6 @@
               </div>
               <div class="huobao-quick-models">
                 <div v-for="q in openaiQuickConfigs" :key="q.name" class="hqm-row">
-                  <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
-                  <span class="hqm-provider">
-                    <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
-                    {{ q.provider }}
-                  </span>
-                  <span class="hqm-models mono">
-                    <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
-                      {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Firemux Relay Quick Setup -->
-            <div v-else-if="quickProviderTab === 'firemux'">
-              <p class="setup-desc">
-                {{ t('settings.ai.quickDesc') }}
-                <a class="huobao-site-link" :href="huobaoSiteUrl" target="_blank" rel="noopener noreferrer">
-                  {{ t('settings.ai.getKey') }}
-                  <ExternalLink :size="12" :stroke-width="1.8" />
-                </a>
-              </p>
-              <div class="huobao-quick-row">
-                <input v-model="huobaoApiKey" class="input" type="password" placeholder="Huobao API Key" />
-                <div class="lang-picker">
-                  <button
-                    type="button"
-                    :class="['lang-option', { on: huobaoRegion === 'cn' }]"
-                    @click="huobaoRegion = 'cn'"
-                  >{{ t('settings.ai.regionCn') }}</button>
-                  <button
-                    type="button"
-                    :class="['lang-option', { on: huobaoRegion === 'com' }]"
-                    @click="huobaoRegion = 'com'"
-                  >{{ t('settings.ai.regionCom') }}</button>
-                </div>
-                <button class="btn btn-primary" :disabled="huobaoSaving" @click="applyHuobaoQuickConfig">
-                  <Loader2 v-if="huobaoSaving" :size="13" class="animate-spin" />
-                  <Sparkles v-else :size="13" />
-                  {{ t('settings.ai.applyQuick') }}
-                </button>
-              </div>
-              <div class="huobao-quick-models">
-                <div v-for="q in huobaoQuickConfigs" :key="q.name" class="hqm-row">
                   <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
                   <span class="hqm-provider">
                     <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
@@ -451,7 +460,7 @@
                 <div class="config-main">
                   <div class="config-line">
                     <span class="config-name">{{ c.name || `${c.provider}-${c.service_type}` }}</span>
-                    <span :class="['tag', c.api_key ? 'tag-success' : 'tag-error']">{{ c.api_key ? t('settings.ai.hasKey') : t('settings.ai.noKey') }}</span>
+                    <span :class="['tag', c.api_key_configured ? 'tag-success' : 'tag-error']">{{ c.api_key_configured ? t('settings.ai.hasKey') : t('settings.ai.noKey') }}</span>
                     <span v-if="!c.is_active" class="tag">{{ t('settings.common.disabled') }}</span>
                   </div>
                   <div class="config-models">
@@ -829,6 +838,11 @@
                 @paste="onModelPaste"
               />
               <button type="button" class="btn btn-sm" :disabled="!modelInput.trim()" @click="addModel">{{ t('common.add') }}</button>
+              <button type="button" class="btn btn-sm btn-ghost" :disabled="cfgFetchingModels || !cfgForm.provider" @click="fetchModelsForForm">
+                <Loader2 v-if="cfgFetchingModels" :size="12" class="animate-spin" />
+                <RefreshCw v-else :size="12" />
+                {{ t('settings.ai.fetchModels') }}
+              </button>
             </div>
             <span class="field-hint">{{ t('settings.cfg.modelsHint') }}</span>
           </div>
@@ -1033,7 +1047,7 @@ import BaseSelect from '~/components/BaseSelect.vue'
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { aiConfigAPI, flowBridgeAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
+import { aiConfigAPI, authAPI, flowBridgeAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
 import { useDesktopBridge } from '~/composables/useDesktopBridge'
 import { useMigrateState } from '~/composables/useMigrateState'
 import { useTheme } from '~/composables/useTheme'
@@ -1060,7 +1074,11 @@ const cfgDialog = ref(false)
 const cfgEditId = ref(null)
 const cfgTesting = ref(false)
 const cfgTestResult = ref(null)
-const quickProviderTab = ref('flow')
+const quickProviderTab = ref('tora')
+const toraCredit = ref(null)
+const toraCreditChecking = ref(false)
+// hasHighCredit removed - all providers accessible
+
 const flowStatus = ref(null)
 const flowChecking = ref(false)
 const flowSaving = ref(false)
@@ -1076,13 +1094,23 @@ const antigravityStatus = ref(null)
 const antigravityChecking = ref(false)
 const geminiApiKey = ref('')
 const geminiSaving = ref(false)
+const geminiFetching = ref(false)
+const geminiDiscoveredTextModels = ref([])
+const geminiDiscoveredImageModels = ref([])
+const geminiDiscoveredVideoModels = ref([])
 const openaiApiKey = ref('')
 const openaiSaving = ref(false)
-const huobaoApiKey = ref('')
-const huobaoSaving = ref(false)
-// 火宝节点选择：默认跟随界面语言（中文→国内 .cn，其他→国外 .com），一键配置与取 Key 链接共用
-const huobaoRegion = ref(locale.value?.startsWith('zh') ? 'cn' : 'com')
-const huobaoSiteUrl = computed(() => `https://api.firemux.${huobaoRegion.value}`)
+const openaiFetching = ref(false)
+const openaiDiscoveredTextModels = ref([])
+const openaiDiscoveredImageModels = ref([])
+const openaiDiscoveredVideoModels = ref([])
+const cfgFetchingModels = ref(false)
+const toraApiKey = ref('')
+const toraSaving = ref(false)
+const toraFetching = ref(false)
+const toraDiscoveredTextModels = ref([])
+const toraDiscoveredImageModels = ref([])
+const toraDiscoveredVideoModels = ref([])
 const cfgForm = reactive({ name: '', provider: '', api_key: '', base_url: '', models: [], service_type: 'text', priority: 0, temperature: '' })
 // 模型标签编辑器：首位即默认模型；输入框支持回车添加、逗号/换行批量粘贴
 const modelInput = ref('')
@@ -1112,7 +1140,14 @@ const serviceTypes = computed(() => [
   { type: 'video', label: t('common.serviceType.video') },
 ])
 const providers = ['antigravity', 'gemini', 'openai', 'google_flow', 'volcengine', 'minimax', 'aliyun']
-const providerSelectOptions = computed(() => providers.map(p => ({ label: p, value: p })))
+const providerSelectOptions = computed(() => {
+  const st = cfgForm.service_type
+  let allowed = providers
+  if (st === 'text') allowed = ['antigravity', 'gemini', 'openai', 'volcengine']
+  else if (st === 'image') allowed = ['openai', 'gemini', 'google_flow', 'volcengine']
+  else if (st === 'video') allowed = ['openai', 'google_flow', 'volcengine', 'minimax', 'aliyun']
+  return allowed.map(p => ({ label: p, value: p }))
+})
 const serviceMeta = computed(() => ({
   text: { label: t('common.serviceType.text'), desc: t('settings.ai.meta.text') },
   image: { label: t('common.serviceType.image'), desc: t('settings.ai.meta.image') },
@@ -1122,18 +1157,21 @@ const providerPresets = computed(() => ({
   text: {
     antigravity: { label: t('settings.ai.presets.antigravityOfficial'), baseUrl: 'http://127.0.0.1:8317', models: ['gemini-3.8-flash-high', 'gemini-3.7-flash-high', 'gemini-3.6-flash-high', 'gemini-3.1-flash-lite', 'gemini-pro-agent', 'claude-sonnet-4-6'] },
     gemini: { label: t('settings.ai.presets.geminiOfficial'), baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'] },
-    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['gpt-4o', 'gpt-4o-mini'] },
+    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['gpt-4o', 'gpt-4o-mini', 'qwen-plus', 'qwen3.8-max'] },
+    volcengine: { label: 'VolcEngine Doubao', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-pro-32k', 'doubao-lite-32k'] },
   },
   image: {
     google_flow: { label: t('settings.ai.presets.flowOfficial'), baseUrl: 'http://127.0.0.1:5679/api/v1/flow-bridge', models: ['gem_pix_2', 'narwhal'] },
-    gemini: { label: t('settings.ai.presets.geminiOfficial'), baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro-image', 'imagen-3.0-generate-002'] },
-    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['dall-e-3', 'gpt-image-2'] },
+    gemini: { label: t('settings.ai.presets.geminiOfficial'), baseUrl: 'https://generativelanguage.googleapis.com', models: ['imagen-3.0-generate-002', 'gemini-3-pro-image'] },
+    openai: { label: t('settings.ai.presets.openaiOfficial'), baseUrl: 'https://api.openai.com', models: ['wan2.7-image', 'qwen-image-2.0', 'qwen-image-3.0', 'dall-e-3', 'gpt-image-2'] },
+    volcengine: { label: 'VolcEngine Seedream', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedream-3-0', 'doubao-seedream-1-0'] },
   },
   video: {
+    openai: { label: 'ToraAPI / OpenAI Video', baseUrl: 'https://www.toraapi.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
     google_flow: { label: t('settings.ai.presets.flowOfficial'), baseUrl: 'http://127.0.0.1:5679/api/v1/flow-bridge', models: ['veo-4s-360p', 'veo-8s-720p', 'veo'] },
-    aliyun: { label: t('settings.ai.presets.aliyunWan'), baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
     volcengine: { label: t('settings.ai.presets.seedanceOfficial'), baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
-    minimax: { label: t('settings.ai.presets.minimaxOfficial'), baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
+    minimax: { label: t('settings.ai.presets.minimaxOfficial'), baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3', 'video-01'] },
+    aliyun: { label: t('settings.ai.presets.aliyunWan'), baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
   },
 }))
 
@@ -1152,26 +1190,29 @@ const antigravityQuickConfigs = computed(() => [
 ])
 
 const geminiQuickConfigs = computed(() => [
-  { service_type: 'text', provider: 'gemini', name: 'Google Gemini (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'], priority: 102 },
-  { service_type: 'image', provider: 'gemini', name: 'Google Gemini Image (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: ['gemini-3-pro-image', 'imagen-3.0-generate-002'], priority: 102 },
+  { service_type: 'text', provider: 'gemini', name: 'Google Gemini (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: geminiDiscoveredTextModels.value.length ? geminiDiscoveredTextModels.value : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'], priority: 102 },
+  { service_type: 'image', provider: 'gemini', name: 'Google Gemini Image (ทางการ)', base_url: 'https://generativelanguage.googleapis.com', model: geminiDiscoveredImageModels.value.length ? geminiDiscoveredImageModels.value : ['imagen-3.0-generate-002', 'gemini-3-pro-image'], priority: 102 },
+  { service_type: 'video', provider: 'google_flow', name: 'Google Flow Video (Veo)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: geminiDiscoveredVideoModels.value.length ? geminiDiscoveredVideoModels.value : ['veo-4s-360p', 'veo-8s-720p', 'veo'], priority: 102 },
 ])
 
 const openaiQuickConfigs = computed(() => [
-  { service_type: 'text', provider: 'openai', name: 'OpenAI (ทางการ)', base_url: 'https://api.openai.com', model: ['gpt-4o', 'gpt-4o-mini'], priority: 101 },
-  { service_type: 'image', provider: 'openai', name: 'OpenAI DALL-E (ทางการ)', base_url: 'https://api.openai.com', model: ['dall-e-3', 'gpt-image-2'], priority: 101 },
+  { service_type: 'text', provider: 'openai', name: 'OpenAI (ทางการ)', base_url: 'https://api.openai.com', model: openaiDiscoveredTextModels.value.length ? openaiDiscoveredTextModels.value : ['gpt-4o', 'gpt-4o-mini'], priority: 101 },
+  { service_type: 'image', provider: 'openai', name: 'OpenAI DALL-E (ทางการ)', base_url: 'https://api.openai.com', model: openaiDiscoveredImageModels.value.length ? openaiDiscoveredImageModels.value : ['dall-e-3', 'gpt-image-2', 'sd-image'], priority: 101 },
+  { service_type: 'video', provider: 'google_flow', name: 'Google Flow Video (Veo)', base_url: 'http://127.0.0.1:5679/api/v1/flow-bridge', model: openaiDiscoveredVideoModels.value.length ? openaiDiscoveredVideoModels.value : ['veo-4s-360p', 'veo-8s-720p', 'veo'], priority: 101 },
 ])
-const huobaoQuickConfigs = computed(() => {
-  const base = huobaoSiteUrl.value
+
+const toraQuickConfigs = computed(() => {
+  const base = 'https://www.toraapi.com'
+  const textMods = toraDiscoveredTextModels.value.length ? toraDiscoveredTextModels.value : ['qwen-plus', 'qwen3.8-max', 'qwen3.8-flash', 'claude-sonnet-5', 'gpt-4o']
+  const imgMods = toraDiscoveredImageModels.value.length ? toraDiscoveredImageModels.value : ['wan2.7-image', 'qwen-image-2.0', 'dall-e-3']
+  const vidMods = toraDiscoveredVideoModels.value.length ? toraDiscoveredVideoModels.value : ['wan3.0-video', 'wan3.0-video-prime']
   return [
-    { service_type: 'text', provider: 'gemini', name: `${t('settings.ai.quickServiceText')} · Gemini`, base_url: base, model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
-    { service_type: 'text', provider: 'openai', name: `${t('settings.ai.quickServiceText')} · OpenAI`, base_url: base, model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
-    { service_type: 'image', provider: 'openai', name: `${t('settings.ai.quickServiceImage')} · OpenAI`, base_url: base, model: ['gpt-image-2'], priority: 99 },
-    { service_type: 'image', provider: 'gemini', name: `${t('settings.ai.quickServiceImage')} · Gemini`, base_url: base, model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
-    { service_type: 'video', provider: 'aliyun', name: `${t('settings.ai.quickServiceVideo')} · Wan 3.0`, base_url: `${base}/qwen`, model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
-    { service_type: 'video', provider: 'volcengine', name: `${t('settings.ai.quickServiceVideo')} · Seedance`, base_url: `${base}/volcengine`, model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
-    { service_type: 'video', provider: 'minimax', name: `${t('settings.ai.quickServiceVideo')} · MiniMax`, base_url: `${base}/minimax`, model: ['MiniMax-H3'], priority: 98 },
+    { service_type: 'text', provider: 'openai', name: 'ToraAPI · ข้อความ (Qwen / Chat)', base_url: base, model: textMods, priority: 105 },
+    { service_type: 'image', provider: 'openai', name: 'ToraAPI · รูปภาพ (Wan / Qwen Image)', base_url: base, model: imgMods, priority: 105 },
+    { service_type: 'video', provider: 'openai', name: 'ToraAPI · วิดีโอ (Wan 3.0 Video)', base_url: base, model: vidMods, priority: 105 },
   ]
 })
+
 
 function byType(t) { return cfgs.value.filter(c => c.service_type === t) }
 function countActive(t) { return byType(t).filter(c => c.is_active).length }
@@ -1189,14 +1230,36 @@ function applyProviderPreset(type, provider) {
   cfgForm.name = `${preset.label}-${type}`
 }
 
-async function loadCfgs() { try { cfgs.value = await aiConfigAPI.list() } catch (e) { toastError(e) } }
+watch(() => cfgForm.provider, (newProv, oldProv) => {
+  if (cfgDialog.value && !cfgEditId.value && newProv && newProv !== oldProv) {
+    applyProviderPreset(cfgForm.service_type, newProv)
+  }
+})
+
+async function loadCfgs(throwOnError = false) {
+  try {
+    const configs = await aiConfigAPI.list()
+    cfgs.value = configs
+    checkToraCredit()
+    return true
+  } catch (error) {
+    cfgs.value = []
+    if (throwOnError) throw error
+    toastError(error)
+    return false
+  }
+}
 
 // ===== 默认模型选择 =====
 // 默认解析规则与工作台/后端一致：启用配置中优先级最高者的模型列表首位
 function defaultModelOf(type) {
   const active = cfgs.value.filter(c => c.service_type === type && c.is_active)
   if (!active.length) return null
-  const top = [...active].sort((a, b) => (b.priority || 0) - (a.priority || 0))[0]
+  const top = [...active].sort((a, b) => {
+    if (a.is_default && !b.is_default) return -1
+    if (!a.is_default && b.is_default) return 1
+    return (b.priority || 0) - (a.priority || 0)
+  })[0]
   const first = Array.isArray(top.model) ? top.model[0] : null
   return first ? { configId: top.id, model: first } : null
 }
@@ -1210,10 +1273,18 @@ async function setDefaultModel(type, c, m) {
   defaultSaving.value = true
   try {
     const models = [m, ...(Array.isArray(c.model) ? c.model : []).filter(x => x !== m)]
-    const maxPriority = Math.max(0, ...cfgs.value.filter(x => x.service_type === type).map(x => x.priority || 0))
-    const payload = { model: models }
-    if ((c.priority || 0) < maxPriority) payload.priority = maxPriority + 1
-    if (!c.is_active) payload.is_active = true // 停用配置无法成为默认,选择即启用
+    const sameType = cfgs.value.filter(x => x.service_type === type)
+    const maxPriority = Math.max(0, ...sameType.map(x => x.priority || 0))
+    const isAlreadyTop = sameType.length <= 1 || (
+      c.priority === maxPriority &&
+      sameType.filter(x => x.priority === maxPriority).length === 1
+    )
+    const payload = {
+      model: models,
+      is_default: true,
+      priority: isAlreadyTop ? c.priority : maxPriority + 1,
+      is_active: true,
+    }
     await aiConfigAPI.update(c.id, payload)
     toast.success(t('settings.ai.defaultModelSwitched', { type: serviceMeta.value[type].label, model: m }))
     await loadCfgs()
@@ -1387,13 +1458,122 @@ async function applyFlowQuickConfig(mode = 'native') {
   }
 }
 
+async function fetchGeminiQuickModels(showToasts = true) {
+  const apiKey = geminiApiKey.value.trim()
+  if (!apiKey) {
+    if (showToasts) toast.warning(t('settings.ai.geminiApiKeyRequired'))
+    return false
+  }
+  geminiFetching.value = true
+  try {
+    const res = await aiConfigAPI.fetchModels({
+      provider: 'gemini',
+      base_url: 'https://generativelanguage.googleapis.com',
+      api_key: apiKey,
+    })
+    const textMods = res?.text_models || (Array.isArray(res?.models) ? res.models : [])
+    const imgMods = res?.image_models || []
+    const vidMods = res?.video_models || []
+    if (textMods.length) geminiDiscoveredTextModels.value = textMods
+    if (imgMods.length) geminiDiscoveredImageModels.value = imgMods
+    if (vidMods.length) geminiDiscoveredVideoModels.value = vidMods
+    if (showToasts) {
+      const total = textMods.length + imgMods.length + vidMods.length
+      if (total > 0) toast.success(t('settings.ai.fetchModelsSuccess', { n: total }))
+      else toast.info(t('settings.ai.fetchModelsEmpty'))
+    }
+    return true
+  } catch (e) {
+    if (showToasts) toastError(e)
+    return false
+  } finally {
+    geminiFetching.value = false
+  }
+}
+
+async function fetchOpenaiQuickModels(showToasts = true) {
+  const apiKey = openaiApiKey.value.trim()
+  if (!apiKey) {
+    if (showToasts) toast.warning(t('settings.ai.openaiApiKeyRequired'))
+    return false
+  }
+  openaiFetching.value = true
+  try {
+    const res = await aiConfigAPI.fetchModels({
+      provider: 'openai',
+      base_url: 'https://api.openai.com',
+      api_key: apiKey,
+    })
+    const textMods = res?.text_models || (Array.isArray(res?.models) ? res.models : [])
+    const imgMods = res?.image_models || []
+    const vidMods = res?.video_models || []
+    if (textMods.length) openaiDiscoveredTextModels.value = textMods
+    if (imgMods.length) openaiDiscoveredImageModels.value = imgMods
+    if (vidMods.length) openaiDiscoveredVideoModels.value = vidMods
+    if (showToasts) {
+      const total = textMods.length + imgMods.length + vidMods.length
+      if (total > 0) toast.success(t('settings.ai.fetchModelsSuccess', { n: total }))
+      else toast.info(t('settings.ai.fetchModelsEmpty'))
+    }
+    return true
+  } catch (e) {
+    if (showToasts) toastError(e)
+    return false
+  } finally {
+    openaiFetching.value = false
+  }
+}
+
+async function fetchModelsForForm() {
+  if (!cfgForm.provider) {
+    toast.warning(t('settings.cfg.providerRequired'))
+    return
+  }
+  cfgFetchingModels.value = true
+  try {
+    const res = await aiConfigAPI.fetchModels({
+      provider: cfgForm.provider,
+      base_url: cfgForm.base_url,
+      api_key: cfgForm.api_key,
+      service_type: cfgForm.service_type,
+      config_id: cfgEditId.value || undefined,
+    })
+    let fetched = []
+    if (cfgForm.service_type === 'video') {
+      fetched = res?.video_models?.length ? res.video_models : (res?.models?.length ? res.models : [])
+    } else if (cfgForm.service_type === 'image') {
+      fetched = res?.image_models?.length ? res.image_models : (res?.models?.length ? res.models : [])
+    } else {
+      fetched = res?.text_models?.length ? res.text_models : (res?.models?.length ? res.models : [])
+    }
+    if (fetched.length) {
+      cfgForm.models = [...fetched]
+      toast.success(t('settings.ai.fetchModelsSuccess', { n: fetched.length }))
+    } else {
+      cfgForm.models = []
+      if (res?.message) {
+        toast.warning(res.message)
+      } else {
+        toast.info(t('settings.ai.fetchModelsEmpty'))
+      }
+    }
+  } catch (e) {
+    toastError(e)
+  } finally {
+    cfgFetchingModels.value = false
+  }
+}
+
 async function applyGeminiQuickConfig() {
   const apiKey = geminiApiKey.value.trim()
   if (!apiKey) { toast.warning(t('settings.ai.geminiApiKeyRequired')); return }
   geminiSaving.value = true
   try {
+    if (!geminiDiscoveredTextModels.value.length) {
+      await fetchGeminiQuickModels(false)
+    }
     for (const preset of geminiQuickConfigs.value) {
-      const payload = { ...preset, api_key: apiKey, is_active: true }
+      const payload = { ...preset, api_key: preset.provider === 'google_flow' ? 'flow' : apiKey, is_active: true }
       const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
       if (existing) await aiConfigAPI.update(existing.id, payload)
       else await aiConfigAPI.create(payload)
@@ -1413,8 +1593,11 @@ async function applyOpenaiQuickConfig() {
   if (!apiKey) { toast.warning(t('settings.ai.openaiApiKeyRequired')); return }
   openaiSaving.value = true
   try {
+    if (!openaiDiscoveredTextModels.value.length) {
+      await fetchOpenaiQuickModels(false)
+    }
     for (const preset of openaiQuickConfigs.value) {
-      const payload = { ...preset, api_key: apiKey, is_active: true }
+      const payload = { ...preset, api_key: preset.provider === 'google_flow' ? 'flow' : apiKey, is_active: true }
       const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
       if (existing) await aiConfigAPI.update(existing.id, payload)
       else await aiConfigAPI.create(payload)
@@ -1429,26 +1612,126 @@ async function applyOpenaiQuickConfig() {
   }
 }
 
-async function applyHuobaoQuickConfig() {
-  const apiKey = huobaoApiKey.value.trim()
-  if (!apiKey) { toast.warning(t('settings.ai.apiKeyRequired')); return }
-  huobaoSaving.value = true
+async function checkToraCredit(customApiKey) {
+  toraCreditChecking.value = true
   try {
-    for (const preset of huobaoQuickConfigs.value) {
-      const payload = { ...preset, api_key: apiKey }
-      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
-      if (existing) await aiConfigAPI.update(existing.id, payload)
-      else await aiConfigAPI.create(payload)
+    const key = customApiKey || toraApiKey.value.trim() || undefined
+    const res = await aiConfigAPI.checkCredit(key ? { api_key: key, base_url: 'https://www.toraapi.com' } : {})
+    if (res?.ok && typeof res.credit === 'number') {
+      toraCredit.value = res.credit
+    } else {
+      toraCredit.value = 0
     }
-    toast.success(t('settings.ai.quickApplied'))
-    huobaoApiKey.value = ''
+  } catch (e) {
+    toraCredit.value = 0
+  } finally {
+    toraCreditChecking.value = false
+  }
+}
+
+async function fetchToraQuickModels(showToasts = true) {
+  const apiKey = toraApiKey.value.trim()
+  if (!apiKey) {
+    if (showToasts) toast.warning('กรุณากรอก ToraAPI Key')
+    return false
+  }
+  toraFetching.value = true
+  checkToraCredit(apiKey)
+  try {
+    const res = await aiConfigAPI.fetchModels({
+      provider: 'openai',
+      base_url: 'https://www.toraapi.com',
+      api_key: apiKey,
+    })
+    if (res?.error) {
+      if (showToasts) toast.error(res.error)
+      return false
+    }
+    const textMods = res?.text_models || (Array.isArray(res?.models) ? res.models : [])
+    const imgMods = res?.image_models || []
+    const vidMods = res?.video_models || []
+    if (textMods.length) toraDiscoveredTextModels.value = textMods
+    if (imgMods.length) toraDiscoveredImageModels.value = imgMods
+    if (vidMods.length) toraDiscoveredVideoModels.value = vidMods
+    if (showToasts) {
+      const total = textMods.length + imgMods.length + vidMods.length
+      if (total > 0) toast.success(t('settings.ai.fetchModelsSuccess', { n: total }) || `ดึงรายการสำเร็จ ${total} โมเดล`)
+      else toast.info(t('settings.ai.fetchModelsEmpty') || 'ไม่พบรายการโมเดล')
+    }
+    return true
+  } catch (e) {
+    if (showToasts) toastError(e)
+    return false
+  } finally {
+    toraFetching.value = false
+  }
+}
+
+async function applyToraQuickConfig() {
+  const apiKey = toraApiKey.value.trim()
+  if (!apiKey) {
+    toast.warning('กรุณากรอก ToraAPI Key')
+    return
+  }
+  toraSaving.value = true
+  try {
+    if (!toraDiscoveredTextModels.value.length && !toraDiscoveredImageModels.value.length && !toraDiscoveredVideoModels.value.length) {
+      await fetchToraQuickModels(false)
+    }
+    const textMods = toraDiscoveredTextModels.value.length ? toraDiscoveredTextModels.value : ['qwen-plus', 'qwen3.8-max', 'qwen3.8-flash', 'claude-sonnet-5', 'gpt-4o']
+  const imgMods = toraDiscoveredImageModels.value.length ? toraDiscoveredImageModels.value : ['wan2.7-image', 'qwen-image-2.0', 'dall-e-3']
+  const vidMods = toraDiscoveredVideoModels.value.length ? toraDiscoveredVideoModels.value : ['wan3.0-video', 'wan3.0-video-prime']
+
+    let appliedCount = 0
+
+    for (const preset of toraQuickConfigs.value) {
+      const existing = cfgs.value.find(c =>
+        c.name === preset.name ||
+        (c.service_type === preset.service_type && (c.base_url === preset.base_url || c.name.includes('Tora')))
+      )
+
+      if (preset.model && preset.model.length > 0) {
+        const payload = {
+          ...preset,
+          api_key: apiKey,
+          is_active: true,
+        }
+        if (existing) await aiConfigAPI.update(existing.id, payload)
+        else await aiConfigAPI.create(payload)
+        appliedCount++
+      } else {
+        // Token has no access to models for this service type (e.g. image or video)
+        // Deactivate existing config if present so it doesn't cause 403 errors and hijack working providers
+        if (existing && existing.is_active) {
+          await aiConfigAPI.update(existing.id, { is_active: false })
+        }
+      }
+    }
+
+    if (appliedCount > 0) {
+      const parts = []
+      if (textMods.length) parts.push(`ข้อความ (${textMods.length})`)
+      if (imgMods.length) parts.push(`รูปภาพ (${imgMods.length})`)
+      if (vidMods.length) parts.push(`วิดีโอ (${vidMods.length})`)
+      toast.success(`เปิดใช้งาน ToraAPI สำเร็จ: ${parts.join(', ')}`)
+    }
+
+    if (!imgMods.length) {
+      toast.info('ToraAPI Key นี้ไม่มีสิทธิ์ใช้งานโมเดลรูปภาพ ระบบจึงปิดการตั้งค่ารูปภาพของ Tora ไว้เพื่อไม่ให้เกิดข้อผิดพลาด 403 (ใช้ Google Flow เป็นหลัก)')
+    }
+    if (!vidMods.length) {
+      toast.info('ToraAPI Key นี้ไม่มีสิทธิ์ใช้งานโมเดลวิดีโอ (ใช้ Google Flow Veo เป็นหลัก)')
+    }
+
+    await checkToraCredit(apiKey)
     await loadCfgs()
   } catch (e) {
     toastError(e)
   } finally {
-    huobaoSaving.value = false
+    toraSaving.value = false
   }
 }
+
 function startAddCfg(t) {
   cfgEditId.value = null
   cfgTestResult.value = null
@@ -1828,13 +2111,27 @@ async function saveStyle() {
   } catch (e) { toastError(e) }
 }
 
-onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets(); refreshFlowStatus(); refreshAntigravityStatus() })
+onMounted(async () => {
+  await loadCfgs()
+  loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets()
+  refreshFlowStatus()
+  refreshAntigravityStatus()
+})
+
+// Local integrations are probed when selected or mounted.
+watch(quickProviderTab, (provider) => {
+  if (provider === 'flow') {
+    refreshFlowStatus()
+    loadFlowAccounts()
+  }
+  if (provider === 'antigravity') refreshAntigravityStatus()
+})
 
 // Read cached bridge account data only; never trigger live balance probes on a timer.
 let flowAccountPoll = null
 onMounted(() => {
   flowAccountPoll = setInterval(() => {
-    if (!document.hidden && !flowChecking.value && flowSwitchingId.value === null && !flowImporting.value && !flowDeleting.value) {
+    if (quickProviderTab.value === 'flow' && !document.hidden && !flowChecking.value && flowSwitchingId.value === null && !flowImporting.value && !flowDeleting.value) {
       refreshFlowStatus(false)
     }
   }, 5000)
@@ -2046,7 +2343,7 @@ onBeforeUnmount(stopUsagePoll)
 .settings-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 .settings-desc { font-size: 13px; color: var(--text-2); margin-top: 6px; }
 
-/* 火宝快捷配置 */
+/* ToraAPI quick setup */
 .quick-card {
   padding: 20px;
   margin-bottom: 16px;

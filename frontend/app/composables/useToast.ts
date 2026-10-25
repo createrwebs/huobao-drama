@@ -53,6 +53,9 @@ export function mapError(err: unknown, opts?: { fallback?: string }): string {
 
   // Flow assessment rejection is not evidence of exhausted credits or HTTP 429.
   if (/PUBLIC_ERROR_UNUSUAL_ACTIVITY/i.test(msg)) return t('errors.flowAssessmentRejected')
+  if (/session expired|maseQ.*401|nzlxg.*401|Google session expired/i.test(msg)) {
+    return t('errors.flowSessionExpired') || 'เซสชัน Google Flow หมดอายุ กรุณาอัปเดต Cookie หรือเชื่อมต่อ Flow Bridge ใน Chrome'
+  }
 
   if (CREDITS_DEPLETED_RE.test(msg)) return t('errors.creditsDepleted')
   if (MODEL_UNAVAILABLE_RE.test(msg)) return t('errors.modelUnavailable')

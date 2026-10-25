@@ -827,15 +827,8 @@
                           @blur="updateField(selectedSb, 'image_prompt', $event.target.value)"
                         />
                         <div v-if="hasSbImg(selectedSb)" class="sb-frame-mode-row">
-                          <span class="sb-frame-mode-label">โหมดอ้างอิงตอนสร้างวิดีโอ:</span>
-                          <label class="sb-frame-radio">
-                            <input v-model="sbVideoRefMode" type="radio" value="first_frame" />
-                            <span>ใช้ภาพสตอรี่บอร์ดเป็นเฟรมแรก (Image-to-Video)</span>
-                          </label>
-                          <label class="sb-frame-radio">
-                            <input v-model="sbVideoRefMode" type="radio" value="reference" />
-                            <span>ใช้รูปตัวละครอ้างอิง (@ตัวละคร)</span>
-                          </label>
+                          <span class="sb-frame-mode-label">โหมดอ้างอิงสร้างวิดีโอ:</span>
+                          <span class="text-xs text-primary font-medium">✨ อ้างอิงภาพสตอรี่บอร์ด & ตัวละคร (Reference Mode — ไม่ล็อกภาพนิ่งเฟรมแรก)</span>
                         </div>
                       </div>
                     </div>
@@ -2046,7 +2039,7 @@ const pendingPropImageIds = ref([])
 const pendingSbImageIds = ref([])
 const sbImagePromptGeneratingIds = ref([])
 const sbImageBatchRunning = ref(false)
-const sbVideoRefMode = ref('first_frame')
+const sbVideoRefMode = ref('reference')
 const pendingVideoIds = ref([])
 const failedVideoMessages = ref({})
 // 任务列表面板：顶栏按钮触发的右侧抽屉,按集聚合 sys_task + video_merges
@@ -2549,8 +2542,8 @@ function bareModelName(key) {
   const i = key.indexOf('/')
   return i >= 0 ? key.slice(i + 1) : key
 }
-function ownerConfigId(options, key) {
-  return key ? (options.find(o => o.key === key)?.configId || undefined) : undefined
+function ownerConfigId(options, model) {
+  return model ? (options.find(o => o.key === model || o.model === model)?.configId || undefined) : undefined
 }
 function hasMultiConfigs(options) {
   return new Set(options.map(o => o.configId)).size > 1
@@ -3368,7 +3361,7 @@ async function genCharImg(id) {
         await ensureAssetPrompt('character', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    const response = await characterAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await characterAPI.generateImage(id, epId.value, imageModel.value || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
     watchAssetImageTask(response, id, pendingCharImageIds)
     toast.success(t('episode.image.generatingChar'))
     await refresh()
@@ -3381,7 +3374,13 @@ async function batchCharImages() {
   const ids = visualChars.value.filter(c => !(c.image_url || c.imageUrl)).map(c => c.id)
   if (!ids.length) { toast.info(t('episode.image.allCharsDone')); return }
   pendingCharImageIds.value = [...new Set([...pendingCharImageIds.value, ...ids])]
-  for (const id of ids) await genCharImg(id)
+  try {
+    const response = await characterAPI.batchImages(ids, epId.value, imageModel.value || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    toast.success(t('episode.image.generatingChar'))
+    await refresh()
+  } catch (e) {
+    for (const id of ids) await genCharImg(id)
+  }
 }
 async function genSceneImg(id) {
   try {
@@ -3393,7 +3392,7 @@ async function genSceneImg(id) {
         await ensureAssetPrompt('scene', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    const response = await sceneAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await sceneAPI.generateImage(id, epId.value, imageModel.value || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
     watchAssetImageTask(response, id, pendingSceneImageIds)
     toast.success(t('episode.image.generatingScene'))
     await refresh()
@@ -3415,7 +3414,7 @@ async function genPropImg(id) {
         await ensureAssetPrompt('prop', id)
       } catch {} // 提示词生成失败不阻断：后端生图前会再兜底生成或回退本地拼接
     }
-    const response = await propAPI.generateImage(id, epId.value, bareModelName(imageModel.value) || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
+    const response = await propAPI.generateImage(id, epId.value, imageModel.value || undefined, ownerConfigId(imageModelOptions.value, imageModel.value), chatModelOverride(), chatConfigId())
     watchAssetImageTask(response, id, pendingPropImageIds)
     toast.success(t('episode.image.generatingProp'))
     await refresh()
@@ -3444,36 +3443,27 @@ function isPendingSbImage(id) { return pendingSbImageIds.value.includes(id) }
 
 function buildFallbackSbImagePrompt(sb) {
   if (!sb) return ''
-  const shotType = sb.shot_type || sb.shotType || 'Medium Shot'
-  const angle = sb.angle || 'Eye-level'
   const charsInShot = getStoryboardCharacters(sb)
-  // หากตัวละครมีภาพอ้างอิง (Ref) แล้ว ไม่ต้องดึง appearance/styling เริ่มต้นจากไฟล์ตัวละครมาใส่ เพราะอาจขัดกับสภาพจริงในฉากใหม่ (เช่น บาดเจ็บ เสื้อขาด เปลี่ยนชุด)
-  const charDesc = charsInShot.length
-    ? charsInShot.map(c => {
-        const hasRef = Boolean(c.image_url || c.imageUrl)
-        if (hasRef) return `@${c.name}`
-        return `${c.name}${c.appearance ? ` (${c.appearance})` : ''}${c.styling ? `, สวมใส่ ${c.styling}` : ''}`
-      }).join(', ')
-    : ''
+  const mainChar = charsInShot[0]
+  const charConsist = mainChar
+    ? `${mainChar.name}${mainChar.appearance ? `, ${mainChar.appearance}` : ''}${mainChar.styling ? `, wearing ${mainChar.styling}` : ''}`
+    : 'a cinematic character'
+  
   const scene = getStoryboardScene(sb)
-  const sceneDesc = scene
-    ? `${scene.location || ''}${scene.time ? ` เวลา${scene.time}` : ''}${scene.prompt ? ` (${scene.prompt})` : ''}${scene.lighting ? `, แสง${scene.lighting}` : ''}`
-    : (sb.location || '')
-  const rawAction = String(sb.description || sb.action || '')
-    .replace(/【ช็อต\s*\d+】/g, ' ')
-    .replace(/【镜头\s*\d+】/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  const atmosphere = sb.atmosphere ? `บรรยากาศ: ${sb.atmosphere}` : ''
-  const stylePreset = drama.value?.style || 'Cinematic realistic drama, high detail, 8k film still'
-  return [
-    `[มุมกล้อง: ${shotType}, ${angle}]`,
-    charDesc ? `[ตัวละคร: ${charDesc}]` : '',
-    rawAction ? `[เหตุการณ์ อิริยาบถ และสภาพในเฟรมแรก: ${rawAction}]` : '',
-    sceneDesc ? `[ฉากหลังและแสง: ${sceneDesc}]` : '',
-    atmosphere ? `[${atmosphere}]` : '',
-    `[สไตล์ภาพ: ${stylePreset}, ภาพนิ่งเฟรมแรกสำหรับสตอรี่บอร์ด ไม่มีตัวอักษรหรือซับไตเติลในภาพ]`,
-  ].filter(Boolean).join(' ')
+  const sceneLocation = scene?.location || scene?.name || sb.location || 'cinematic environment'
+  const atmosphere = sb.atmosphere || 'dramatic cinematic lighting, intense mood'
+  const visualStyle = drama.value?.visual_style || drama.value?.prompt_style || drama.value?.style || 'shot on 35mm film, cinematic realism, anamorphic lens'
+  const shotType = sb.shot_type || sb.shotType || 'Medium shot'
+  const angle = sb.angle || 'eye-level angle'
+  
+  const rawDesc = String(sb.description || sb.action || '')
+  const shotChunks = rawDesc
+    .split(/【(?:ช็อต|镜头)\s*\d+】/)
+    .map(s => s.replace(/(?:ทินพูดว่า|พูดว่า|เสียงบรรยาย|旁白)[：:]\s*["'“][^"'”]*["'”]/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+  const shotAction = shotChunks[0] || rawDesc || 'cinematic scene unfolding with high dramatic tension'
+
+  return `A single cinematic shot, ${shotType}, ${angle}. ${charConsist} in ${sceneLocation}. ${shotAction.slice(0, 220)}. Lighting and atmosphere: ${atmosphere}. ${visualStyle}, 8k resolution, photorealistic, highly detailed. No split screen, no collage, no borders, no multi-panel, no text, no subtitles.`
 }
 
 async function genSbImagePrompt(sb, opts = {}) {
@@ -3482,33 +3472,35 @@ async function genSbImagePrompt(sb, opts = {}) {
   const charDetails = getStoryboardCharacters(sb)
     .map(c => {
       const hasRef = Boolean(c.image_url || c.imageUrl)
-      if (hasRef) return `@${c.name} (มีภาพอ้างอิงแล้ว — ห้ามดึงรูปลักษณ์หรือชุดเริ่มต้นจากไฟล์ตัวละคร)`
+      if (hasRef) return `@${c.name} (มีภาพอ้างอิงแล้ว — ยึดตามใบหน้า/ชุดในภาพอ้างอิง)`
       return `${c.name} (รูปลักษณ์: ${c.appearance || '-'}, ชุด: ${c.styling || '-'})`
     })
     .join('; ') || 'ไม่มี'
   const scene = getStoryboardScene(sb)
   const sceneDetail = scene
-    ? `${scene.location} · ${scene.time || ''} (${scene.prompt || ''}, แสง: ${scene.lighting || ''})`
+    ? `${scene.location || scene.name} · ${scene.time || ''} (${scene.prompt || ''}, แสง: ${scene.lighting || ''})`
     : (getSceneName(sb) || 'ไม่ระบุ')
   const propNames = getStoryboardProps(sb).map(p => p.name).join('、') || 'ไม่มี'
+  const stylePreset = drama.value?.visual_style || drama.value?.prompt_style || drama.value?.style || 'shot on 35mm film, cinematic realism'
 
   sbImagePromptGeneratingIds.value.push(sb.id)
   try {
     await api.post(`/agent/prompt_generator/chat`, {
-      message: `กรุณาสร้างพรอมต์ภาพนิ่งสตอรี่บอร์ดเฟรมแรก (image_prompt) สำหรับช็อตที่ #${idx} (ID:${sb.id})
+      message: `กรุณาสร้างพรอมต์ภาพคีย์เฟรมภาพยนตร์ (Single Cinematic Shot 16:9) สำหรับช็อตที่ #${idx} (ID:${sb.id})
 ข้อมูลช็อต:
+- ขนาดภาพ/มุมกล้อง: ${sb.shot_type || sb.shotType || 'Medium shot'} · ${sb.angle || 'Eye-level'}
 - คำบรรยายช็อต: ${sb.description || '-'}
-- บรรยากาศ: ${sb.atmosphere || '-'}
-- มุมกล้อง/ขนาดภาพ: ${sb.shot_type || 'Medium Shot'} / ${sb.angle || 'Eye-level'}
+- บรรยากาศ/แสงเงา: ${sb.atmosphere || '-'}
+- สไตล์ภาพของเรื่อง: ${stylePreset}
 - ตัวละครในช็อต: ${charDetails}
-- ฉากและแสง: ${sceneDetail}
-- พร็อพ: ${propNames}
+- ฉากและสถานที่: ${sceneDetail}
+- พร็อพ/อุปกรณ์: ${propNames}
 
-กฎสำคัญ:
-1. ตัวละครที่มีภาพอ้างอิง (Reference) แล้ว ห้ามคัดลอกรูปลักษณ์หรือชุดเริ่มต้น (appearance, styling) จากไฟล์โปรไฟล์ตัวละครมาใส่ซ้ำเด็ดขาด เพราะในฉากใหม่ตัวละครอาจเปลี่ยนอิริยาบถ บาดเจ็บ เสื้อขาด หรือเปลี่ยนชุดตามเนื้อเรื่อง การระบุชุดหรือท่าทางจากโปรไฟล์เริ่มต้นจะทำให้ภาพผิดเพี้ยน
-2. ให้ใช้ @ชื่อตัวละคร และบรรยายเฉพาะอิริยาบถ ท่าทาง สีหน้า และสภาพร่างกาย/เครื่องแต่งกายที่เกิดขึ้นจริงในช็อตนี้ตามคำบรรยายช็อตเท่านั้น
-3. โครงสร้างพรอมต์ภาพสตอรี่บอร์ด: [ขนาดภาพและมุมกล้อง] + [@ชื่อตัวละคร อิริยาบถ ท่าทาง สีหน้า และสภาพตามเหตุการณ์ในเฟรมแรก] + [ฉากหลัง แสงเงา และบรรยากาศภาพยนตร์] (ห้ามใส่บทพูดหรือข้อความตัวอักษรลงในภาพ และหลีกเลี่ยงคำรุนแรง/เลือด)
-กรุณาเรียกใช้ update_storyboard เพื่อบันทึกค่าลงในฟิลด์ image_prompt ของช็อต ID:${sb.id} เท่านั้น (ห้ามแก้ไขฟิลด์อื่น)`,
+โครงสร้างและข้อกำหนด (แบบ Single Shot สำหรับวิดีโอ 16:9):
+1. ต้องเป็นภาพเดี่ยวเต็มจอ 16:9 (Single full-frame cinematic shot) สำหรับใช้เป็นภาพตั้งต้น/คีย์เฟรมของช็อตนี้ ห้ามสร้างเป็นตารางหรือกริดเด็ดขาด (No split screen, no collage, no grid, no multi-panel, no borders).
+2. บรรยายขนาดภาพ มุมกล้อง ท่าทาง การแสดงอารมณ์ของตัวละคร การโต้ตอบกับอุปกรณ์ และสภาพแวดล้อมอย่างละเอียดสมจริงเป็นภาษาอังกฤษ
+3. ห้ามมีบทพูด ตัวอักษร ซับไตเติล หรือขอบภาพใดๆ
+4. กรุณาเรียกใช้ update_storyboard เพื่อบันทึกค่าลงในฟิลด์ image_prompt ของช็อต ID:${sb.id} เท่านั้น (ห้ามแก้ไขฟิลด์อื่น)`,
       drama_id: dramaId,
       episode_id: epId.value,
       model: chatModelOverride() || undefined,
@@ -3517,13 +3509,13 @@ async function genSbImagePrompt(sb, opts = {}) {
     await refresh()
     const updated = sbs.value.find(x => x.id === sb.id)
     let promptText = (updated?.image_prompt || updated?.imagePrompt || '').trim()
-    if (!promptText) {
+    if (!promptText || promptText.includes('2x3')) {
       promptText = buildFallbackSbImagePrompt(updated || sb)
       await storyboardAPI.update(sb.id, { image_prompt: promptText })
       if (updated) updated.image_prompt = promptText
       sb.image_prompt = promptText
     }
-    if (!opts.silent) toast.success(`สร้างพรอมต์ภาพสตอรี่บอร์ด ช็อต #${idx} สำเร็จ`)
+    if (!opts.silent) toast.success(`สร้างพรอมต์ภาพคีย์เฟรม ช็อต #${idx} สำเร็จ`)
     return promptText
   } catch (e) {
     const fallback = buildFallbackSbImagePrompt(sb)
@@ -3547,23 +3539,31 @@ async function genSbImg(sb, opts = {}) {
   pendingSbImageIds.value.push(sb.id)
   try {
     let prompt = (sb.image_prompt || sb.imagePrompt || '').trim()
-    if (!prompt) {
-      if (!opts.silent) toast.info(`กำลังสร้างพรอมต์ภาพสตอรี่บอร์ด ช็อต #${idx}...`)
+    if (!prompt || prompt.includes('2x3')) {
+      if (!opts.silent) toast.info(`กำลังสร้างพรอมต์ภาพคีย์เฟรม ช็อต #${idx}...`)
       prompt = await genSbImagePrompt(sb, { silent: true })
     }
-    if (!prompt) {
+    if (!prompt || prompt.includes('2x3')) {
       prompt = buildFallbackSbImagePrompt(sb)
       await storyboardAPI.update(sb.id, { image_prompt: prompt })
       sb.image_prompt = prompt
     }
     const referenceImages = getShotReferenceImages(sb)
+    const aspectResolutionMap = {
+      '16:9': '1920x1080',
+      '9:16': '1080x1920',
+      '1:1': '1024x1024',
+      '4:3': '1024x768',
+      '3:4': '768x1024',
+    }
+    const resolvedSize = aspectResolutionMap[dramaAspectRatio.value] || dramaAspectRatio.value || '1920x1080'
     const generation = await taskAPI.generate({
       type: 'image',
       storyboard_id: sb.id,
       drama_id: dramaId,
       prompt,
       frame_type: 'first_frame',
-      size: dramaAspectRatio.value,
+      size: resolvedSize,
       reference_images: referenceImages.length ? referenceImages : undefined,
       model: bareModelName(imageModel.value) || undefined,
       config_id: ownerConfigId(imageModelOptions.value, imageModel.value),
@@ -3894,6 +3894,9 @@ function getShotReferenceImages(sb) {
   for (const prop of getStoryboardProps(sb)) {
     pushRef(prop?.image_url || prop?.imageUrl)
   }
+  // สตอรี่บอร์ดภาพนิ่ง/คีย์เฟรม ใส่เป็นภาพอ้างอิง (Reference) เสมอ (ไม่ใช้เป็น First Frame)
+  const sbImg = sb?.first_frame_image || sb?.firstFrameImage || sb?.composed_image || sb?.composedImage || null
+  if (sbImg) pushRef(sbImg)
   return refs
 }
 
@@ -4103,30 +4106,49 @@ function uploadAssetImage(kind, id) {
   })
 }
 
+function extractDurationFromPrompt(prompt) {
+  if (!prompt) return null
+  const rangeMatches = [...prompt.matchAll(/(?:^|[^\d])(\d+)\s*[-~至到]\s*(\d+)\s*(?:s|sec|วินาที|秒)/gi)]
+  if (rangeMatches.length > 0) {
+    const endTimes = rangeMatches.map(m => parseInt(m[2], 10)).filter(n => !isNaN(n) && n > 0)
+    if (endTimes.length > 0) return Math.max(...endTimes)
+  }
+  const singleMatches = [...prompt.matchAll(/(?:^|[^\d])(\d+)\s*(?:s|sec|วินาที|秒)(?:[^\w]|$)/gi)]
+  if (singleMatches.length > 0) {
+    const times = singleMatches.map(m => parseInt(m[1], 10)).filter(n => !isNaN(n) && n >= 2 && n <= 60)
+    if (times.length > 0) return Math.max(...times)
+  }
+  return null
+}
+
 async function genVid(sb, opts = {}) {
   // Flow sends local reference files through the original engine/cookie path.
 
   const referenceImages = getShotReferenceImages(sb)
-  const frameImg = sb.first_frame_image || sb.firstFrameImage || sb.composed_image || sb.composedImage || sb.image_url || sb.imageUrl || null
-  // 参考素材完全来自分镜绑定的角色/场景/道具图片
+  const resolvedPrompt = resolveVideoPromptRefs(sb)
+  const promptDuration = extractDurationFromPrompt(resolvedPrompt)
+  const finalDuration = promptDuration || Number(sb.duration || 10)
+
+  if (promptDuration && promptDuration !== sb.duration) {
+    updateField(sb, 'duration', promptDuration)
+  }
+
+  // การสร้างวีดีโอ ต้องไม่เอา storyboard มาสร้างเป็น frame แรก ต้องเอาไว้อ้างอิงเป็น ref เท่านั้น
   const params = {
     storyboard_id: sb.id,
     drama_id: dramaId,
-    prompt: resolveVideoPromptRefs(sb),
-    duration: Number(sb.duration || 10),
+    prompt: resolvedPrompt,
+    duration: finalDuration,
     aspect_ratio: dramaAspectRatio.value,
     generate_audio: true,
-    model: bareModelName(videoModel.value) || undefined,
+    model: videoModel.value || undefined,
     config_id: ownerConfigId(videoModelOptions.value, videoModel.value),
-    reference_image_urls: referenceImages,
-    reference_mode: isGoogleFlowVideo.value && referenceImages.length ? 'reference' : undefined,
-    image_url: frameImg || undefined,
-    first_frame_url: frameImg || undefined,
+    reference_mode: 'reference',
+    reference_image_urls: referenceImages.length ? referenceImages : undefined,
+    image_url: undefined,
+    first_frame_url: undefined,
   }
-  if (frameImg && sbVideoRefMode.value === 'first_frame') {
-    params.reference_mode = 'first_frame'
-  }
-  if (!params.prompt && !referenceImages.length && !frameImg) {
+  if (!params.prompt && !referenceImages.length) {
     toast.error(t('episode.vid.needRefOrPrompt'))
     return
   }

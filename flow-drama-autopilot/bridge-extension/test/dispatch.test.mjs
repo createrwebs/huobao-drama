@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const extDir = path.resolve(here, '..');
@@ -32,7 +32,7 @@ const extDir = path.resolve(here, '..');
 // CommonJS and choke on its `import`. Copying the two real files into a staged
 // directory with a one-line package.json keeps the originals untouched.
 const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'fgext-'));
-for (const file of ['background.js', 'config.js', 'popup.js']) {
+for (const file of ['background.js', 'config.js', 'popup.js', 'qzent-cookies.js']) {
   fs.copyFileSync(path.join(extDir, file), path.join(stage, file));
 }
 fs.writeFileSync(path.join(stage, 'package.json'), JSON.stringify({ type: 'module' }));
@@ -65,7 +65,7 @@ fs.writeFileSync(path.join(stage, 'package.json'), JSON.stringify({ type: 'modul
  * ------------------------------------------------------------------ */
 
 const manifest = JSON.parse(fs.readFileSync(path.join(extDir, 'manifest.json'), 'utf8'));
-const { DEFAULTS } = await import(path.join(stage, 'config.js'));
+const { DEFAULTS } = await import(pathToFileURL(path.join(stage, 'config.js')).href);
 
 /** Does one manifest host pattern cover a bare host? */
 function patternCoversHost(pattern, host) {
@@ -409,7 +409,7 @@ for (const [key, descriptor] of Object.entries(descriptors)) {
   Object.defineProperty(globalThis, key, descriptor);
 }
 
-await import(path.join(stage, 'background.js'));
+await import(pathToFileURL(path.join(stage, 'background.js')).href);
 
 // connect() is async — let it reach `new WebSocket(...)`.
 for (let i = 0; i < 10 && sockets.length === 0; i++) {
@@ -879,7 +879,7 @@ globalThis.navigator.clipboard = {
   writeText: async (text) => { clipboardText = text; },
 };
 
-await import(path.join(stage, 'popup.js'));
+await import(pathToFileURL(path.join(stage, 'popup.js')).href);
 await new Promise((resolve) => setTimeout(resolve, 20));
 
 /**

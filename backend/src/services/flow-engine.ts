@@ -12,12 +12,14 @@ import { enrichStoryboardVideoPrompt } from './video-prompts.js'
 import { cookieDiagnostic, diagnosticHash, summarizeFlowOutput, writeFlowDiagnostic } from './flow-diagnostics.js'
 
 // Known directories for Google Flow engine binary and cookies
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
 const CANDIDATE_FLOW_ROOTS = [
   process.env.FLOW_ENGINE_DIR,
-  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../flow-drama-autopilot/flow-agent-ref/flow-agent'),
-  '/Users/noppanan/flow-drama-autopilot/flow-agent-ref/flow-agent',
+  path.resolve(repoRoot, 'flow-drama-autopilot/flow-agent-ref/flow-agent'),
   path.resolve(process.cwd(), '../flow-drama-autopilot/flow-agent-ref/flow-agent'),
   path.resolve(process.cwd(), './flow-agent'),
+  repoRoot,
+  process.cwd(),
 ].filter(Boolean) as string[]
 
 export interface FlowAccountItem {
@@ -58,6 +60,14 @@ export function resolveFlowEngine(): { rootDir: string; binaryPath: string } | n
       return { rootDir: root, binaryPath: altBin }
     }
   }
+
+  // Fallback: If repo root or cwd has cookies/ directory, treat it as rootDir so cookie accounts can be listed and imported
+  for (const root of [repoRoot, process.cwd()]) {
+    if (fs.existsSync(path.join(root, 'cookies'))) {
+      return { rootDir: root, binaryPath: '' }
+    }
+  }
+
   return null
 }
 
@@ -460,7 +470,7 @@ export async function getFlowEngineStatus(refresh = false): Promise<FlowEngineIn
 
   let lastError: string | undefined
   // Refresh the same database that supplies the account list.
-  if (refresh) {
+  if (refresh && resolved.binaryPath) {
     try {
       await new Promise<void>((res, reject) => {
         execFile(resolved.binaryPath, ['balance', '--refresh', '--db', path.join(resolved.rootDir, 'data', 'flow.db')], { cwd: resolved.rootDir, timeout: 90000 }, (err) => {
@@ -568,7 +578,9 @@ export function generateFlowImage(options: GenerateFlowImageOptions): Promise<Fl
 
 async function runFlowImage(options: GenerateFlowImageOptions): Promise<FlowImageResult> {
   const engine = resolveFlowEngine()
-  if (!engine) throw new Error('Google Flow Engine is not configured or binary not found')
+  if (!engine || !engine.binaryPath || !fs.existsSync(engine.binaryPath)) {
+    throw new Error('ไม่พบ Flow Engine binary (flow-windows.exe) กรุณาตรวจสอบการติดตั้ง หรือใช้ Provider อื่น เช่น ToraAPI หรือ Gemini')
+  }
 
   let aspect = options.aspect || '1:1'
   if (aspect.includes('x')) {
@@ -723,7 +735,9 @@ export interface FlowVideoResult {
 
 export async function generateFlowVideo(options: GenerateFlowVideoOptions): Promise<FlowVideoResult> {
   const engine = resolveFlowEngine()
-  if (!engine) throw new Error('Google Flow Engine is not configured or binary not found')
+  if (!engine || !engine.binaryPath || !fs.existsSync(engine.binaryPath)) {
+    throw new Error('ไม่พบ Flow Engine binary (flow-windows.exe) กรุณาตรวจสอบการติดตั้ง หรือใช้ Provider อื่น เช่น ToraAPI หรือ Gemini')
+  }
 
   let aspect = options.aspect || '9:16'
   if (aspect.includes('x')) {
@@ -773,7 +787,7 @@ export async function generateFlowVideo(options: GenerateFlowVideoOptions): Prom
   if (!useStartImage) {
     for (const ref of options.referenceImages || []) {
       const file = resolveToLocalFilePath(ref)
-      if (!file || !fs.statSync(file).isFile()) throw new Error(`ไม่พบไฟล์ภาพอ้างอิง: ${ref}`)
+      if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) throw new Error(`ไม่พบไฟล์ภาพอ้างอิง: ${ref}`)
       if (!resolvedRefImages.includes(file)) resolvedRefImages.push(file)
     }
     if (!resolvedRefImages.length && options.storyboardId) {
@@ -827,7 +841,7 @@ export async function generateFlowVideo(options: GenerateFlowVideoOptions): Prom
     duration, quality, aspect, referenceCount: resolvedRefImages.length,
     promptLength: prompt.length, promptHash: diagnosticHash(prompt), cookie: beforeCookie,
     references: resolvedRefImages.map(file => ({ bytes: fs.statSync(file).size, contentHash: diagnosticHash(fs.readFileSync(file).toString('base64')) })),
-    binaryModifiedAt: fs.statSync(engine.binaryPath).mtime.toISOString(),
+    binaryModifiedAt: engine.binaryPath && fs.existsSync(engine.binaryPath) ? fs.statSync(engine.binaryPath).mtime.toISOString() : null,
   })
 
   const runGeneration = (): Promise<{ stdout: string; stderr: string }> => {

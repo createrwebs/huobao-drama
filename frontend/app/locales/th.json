@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Huobao Shorts",
+    "title": "ToraAPI",
     "updateAvailable": "มีเวอร์ชันใหม่ v{version} พร้อมให้อัปเกรดใน ตั้งค่า → เกี่ยวกับ"
   },
   "common": {
@@ -275,7 +275,6 @@
       "tabFlow": "Google Flow (ฟรี/Google One)",
       "tabGemini": "Google Gemini (ฟรี)",
       "tabOpenai": "OpenAI (ทางการ)",
-      "tabFiremux": "Firemux Relay (วิดีโอ)",
       "antigravityQuickDesc": "ใช้งานโมเดลข้อความของ Google Antigravity (Gemini 3.8 Flash, 3.7 Flash, Gemini Pro, Claude) โดยตรงผ่านบัญชีที่คุณล็อกอินไว้ในเครื่อง ไม่ต้องใช้ API Key แบบเติมเงิน และไม่มีค่าใช้จ่าย",
       "applyAntigravity": "เปิดใช้งาน Google Antigravity (โมเดลข้อความฟรี)",
       "antigravityStatusConnected": "Google Antigravity เชื่อมต่อแล้ว (พอร์ต 8317 พร้อมใช้งาน)",
@@ -289,7 +288,7 @@
       "applyFlowNative": "วิธีที่ 1: เปิดใช้งาน Google Flow (ในตัว - แนะนำ)",
       "applyFlowProxy": "วิธีที่ 2: เปิดใช้งานผ่าน Local OpenAI Proxy",
       "flowQuickApplied": "บันทึกและเปิดใช้งาน Google Flow เรียบร้อยแล้ว",
-      "flowMethod1Desc": "วิธีที่ 1 (Native Adapter): Huobao Drama เรียกเครื่องมือภายในเพื่อเจนภาพและวิดีโอโดยตรง รวดเร็วและเสถียรที่สุด",
+      "flowMethod1Desc": "วิธีที่ 1 (Native Adapter): ToraAPI เรียกเครื่องมือภายในเพื่อเจนภาพและวิดีโอโดยตรง รวดเร็วและเสถียรที่สุด",
       "flowMethod2Desc": "วิธีที่ 2 (OpenAI Compatible Bridge): ให้บริการผ่านพอร์ต http://127.0.0.1:5679/api/v1/flow-bridge เพื่อรองรับไคลเอนต์ภายนอกแบบ OpenAI",
       "flowAccountsTitle": "บัญชี Google Flow ที่เชื่อมต่อ",
       "flowActiveBadge": "กำลังใช้งาน",
@@ -316,11 +315,11 @@
       "applyOpenai": "ใช้การตั้งค่า OpenAI (ข้อความ + ภาพ)",
       "openaiApiKeyRequired": "กรุณากรอก OpenAI API Key",
       "openaiQuickApplied": "บันทึกการตั้งค่า OpenAI (ข้อความ + ภาพ) เรียบร้อยแล้ว",
-      "quickDesc": "กรอก Huobao / Firemux API Key เพื่อเชื่อมต่อโมเดลวิดีโอจีน (Wan 3.0 / Seedance / MiniMax) ผ่านพร็อกซีรีเลย์",
-      "getKey": "รับ Huobao API Key",
+      "quickDesc": "กรอก ToraAPI API Key เพื่อเชื่อมต่อโมเดลวิดีโอจีน (Wan 3.0 / Seedance / MiniMax) ผ่านพร็อกซีรีเลย์",
+      "getKey": "รับ ToraAPI API Key",
       "regionCn": "จีน",
       "regionCom": "สากล",
-      "applyQuick": "ใช้การตั้งค่า Firemux",
+      "applyQuick": "ใช้การตั้งค่า ToraAPI",
       "manualTitle": "เทมเพลตแบบกำหนดเอง",
       "manualDesc": "เลือกประเภทบริการ จากนั้นกรอก `ผู้ให้บริการ / Base URL / โมเดล` ที่แนะนำจากเทมเพลต",
       "activeCount": "{n} ใช้งานอยู่",
@@ -330,8 +329,8 @@
       "setDefault": "ตั้งเป็นโมเดลเริ่มต้นสำหรับประเภทนี้",
       "noBaseUrl": "ยังไม่ได้ตั้งค่า Base URL",
       "test": "ทดสอบ",
-      "apiKeyRequired": "กรุณากรอก Huobao API Key",
-      "quickApplied": "เขียนการตั้งค่าด่วน Huobao เรียบร้อยแล้ว",
+      "apiKeyRequired": "กรุณากรอก ToraAPI API Key",
+      "quickApplied": "เขียนการตั้งค่าด่วน ToraAPI เรียบร้อยแล้ว",
       "defaultModelSwitched": "เปลี่ยนโมเดล {type} เริ่มต้นเป็น {model}",
       "meta": {
         "text": "ความสามารถด้านข้อความ: เขียนบทใหม่, สกัดแอสเซท, แตกสตอรี่บอร์ด",
@@ -347,9 +346,29 @@
         "seedanceOfficial": "Seedance 2.0 ทางการ",
         "minimaxOfficial": "MiniMax H3 ทางการ"
       },
-      "quickServiceText": "Huobao ข้อความ",
-      "quickServiceImage": "Huobao รูปภาพ",
-      "quickServiceVideo": "Huobao วิดีโอ"
+      "quickServiceText": "ToraAPI ข้อความ",
+      "quickServiceImage": "ToraAPI รูปภาพ",
+      "quickServiceVideo": "ToraAPI วิดีโอ",
+      "toraKeyLabel": "คีย์บัญชี ToraAPI",
+      "toraDesc": "ใส่ ToraAPI key เพื่อดึงรายการโมเดลจริง แยก Chat, Image และ VDO ระบบจะเลือกเฉพาะชื่อโมเดลที่ดึงกลับมาสำหรับ key นี้",
+      "toraLogin": "เข้าสู่ระบบ ToraAPI",
+      "toraLogout": "ออกจากระบบ",
+      "toraChecking": "กำลังตรวจสอบเซสชัน ToraAPI…",
+      "toraConnected": "เชื่อมต่อ ToraAPI แล้ว",
+      "toraDisconnected": "ยังไม่ได้เชื่อมต่อ ToraAPI",
+      "toraLoggedIn": "เข้าสู่ระบบ ToraAPI และโหลดโมเดลแล้ว",
+      "toraLoggedOut": "ออกจากระบบแล้ว",
+      "toraLoginFailed": "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบคีย์แล้วลองอีกครั้ง",
+      "toraSessionFailed": "ตรวจสอบเซสชัน ToraAPI ไม่สำเร็จ",
+      "toraLogoutFailed": "ออกจากระบบ ToraAPI ไม่สำเร็จ",
+      "toraSecurityNote": "คีย์จะส่งไปยังเซิร์ฟเวอร์นี้เพื่อเข้าสู่ระบบ และจะไม่บันทึกไว้ในเบราว์เซอร์",
+      "toraLocalLimit": "โหมด local นี้เปิดการเชื่อมต่อข้อความและรูปภาพก่อน วิดีโอยังไม่เปิดจนกว่าจะตรวจสัญญา API ครบ เซสชันหมดอายุใน 8 ชั่วโมงหรือเมื่อรีสตาร์ทเซิร์ฟเวอร์",
+      "toraModelsFailed": "เข้าสู่ระบบแล้ว แต่โหลดโมเดลไม่สำเร็จ กรุณารีเฟรชรายการและลองอีกครั้ง",
+      "toraSessionExpired": "เซสชัน ToraAPI หมดอายุ กรุณาเข้าสู่ระบบใหม่",
+      "toraCatalogTitle": "โมเดลที่ API key นี้ใช้ได้",
+      "toraCatalogRefresh": "รีเฟรชโมเดล",
+      "toraCatalogEmpty": "key นี้ไม่มีโมเดลในประเภทนี้",
+      "tabTora": "ToraAPI"
     },
     "styles": {
       "title": "พรีเซ็ตสไตล์",
@@ -469,7 +488,7 @@
       "addTitle": "เพิ่มบริการ {type}",
       "sub": "เลือกเทมเพลตก่อน — `Base URL` และโมเดลเริ่มต้นที่เหมาะสมจะถูกกรอกโดยอัตโนมัติ",
       "name": "ชื่อการตั้งค่า",
-      "namePlaceholder": "เช่น บริการรูปภาพเริ่มต้น Huobao",
+      "namePlaceholder": "เช่น บริการรูปภาพเริ่มต้น ToraAPI",
       "provider": "ผู้ให้บริการ",
       "providerPlaceholder": "เลือกผู้ให้บริการ",
       "priority": "ลำดับความสำคัญ",
@@ -485,7 +504,12 @@
       "reachable": "Endpoint ตอบสนองสำเร็จ",
       "unreachable": "Endpoint ล้มเหลวในการทดสอบ",
       "providerRequired": "กรุณาเลือกผู้ให้บริการ",
-      "tempInvalid": "อุณหภูมิต้องเป็นตัวเลขระหว่าง 0 ถึง 2"
+      "tempInvalid": "อุณหภูมิต้องเป็นตัวเลขระหว่าง 0 ถึง 2",
+      "fetchModels": "ดึงรายชื่อโมเดล",
+      "fetchModelsSuccess": "ดึงโมเดลสำเร็จ {n} รายการ",
+      "fetchModelsFailed": "ไม่สามารถดึงโมเดลได้: {error}",
+      "fetchModelsEmpty": "ไม่พบโมเดลที่ใช้งานได้ หรือ API ไม่ส่งรายชื่อกลับมา",
+      "fetchAndApply": "ดึงโมเดลและนำไปใช้"
     },
     "styleDialog": {
       "editTitle": "แก้ไขพรีเซ็ตสไตล์",
@@ -987,6 +1011,7 @@
     "server": "เซิร์ฟเวอร์ส่งการตอบกลับที่ไม่คาดคิด กรุณาลองใหม่อีกครั้งในภายหลัง",
     "unavailable": "บริการไม่พร้อมใช้งานชั่วคราว กรุณาลองใหม่อีกครั้งในภายหลัง",
     "auth": "การยืนยันตัวตนล้มเหลว ตรวจสอบการตั้งค่า API key ของคุณ",
+    "flowSessionExpired": "เซสชัน Google Flow หมดอายุ กรุณาอัปเดต Cookie หรือเชื่อมต่อส่วนขยาย Flow Bridge ใน Chrome",
     "rateLimit": "คำขอมากเกินไปหรือโควต้าไม่เพียงพอ กรุณาลองใหม่อีกครั้งในภายหลัง",
     "flowAssessmentRejected": "Google Flow ปฏิเสธการประเมินคำขอ (PUBLIC_ERROR_UNUSUAL_ACTIVITY) ยังไม่ยืนยันว่าเครดิตหมด ต้องตรวจ session และ reCAPTCHA ของ Flow engine กรุณาอย่าส่งงานซ้ำระหว่างตรวจสอบ",
     "timeout": "การสร้างหมดเวลา กรุณาลองใหม่อีกครั้ง",
@@ -1003,7 +1028,7 @@
     "helpTitle": "คู่มือแนะนำ",
     "index": {
       "welcome": {
-        "title": "👋 ยินดีต้อนรับสู่ Huobao Drama",
+        "title": "👋 ยินดีต้อนรับสู่ ToraAPI Drama",
         "desc": "นิยาย → บทละคร → แอสเซท → สตอรี่บอร์ด → วิดีโอ → รวมผลงาน ครบจบในที่เดียว กำหนดค่าบริการ AI ก่อน จากนั้นสร้างโปรเจกต์แรกของคุณ"
       },
       "create": {
@@ -1012,13 +1037,13 @@
       },
       "settings": {
         "title": "ขั้นตอนที่ 1 · กำหนดค่าบริการ AI",
-        "desc": "ทุกฟีเจอร์ AI จำเป็นต้องทำขั้นตอนนี้ก่อน เปิดหน้าการตั้งค่าแล้ววาง Huobao API Key เพื่อตั้งค่าข้อความ/ภาพ/วิดีโอในคลิกเดียว"
+        "desc": "ทุกฟีเจอร์ AI จำเป็นต้องทำขั้นตอนนี้ก่อน เปิดหน้าการตั้งค่าแล้ววาง ToraAPI API Key เพื่อตั้งค่าข้อความ/ภาพ/วิดีโอในคลิกเดียว"
       }
     },
     "settings": {
       "quick": {
         "title": "ตั้งค่าเร็วที่สุด: ตั้งค่าด่วน",
-        "desc": "วาง Huobao API Key เพื่อเขียนการตั้งค่าทั้งสามส่วนที่แนะนำ (ข้อความ/ภาพ/วิดีโอ) พร้อมทดสอบการเชื่อมต่อทันที"
+        "desc": "เชื่อมต่อบัญชี ToraAPI เซิร์ฟเวอร์จะบันทึกเซสชันอย่างปลอดภัยและตั้งค่าโมเดลข้อความ รูปภาพ และวิดีโอที่พร้อมใช้งาน"
       },
       "nav": {
         "title": "ศูนย์รวมการจัดการทั้งหมด",

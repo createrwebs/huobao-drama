@@ -22,11 +22,15 @@ export class OpenAIImageAdapter implements ImageProviderAdapter {
     const model = record.model || config.model || 'gpt-image-2'
     const isGptImage = model.startsWith('gpt-image-')
     const isGptImage2 = model === 'gpt-image-2'
+    const isDalle3 = model.startsWith('dall-e-3')
+    const resolvedRes = this.normalizeResolution(record.size)
     const size = isGptImage2
-      ? this.normalizeGptImage2Size(record.size)
+      ? this.normalizeGptImage2Size(resolvedRes)
       : isGptImage
-      ? this.normalizeGptImageSize(record.size)
-      : record.size || '1024x1024'
+      ? this.normalizeGptImageSize(resolvedRes)
+      : isDalle3
+      ? this.normalizeDalle3Size(resolvedRes)
+      : resolvedRes
 
     // 有参考图 → 走 edits（multipart 上传图片文件）；无参考图 → 纯文生图 generations
     const refs = this.parseReferenceImages(record.referenceImages)
@@ -85,12 +89,13 @@ export class OpenAIImageAdapter implements ImageProviderAdapter {
     form.append('n', '1')
 
     let appended = 0
+    const fieldName = refs.length === 1 ? 'image' : 'image[]'
     for (const ref of refs) {
       const parsed = parseDataUrl(ref)
       if (!parsed) continue
       const buffer = Buffer.from(parsed.data, 'base64')
       const ext = parsed.mimeType === 'image/png' ? 'png' : parsed.mimeType === 'image/webp' ? 'webp' : 'jpg'
-      form.append('image[]', new Blob([buffer], { type: parsed.mimeType }), `reference-${++appended}.${ext}`)
+      form.append(fieldName, new Blob([buffer], { type: parsed.mimeType }), `reference-${++appended}.${ext}`)
     }
     if (!appended) {
       throw new Error('参考图片无法解析为可上传的文件（仅支持 data URL 形式的图片）')
@@ -104,6 +109,44 @@ export class OpenAIImageAdapter implements ImageProviderAdapter {
       },
       body: form,
     }
+  }
+
+  normalizeResolution(size?: string | null): string {
+    if (!size) return '1920x1080'
+    const trimmed = size.trim().toLowerCase()
+
+    if (trimmed === '16:9' || trimmed === '16/9') return '1920x1080'
+    if (trimmed === '9:16' || trimmed === '9/16') return '1080x1920'
+    if (trimmed === '1:1' || trimmed === '1/1') return '1024x1024'
+    if (trimmed === '4:3' || trimmed === '4/3') return '1024x768'
+    if (trimmed === '3:4' || trimmed === '3/4') return '768x1024'
+    if (trimmed === '21:9' || trimmed === '21/9') return '2560x1080'
+
+    if (/^\d+\*\d+$/.test(trimmed)) {
+      return trimmed.replace('*', 'x')
+    }
+
+    if (/^\d+x\d+$/.test(trimmed)) {
+      return trimmed
+    }
+
+    if (trimmed.includes(':') || trimmed.includes('/')) {
+      const sep = trimmed.includes(':') ? ':' : '/'
+      const [w, h] = trimmed.split(sep).map(Number)
+      if (w && h) {
+        if (w === h) return '1024x1024'
+        if (w > h) return `${Math.round((1080 * w) / h)}x1080`
+        return `1080x${Math.round((1080 * h) / w)}`
+      }
+    }
+
+    return '1920x1080'
+  }
+
+  private normalizeDalle3Size(size: string): string {
+    const [w, h] = size.split('x').map(Number)
+    if (!w || !h || w === h) return '1024x1024'
+    return w > h ? '1792x1024' : '1024x1792'
   }
 
   private normalizeGptImageSize(size?: string | null): string {
@@ -137,21 +180,20 @@ export class OpenAIImageAdapter implements ImageProviderAdapter {
   }
 
   parseGenerateResponse(result: any): ImageGenResponse {
-    // OpenAI DALL-E 3 目前是同步返回，但规范上也有异步 task 模式
-    if (result.task_id || result.id) {
-      return { isAsync: true, taskId: result.task_id || result.id }
-    }
-    const imageUrl = result.data?.[0]?.url || result.url
+    // 优先检查直接返回的图片 URL 或 Base64（同步完成）
+    const imageUrl = result.data?.[0]?.url || result.url || result.output?.url
     if (imageUrl) {
       return { isAsync: false, imageUrl }
     }
-    // b64_json 模式
     const b64 = result.data?.[0]?.b64_json
     if (b64) {
-      // 对于 base64，返回特殊标记，实际处理在 extractImageBase64
       return { isAsync: false, imageUrl: undefined }
     }
-    throw new Error('No image URL in response')
+    // 无直接结果但返回了任务 ID，按异步轮询处理
+    if (result.task_id || result.id) {
+      return { isAsync: true, taskId: result.task_id || result.id }
+    }
+    throw new Error('No image URL or task ID in response')
   }
 
   buildPollRequest(config: AIConfig, taskId: string): ProviderRequest {

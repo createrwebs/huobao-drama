@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "火宝ショートドラマ",
+    "title": "ToraAPI",
     "updateAvailable": "新バージョン v{version} があります。「設定 → 更新について」でアップグレードできます"
   },
   "common": {
@@ -274,7 +274,6 @@
       "tabFlow": "Google Flow (無料/Google One)",
       "tabGemini": "Google Gemini (公式無料)",
       "tabOpenai": "OpenAI (公式)",
-      "tabFiremux": "Firemux 中継 (動画)",
       "flowQuickDesc": "Chromeから同期された Google One / Flow セッションを使用して、画像（Imagen 3）および動画（Veo）を無料生成します。",
       "flowStatusConnected": "Google Flow 接続完了 ({accounts} アカウント, クレジット: {credits})",
       "flowStatusChecking": "Google Flow 接続状態を確認中...",
@@ -282,7 +281,7 @@
       "applyFlowNative": "方法1: 内蔵 Google Flow を有効化 (ネイティブ推奨)",
       "applyFlowProxy": "方法2: ローカル OpenAI プロキシ経由で有効化",
       "flowQuickApplied": "Google Flow の設定が正常に保存され有効化されました",
-      "flowMethod1Desc": "方法1 (ネイティブ): Huobao Drama がローカルエンジンを直接呼び出してメディアを生成します（最高速・安定）。",
+      "flowMethod1Desc": "方法1 (ネイティブ): ToraAPI がローカルエンジンを直接呼び出してメディアを生成します（最高速・安定）。",
       "flowMethod2Desc": "方法2 (OpenAI互換ブリッジ): http://127.0.0.1:5679/api/v1/flow-bridge で標準インターフェースを提供します。",
       "geminiQuickDesc": "Google AI Studio 公式 Gemini API Key（無料枠対応）を使用して、テキストおよび画像生成モデルをワンクリックで設定します。",
       "getGeminiKey": "Google で無料 Key を取得",
@@ -294,11 +293,11 @@
       "applyOpenai": "OpenAI 設定を適用 (テキスト + 画像)",
       "openaiApiKeyRequired": "OpenAI API Key を入力してください",
       "openaiQuickApplied": "OpenAI の設定が正常に保存されました",
-      "quickDesc": "Huobao / Firemux API Key を入力して、動画モデル（Wan 3.0 / Seedance / MiniMax）の中継サービスを設定します。",
-      "getKey": "Huobao API Key を取得",
+      "quickDesc": "ToraAPI API Key を入力して、動画モデル（Wan 3.0 / Seedance / MiniMax）の中継サービスを設定します。",
+      "getKey": "ToraAPI API Key を取得",
       "regionCn": "国内",
       "regionCom": "海外",
-      "applyQuick": "Firemux 設定を書き込む",
+      "applyQuick": "ToraAPI 設定を書き込む",
       "manualTitle": "手動テンプレート",
       "manualDesc": "サービスタイプを選ぶと、推奨の `provider / base URL / model` がテンプレートから入力されます。",
       "activeCount": "{n} 件有効",
@@ -308,8 +307,8 @@
       "setDefault": "このタイプのデフォルトモデルに設定",
       "noBaseUrl": "Base URL 未設定",
       "test": "テスト",
-      "apiKeyRequired": "Huobao API Key を入力してください",
-      "quickApplied": "火宝クイック設定を書き込みました",
+      "apiKeyRequired": "ToraAPI API Key を入力してください",
+      "quickApplied": "ToraAPIクイック設定を書き込みました",
       "defaultModelSwitched": "デフォルト{type}モデルを {model} に切り替えました",
       "presets": {
         "flowOfficial": "Google Flow (無料/Google One)",
@@ -323,7 +322,27 @@
         "text": "脚本リライト、キャラクター・シーン抽出、分镜分解などの Agent テキスト能力",
         "image": "キャラクター図、シーン図、ショット図などの静止画生成",
         "video": "ショット動画の直接生成（デフォルト Seedance 2.0）"
-      }
+      },
+      "toraKeyLabel": "ToraAPI アカウントキー",
+      "toraDesc": "ToraAPI キーから最新のモデル一覧を取得し、Chat、Image、VDO に分類します。返された正確な ID のみ使用します。",
+      "toraLogin": "ToraAPI にログイン",
+      "toraLogout": "ログアウト",
+      "toraChecking": "ToraAPI セッションを確認中…",
+      "toraConnected": "ToraAPI に接続済み",
+      "toraDisconnected": "ToraAPI 未接続",
+      "toraLoggedIn": "ToraAPI にログインし、モデルを読み込みました",
+      "toraLoggedOut": "ログアウトしました",
+      "toraLoginFailed": "ログインできませんでした。キーを確認して再試行してください。",
+      "toraSessionFailed": "ToraAPI セッションを確認できませんでした。",
+      "toraLogoutFailed": "ToraAPI からログアウトできませんでした。",
+      "toraSecurityNote": "キーはログインのためにこのサーバーへ送信され、ブラウザーには保存されません。",
+      "toraLocalLimit": "ローカル連携ではテキストと画像のプロトコルを先に有効にします。動画は API 契約の確認後に対応します。8 時間後またはサーバー再起動後に再ログインしてください。",
+      "toraModelsFailed": "ログイン済みですがモデルの取得に失敗しました。モデル一覧を更新してください。",
+      "toraSessionExpired": "ToraAPI セッションの有効期限が切れました。再度ログインしてください。",
+      "toraCatalogTitle": "この API キーで利用可能なモデル",
+      "toraCatalogRefresh": "モデルを更新",
+      "toraCatalogEmpty": "この種類のモデルはありません。",
+      "tabTora": "ToraAPI"
     },
     "styles": {
       "title": "スタイルプリセット",
@@ -421,7 +440,7 @@
       "addTitle": "{type}サービスを追加",
       "sub": "まずテンプレートを選ぶと、適切な `Base URL` とデフォルトモデルが自動入力されます。",
       "name": "設定名",
-      "namePlaceholder": "例：火宝デフォルト画像サービス",
+      "namePlaceholder": "例：ToraAPIデフォルト画像サービス",
       "provider": "プロバイダー",
       "providerPlaceholder": "プロバイダーを選択",
       "priority": "優先度",
@@ -915,7 +934,7 @@
     "helpTitle": "ガイド",
     "index": {
       "welcome": {
-        "title": "👋 火宝短劇へようこそ",
+        "title": "👋 ToraAPI短劇へようこそ",
         "desc": "小説 → 脚本 → アセット → 絵コンテ → 動画 → 完成、すべてワンストップ。まず AI サービスを設定し、最初のプロジェクトを作成しましょう。"
       },
       "create": {
@@ -924,13 +943,13 @@
       },
       "settings": {
         "title": "ステップ 1 · AI サービスを設定",
-        "desc": "すべての AI 機能に事前設定が必要です。「設定」ページで Huobao API キーを貼り、テキスト/画像/動画をワンクリック設定しましょう。"
+        "desc": "すべての AI 機能に事前設定が必要です。「設定」ページで ToraAPI API キーを貼り、テキスト/画像/動画をワンクリック設定しましょう。"
       }
     },
     "settings": {
       "quick": {
         "title": "最速セットアップ：クイック設定",
-        "desc": "Huobao API キーを貼り付けると推奨 3 設定（テキスト/画像/動画）を一括書き込み。接続テスト対応。"
+        "desc": "ToraAPI アカウントに接続します。サーバーがセッションを安全に保存し、利用可能なテキスト・画像・動画モデルを設定します。"
       },
       "nav": {
         "title": "すべてここに",

@@ -52,6 +52,9 @@ export function stripStylePrefix(prompt: string, knownStylePrompts: string[]): s
 /** 确保提示词使用该剧本当前绑定的风格前缀 */
 export async function applyDramaStyleToPrompt(prompt: string, dramaId: number | null | undefined): Promise<string> {
   if (!prompt || !dramaId) return prompt
+  if (prompt.toLowerCase().includes('2x3 storyboard grid') || prompt.toLowerCase().includes('2x3 grid')) {
+    return prompt
+  }
   const stylePrompt = await getDramaStylePrompt(dramaId)
   if (!stylePrompt) return prompt
 

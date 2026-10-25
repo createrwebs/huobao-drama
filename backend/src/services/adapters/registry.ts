@@ -10,6 +10,7 @@ import { MiniMaxVideoAdapter } from './minimax-video.js'
 import { AliyunWanVideoAdapter } from './aliyun-wan-video.js'
 import { GoogleFlowImageAdapter } from './google-flow-image.js'
 import { GoogleFlowVideoAdapter } from './google-flow-video.js'
+import { OpenAIVideoAdapter } from './openai-video.js'
 import type { ImageProviderAdapter, VideoProviderAdapter } from './types.js'
 
 // 图片 Adapter 注册表
@@ -22,6 +23,7 @@ export const imageAdapters: Record<string, ImageProviderAdapter> = {
 
 // 视频 Adapter 注册表
 export const videoAdapters: Record<string, VideoProviderAdapter> = {
+  openai: new OpenAIVideoAdapter(),
   volcengine: new VolcEngineVideoAdapter(),
   minimax: new MiniMaxVideoAdapter(),
   aliyun: new AliyunWanVideoAdapter(),

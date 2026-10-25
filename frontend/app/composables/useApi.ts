@@ -1,20 +1,26 @@
-const BASE = '/api/v1'
+function apiBase() {
+  const baseURL = useRuntimeConfig().app.baseURL
+  return `${baseURL.replace(/\/+$/, '')}/api/v1`
+}
 
 async function req<T = any>(method: string, path: string, body?: any): Promise<T> {
-  const opts: RequestInit = { method, headers: { 'Content-Type': 'application/json' } }
+  const opts: RequestInit = { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } }
   if (body) opts.body = JSON.stringify(body)
 
   const start = performance.now()
-  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', body || '')
+  // Log metadata only: keys, cookies and provider error payloads are sensitive.
+  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc')
 
   try {
-    const resp = await fetch(`${BASE}${path}`, opts)
+    const resp = await fetch(`${apiBase()}${path}`, opts)
     const json = await resp.json()
     const ms = Math.round(performance.now() - start)
 
     if (!resp.ok || (json.code && json.code >= 400)) {
-      console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888', json.message || '')
-      throw new Error(json.message || json.msg || json.error?.message || `${resp.status}`)
+      console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888')
+      const error = new Error(json.message || json.msg || json.error?.message || `${resp.status}`)
+      ;(error as any).status = resp.status
+      throw error
     }
 
     console.log(`%c[API] %c${method} ${path} %c${resp.status} %c${ms}ms`, 'color:#888', 'color:#66bb6a', 'color:#66bb6a;font-weight:bold', 'color:#888')
@@ -22,7 +28,7 @@ async function req<T = any>(method: string, path: string, body?: any): Promise<T
   } catch (err: any) {
     if (!err.message?.match(/^\d{3}$/)) {
       const ms = Math.round(performance.now() - start)
-      console.log(`%c[API] %c${method} ${path} %cERROR %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888', err.message)
+      console.log(`%c[API] %c${method} ${path} %cERROR %c${ms}ms`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold', 'color:#888')
     }
     throw err
   }
@@ -33,6 +39,13 @@ export const api = {
   post: <T = any>(p: string, b?: any) => req<T>('POST', p, b),
   put: <T = any>(p: string, b?: any) => req<T>('PUT', p, b),
   del: <T = any>(p: string) => req<T>('DELETE', p),
+}
+
+export const authAPI = {
+  login: (apiKey: string) => api.post('/auth/login', { apiKey }),
+  me: () => api.get<{ authenticated: boolean; managed?: boolean }>('/auth/me'),
+  models: () => api.get<{ chat: any[]; image: any[]; vdo: any[]; unknown: any[] }>('/auth/models'),
+  logout: () => api.post('/auth/logout'),
 }
 
 export const dramaAPI = {
@@ -109,7 +122,7 @@ async function uploadReq<T = any>(path: string, file: File): Promise<T> {
   const fd = new FormData()
   fd.append('file', file)
   console.log(`%c[API] %cPOST %c${path} %c${file.name}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', 'color:#888')
-  const resp = await fetch(`${BASE}${path}`, { method: 'POST', body: fd })
+  const resp = await fetch(`${apiBase()}${path}`, { method: 'POST', credentials: 'same-origin', body: fd })
   const json = await resp.json()
   if (!resp.ok || (json.code && json.code >= 400)) {
     console.log(`%c[API] %cPOST ${path} %c${resp.status}`, 'color:#888', 'color:#ef5350', 'color:#ef5350;font-weight:bold')
@@ -134,6 +147,10 @@ export const aiConfigAPI = {
   update: (id: number, d: any) => api.put(`/ai-configs/${id}`, d),
   del: (id: number) => api.del(`/ai-configs/${id}`),
   test: (d: any) => api.post('/ai-configs/test', d),
+  fetchModels: (d: { provider?: string; base_url?: string; api_key?: string; service_type?: string; config_id?: number }) =>
+    api.post<any>('/ai-configs/fetch-models', d),
+  checkCredit: (d?: { api_key?: string; base_url?: string; config_id?: number }) =>
+    api.post<{ ok: boolean; credit: number; hard_limit?: number; total_usage?: number; is_unlimited?: boolean; message?: string }>('/ai-configs/credit', d || {}),
 }
 
 export const flowBridgeAPI = {
@@ -146,6 +163,7 @@ export const flowBridgeAPI = {
   applyToStoryboard: (data: { storyboard_id: number; filename?: string; file_path?: string; video_url?: string; prompt?: string }) => api.post('/flow-bridge/apply-to-storyboard', data),
   getCharacterRefs: (dramaId: number) => api.get(`/flow-bridge/character-refs/${dramaId}`),
   syncCharacterRefs: (data: { drama_id: number; force?: boolean; character_ids?: number[] }) => api.post('/flow-bridge/sync-character-refs', data),
+  profiles: (serviceType?: string) => api.get(`/ai-configs/profiles${serviceType ? `?service_type=${serviceType}` : ''}`),
 }
 
 // lang 缺省/为 zh 时读写基础版（不带 query，保持原请求形态）

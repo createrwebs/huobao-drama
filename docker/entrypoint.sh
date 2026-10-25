@@ -9,4 +9,11 @@ if [ ! -e /app/data/workspace/.template-version ]; then
 fi
 
 cd /app/backend
-exec node_modules/.bin/tsx src/index.ts
+if [ -x ./node_modules/.bin/tsx ]; then
+  exec ./node_modules/.bin/tsx src/index.ts
+elif which tsx >/dev/null 2>&1; then
+  exec tsx src/index.ts
+else
+  exec npx tsx src/index.ts
+fi
+
