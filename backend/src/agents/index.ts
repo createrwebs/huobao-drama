@@ -439,12 +439,20 @@ async function getModel(fileModel: string | undefined, modelOverride?: string, t
     ? tempFetch
     : createMaxTokensFetch(providerName, tempFetch)
   const fetchImpl = createModelFallbackFetch(providerName, maxTokensFetch, textConfig.availableModels)
+  const loggingFetch: typeof fetch = async (input, init) => {
+    console.log('[DEBUG FETCH URL]', typeof input === 'string' ? input : (input as any)?.url)
+    const res = await fetchImpl(input, init)
+    if (!res.ok) {
+      console.log('[DEBUG FETCH ERR]', res.status, await res.clone().text())
+    }
+    return res
+  }
 
   if (providerName === 'gemini') {
     const googleProvider = createGoogleGenerativeAI({
       apiKey: textConfig.apiKey,
       baseURL: resolvedBaseURL,
-      fetch: fetchImpl,
+      fetch: loggingFetch,
     })
     return googleProvider(modelName)
   }
@@ -452,7 +460,7 @@ async function getModel(fileModel: string | undefined, modelOverride?: string, t
   const provider = createOpenAI({
     baseURL: resolvedBaseURL,
     apiKey: textConfig.apiKey,
-    fetch: fetchImpl,
+    fetch: loggingFetch,
   } as any)
   return provider.chat(modelName)
 }
