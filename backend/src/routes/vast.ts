@@ -3,10 +3,16 @@
  * การค้นหา GPU, ตั้งค่า Vast API Key & SSH Key, ตรวจสอบเงินสำรอง $20, และการรันคิวงานจริง
  */
 import { Hono } from 'hono'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
+import { db, schema } from '../db/index.js'
 import { vastClient, VAST_GPU_CATALOGUE } from '../services/vast-client.js'
 import { vastRenderRunner } from '../services/vast-runner.js'
 import { getVastPricingConfig } from '../services/app-settings.js'
 import { success, badRequest, notFound } from '../utils/response.js'
+import { getActor, isServerMode } from '../middleware/auth.js'
+import { getDramaIfAuthorized, validateDramaOwnershipOfEntities } from '../utils/ownership.js'
+import { getToraCredits } from '../services/tora-client.js'
+import { sharedVastPool } from '../services/shared-vast-pool.js'
 
 const app = new Hono()
 
@@ -202,6 +208,25 @@ app.post('/render-batch', async (c) => {
     return badRequest(c, 'shotIds is required and must not be empty')
   }
 
+  const drama = await getDramaIfAuthorized(c, Number(dramaId || 0))
+  if (!drama) return notFound(c, 'ซีรีย์ไม่พบหรือไม่มีสิทธิ์เข้าถึง')
+  const actor = getActor(c)
+  if (isServerMode() && (!actor?.apiKey || !actor.userId)) {
+    return c.json({ code: 402, message: 'ต้องเข้าสู่ระบบด้วย Tora API key ก่อนเริ่มเรนเดอร์' }, 402)
+  }
+  const validEntities = await validateDramaOwnershipOfEntities(Number(dramaId), { storyboardIds: shotIds.map(Number) })
+  if (!validEntities) return badRequest(c, 'มีช็อตบางรายการไม่อยู่ในซีรีย์นี้')
+  if (isServerMode() && actor?.apiKey) {
+    try {
+      const credits = await getToraCredits(actor.apiKey)
+      if (!credits.tokenUnlimited && credits.spendableCredit <= 0 && credits.spendableQuota <= 0) {
+        return c.json({ code: 402, message: 'เครดิต Tora ไม่เพียงพอสำหรับเริ่มเรนเดอร์' }, 402)
+      }
+    } catch (err: any) {
+      return c.json({ code: 402, message: `ตรวจสอบเครดิต Tora ไม่สำเร็จ: ${err.message}` }, 402)
+    }
+  }
+
   try {
     const job = await vastRenderRunner.startBatchJob({
       shotIds,
@@ -213,6 +238,55 @@ app.post('/render-batch', async (c) => {
       templateHashId,
       directComfyUrl,
       directSshCommand,
+      scope: 'episode',
+    })
+    return success(c, { job })
+  } catch (err: any) {
+    return badRequest(c, err.message)
+  }
+})
+
+// POST /render-drama — รวม storyboard ของทุกตอนในซีรีย์แล้วส่งเข้า Vast.ai เป็นงานเดียว
+app.post('/render-drama', async (c) => {
+  const body = await c.req.json().catch(() => ({}))
+  const dramaId = Number(body.dramaId || body.drama_id || 0)
+  if (!dramaId) return badRequest(c, 'dramaId is required')
+
+  const drama = await getDramaIfAuthorized(c, dramaId)
+  if (!drama) return notFound(c, 'ซีรีย์ไม่พบหรือไม่มีสิทธิ์เข้าถึง')
+  const actor = getActor(c)
+  if (isServerMode() && (!actor?.apiKey || !actor.userId)) {
+    return c.json({ code: 402, message: 'ต้องเข้าสู่ระบบด้วย Tora API key ก่อนเริ่มเรนเดอร์' }, 402)
+  }
+  if (isServerMode() && actor?.apiKey) {
+    const credits = await getToraCredits(actor.apiKey).catch(() => null)
+    if (!credits || (!credits.tokenUnlimited && credits.spendableCredit <= 0 && credits.spendableQuota <= 0)) {
+      return c.json({ code: 402, message: 'เครดิต Tora ไม่เพียงพอสำหรับเริ่มเรนเดอร์' }, 402)
+    }
+  }
+
+  const episodes = await db.select({ id: schema.episodes.id })
+    .from(schema.episodes)
+    .where(and(eq(schema.episodes.dramaId, dramaId), isNull(schema.episodes.deletedAt)))
+  const episodeIds = episodes.map(ep => ep.id)
+  if (!episodeIds.length) return badRequest(c, 'ซีรีย์นี้ยังไม่มีตอนให้เรนเดอร์')
+  const storyboards = await db.select({ id: schema.storyboards.id })
+    .from(schema.storyboards)
+    .where(and(inArray(schema.storyboards.episodeId, episodeIds), isNull(schema.storyboards.deletedAt)))
+  const shotIds = storyboards.map(sb => sb.id)
+  if (!shotIds.length) return badRequest(c, 'ซีรีย์นี้ยังไม่มี storyboard ให้เรนเดอร์')
+
+  try {
+    const job = await vastRenderRunner.startBatchJob({
+      shotIds,
+      dramaId,
+      episodeId: episodeIds[0],
+      gpuId: body.gpuId,
+      modelMode: body.modelMode,
+      templateHashId: body.templateHashId,
+      directComfyUrl: body.directComfyUrl,
+      directSshCommand: body.directSshCommand,
+      scope: 'drama',
     })
     return success(c, { job })
   } catch (err: any) {
@@ -245,6 +319,59 @@ app.get('/active-batch/:episodeId', async (c) => {
   const episodeId = Number(c.req.param('episodeId'))
   const job = vastRenderRunner.getActiveJobForEpisode(episodeId)
   return success(c, { job })
+})
+
+app.get('/active-drama/:dramaId', async (c) => {
+  const dramaId = Number(c.req.param('dramaId'))
+  if (!(await getDramaIfAuthorized(c, dramaId))) return notFound(c, 'ซีรีย์ไม่พบหรือไม่มีสิทธิ์เข้าถึง')
+  return success(c, { job: vastRenderRunner.getActiveJobForDrama(dramaId) })
+})
+
+// POST /shared/jobs — ส่งงานเข้า shared MiniMax H3 queue (ใช้ container ร่วมกัน)
+app.post('/shared/jobs', async (c) => {
+  const actor = getActor(c)
+  if (!actor) return c.json({ code: 401, message: 'ต้องเข้าสู่ระบบก่อนใช้งาน shared render' }, 401)
+  const body = await c.req.json().catch(() => ({}))
+  const dramaId = Number(body.drama_id || body.dramaId || 0)
+  const episodeId = Number(body.episode_id || body.episodeId || 0) || undefined
+  const storyboardIds = Array.isArray(body.storyboard_ids || body.storyboardIds)
+    ? (body.storyboard_ids || body.storyboardIds).map(Number).filter(Boolean)
+    : []
+  if (!dramaId || !storyboardIds.length) return badRequest(c, 'drama_id และ storyboard_ids จำเป็นต้องระบุ')
+  const drama = await getDramaIfAuthorized(c, dramaId)
+  if (!drama) return notFound(c, 'ซีรีย์ไม่พบหรือไม่มีสิทธิ์เข้าถึง')
+  const valid = await validateDramaOwnershipOfEntities(dramaId, { storyboardIds, episodeIds: episodeId ? [episodeId] : undefined })
+  if (!valid) return badRequest(c, 'มี storyboard หรือ episode บางรายการไม่อยู่ในซีรีย์นี้')
+  try {
+    const job = await sharedVastPool.enqueue({ ownerUserId: actor.userId, dramaId, episodeId, storyboardIds })
+    return success(c, job)
+  } catch (err: any) {
+    return badRequest(c, err.message)
+  }
+})
+
+app.get('/shared/jobs/:id', async (c) => {
+  const actor = getActor(c)
+  if (!actor) return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  const job = await sharedVastPool.getJobView(Number(c.req.param('id')), actor.userId)
+  if (!job) return notFound(c, 'Shared render job not found')
+  return success(c, job)
+})
+
+app.get('/shared/queue', async (c) => {
+  const actor = getActor(c)
+  if (!actor) return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  return success(c, await sharedVastPool.getQueue(actor.userId))
+})
+
+app.get('/shared/status', async (c) => success(c, await sharedVastPool.status()))
+
+app.post('/shared/jobs/:id/cancel', async (c) => {
+  const actor = getActor(c)
+  if (!actor) return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  const ok = await sharedVastPool.cancel(Number(c.req.param('id')), actor.userId)
+  if (!ok) return notFound(c, 'งานไม่พบหรือไม่สามารถยกเลิกได้')
+  return success(c, { success: true })
 })
 
 export default app

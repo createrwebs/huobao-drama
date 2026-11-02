@@ -12,6 +12,7 @@ export const sqliteSchemaStatements = [
     owner_user_id INTEGER,
     title TEXT NOT NULL,
     description TEXT,
+    synopsis TEXT,
     genre TEXT,
     style TEXT DEFAULT '3d',
     aspect_ratio TEXT DEFAULT '16:9',
@@ -422,6 +423,79 @@ export function initSqliteSchema(sqlite: Database.Database) {
     } catch (e: any) {
       console.warn(`Could not check/add owner_user_id on ${table}:`, e?.message)
     }
+  }
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS vast_render_pools (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pool_key TEXT NOT NULL UNIQUE,
+    model TEXT NOT NULL DEFAULT 'minimax_h3',
+    status TEXT NOT NULL DEFAULT 'stopped',
+    instance_id INTEGER,
+    contract_id INTEGER,
+    gpu_id TEXT,
+    gpu_name TEXT,
+    comfy_url TEXT,
+    idle_since TEXT,
+    last_used_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`)
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS vast_render_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_user_id INTEGER NOT NULL,
+    pool_key TEXT NOT NULL DEFAULT 'minimax_h3',
+    drama_id INTEGER NOT NULL,
+    episode_id INTEGER,
+    storyboard_ids TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    runner_job_id TEXT,
+    estimated_seconds INTEGER DEFAULT 0,
+    actual_seconds INTEGER DEFAULT 0,
+    reserved_quota INTEGER DEFAULT 0,
+    charged_quota INTEGER DEFAULT 0,
+    tora_request_id TEXT,
+    error_msg TEXT,
+    created_at TEXT NOT NULL,
+    started_at TEXT,
+    completed_at TEXT,
+    updated_at TEXT NOT NULL
+  )`)
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS vast_usage_ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    idempotency_key TEXT NOT NULL UNIQUE,
+    queue_id INTEGER NOT NULL,
+    owner_user_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    duration_seconds INTEGER DEFAULT 0,
+    quota_per_second INTEGER DEFAULT 0,
+    quota_amount INTEGER DEFAULT 0,
+    tora_request_id TEXT,
+    created_at TEXT NOT NULL
+  )`)
+  sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_queue_status ON vast_render_queue (pool_key, status, created_at)')
+  sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_queue_owner ON vast_render_queue (owner_user_id, created_at)')
+  sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_ledger_queue ON vast_usage_ledger (queue_id, event_type)')
+  try {
+    const ledgerCols = sqlite.prepare('PRAGMA table_info(vast_usage_ledger)').all() as Array<{ name: string }>
+    if (ledgerCols.length > 0 && !ledgerCols.some(c => c.name === 'idempotency_key')) {
+      sqlite.exec('ALTER TABLE vast_usage_ledger ADD COLUMN idempotency_key TEXT')
+      sqlite.exec("UPDATE vast_usage_ledger SET idempotency_key = 'legacy-' || id WHERE idempotency_key IS NULL")
+    }
+    sqlite.exec('CREATE UNIQUE INDEX IF NOT EXISTS uq_vast_ledger_idempotency ON vast_usage_ledger (idempotency_key)')
+  } catch (e: any) {
+    console.warn('Could not migrate vast_usage_ledger idempotency key:', e?.message)
+  }
+
+  // 迁移：为已存在表添加 synopsis 列（旧库升级）
+  try {
+    const dramaCols = sqlite.prepare('PRAGMA table_info(dramas)').all() as Array<{ name: string }>
+    if (dramaCols.length > 0 && !dramaCols.some(c => c.name === 'synopsis')) {
+      sqlite.exec('ALTER TABLE dramas ADD COLUMN synopsis TEXT')
+      console.log('🎭 已为 dramas 表添加 synopsis 列')
+    }
+  } catch (e: any) {
+    console.warn('Could not add synopsis column to dramas:', e?.message)
   }
 
   // Multi-user and session indexes

@@ -8,6 +8,7 @@
     "start": "tsx src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test:shared-vast": "node --import tsx --test tests/shared-vast-pool.test.ts",
     "backfill-artwork": "tsx scripts/backfill-artwork.ts",
     "migrate:sqlite-to-mysql": "tsx scripts/migrate-sqlite-to-mysql.ts"
   },

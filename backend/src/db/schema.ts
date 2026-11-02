@@ -10,6 +10,7 @@ export const dramas = sqliteTable('dramas', {
   ownerUserId: integer('owner_user_id'),
   title: text('title').notNull(),
   description: text('description'),
+  synopsis: text('synopsis'),
   genre: text('genre'),
   style: text('style').default('3d'),
   aspectRatio: text('aspect_ratio').default('16:9'),
@@ -315,5 +316,56 @@ export const authSessions = sqliteTable('auth_sessions', {
   expiresAt: text('expires_at').notNull(),
   revokedAt: text('revoked_at'),
   lastSeenAt: text('last_seen_at'),
+})
+
+export const vastRenderPools = sqliteTable('vast_render_pools', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  poolKey: text('pool_key').notNull().unique(),
+  model: text('model').notNull().default('minimax_h3'),
+  status: text('status').notNull().default('stopped'),
+  instanceId: integer('instance_id'),
+  contractId: integer('contract_id'),
+  gpuId: text('gpu_id'),
+  gpuName: text('gpu_name'),
+  comfyUrl: text('comfy_url'),
+  idleSince: text('idle_since'),
+  lastUsedAt: text('last_used_at'),
+  lastError: text('last_error'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
+export const vastRenderQueue = sqliteTable('vast_render_queue', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerUserId: integer('owner_user_id').notNull(),
+  poolKey: text('pool_key').notNull().default('minimax_h3'),
+  dramaId: integer('drama_id').notNull(),
+  episodeId: integer('episode_id'),
+  storyboardIds: text('storyboard_ids').notNull(),
+  status: text('status').notNull().default('queued'),
+  runnerJobId: text('runner_job_id'),
+  estimatedSeconds: integer('estimated_seconds').default(0),
+  actualSeconds: integer('actual_seconds').default(0),
+  reservedQuota: integer('reserved_quota').default(0),
+  chargedQuota: integer('charged_quota').default(0),
+  toraRequestId: text('tora_request_id'),
+  errorMsg: text('error_msg'),
+  createdAt: text('created_at').notNull(),
+  startedAt: text('started_at'),
+  completedAt: text('completed_at'),
+  updatedAt: text('updated_at').notNull(),
+})
+
+export const vastUsageLedger = sqliteTable('vast_usage_ledger', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  idempotencyKey: text('idempotency_key').notNull().unique(),
+  queueId: integer('queue_id').notNull(),
+  ownerUserId: integer('owner_user_id').notNull(),
+  eventType: text('event_type').notNull(),
+  durationSeconds: integer('duration_seconds').default(0),
+  quotaPerSecond: integer('quota_per_second').default(0),
+  quotaAmount: integer('quota_amount').default(0),
+  toraRequestId: text('tora_request_id'),
+  createdAt: text('created_at').notNull(),
 })
 

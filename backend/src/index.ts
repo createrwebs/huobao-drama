@@ -27,6 +27,7 @@ import { flowBridge } from './routes/flowBridge.js'
 import auth from './routes/auth.js'
 import worker from './routes/worker.js'
 import vast from './routes/vast.js'
+import { sharedVastPool } from './services/shared-vast-pool.js'
 import { requestLogger, errorHandler } from './middleware/logger.js'
 import { authMiddleware } from './middleware/auth.js'
 import { handleAuthenticatedMedia } from './utils/media-auth.js'
@@ -114,5 +115,8 @@ db.update(schema.sysTask)
     if (affected > 0) console.log(`🔁 已清理 ${affected} 个中断的生成任务`)
   })
   .catch(err => console.error('清理中断任务失败:', err?.message))
+
+// Shared MiniMax H3 pool: resume queued work and enforce the five-minute idle timeout.
+sharedVastPool.start()
 
 serve({ fetch: root.fetch, port })

@@ -37,6 +37,9 @@ async function req<T = any>(method: string, path: string, body?: any): Promise<T
       if (resp.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/')) {
         window.dispatchEvent(new CustomEvent('huobao:unauthorized'))
       }
+      if (resp.status === 402 && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('huobao:insufficient-credit', { detail: { message: json.message } }))
+      }
       throw new Error(json.message || json.msg || json.error?.message || `${resp.status}`)
     }
 
@@ -64,6 +67,7 @@ export const dramaAPI = {
   create: (data: any) => api.post('/dramas', data),
   update: (id: number, data: any) => api.put(`/dramas/${id}`, data),
   del: (id: number) => api.del(`/dramas/${id}`),
+  generateEpisodes: (id: number, data: { synopsis?: string; total_episodes?: number }) => api.post<{ episodes?: any[]; created_count: number; updated_count: number }>(`/dramas/${id}/generate-episodes`, data),
 }
 
 export const episodeAPI = {
@@ -240,8 +244,22 @@ export const vastAPI = {
     directComfyUrl?: string
     directSshCommand?: string
   }) => api.post<{ job: any }>('/vast/render-batch', params),
+  startDramaRender: (params: {
+    dramaId: number | string
+    gpuId?: string
+    modelMode?: string
+    templateHashId?: string
+    directComfyUrl?: string
+    directSshCommand?: string
+  }) => api.post<{ job: any }>('/vast/render-drama', params),
   getRenderBatchStatus: (jobId: string) => api.get<{ job: any }>(`/vast/render-batch/${jobId}`),
   cancelRenderBatch: (jobId: string) => api.post<{ success: boolean }>(`/vast/render-batch/${jobId}/cancel`),
   getActiveBatch: (episodeId: number | string) => api.get<{ job: any }>(`/vast/active-batch/${episodeId}`),
+  getActiveDramaBatch: (dramaId: number | string) => api.get<{ job: any }>(`/vast/active-drama/${dramaId}`),
+  enqueueSharedRender: (params: { drama_id: number | string; episode_id?: number | string; storyboard_ids: number[] }) => api.post<any>('/vast/shared/jobs', params),
+  getSharedRenderJob: (id: number | string) => api.get<any>(`/vast/shared/jobs/${id}`),
+  getSharedQueue: () => api.get<any>('/vast/shared/queue'),
+  getSharedPoolStatus: () => api.get<any>('/vast/shared/status'),
+  cancelSharedRender: (id: number | string) => api.post<any>(`/vast/shared/jobs/${id}/cancel`),
 }
 

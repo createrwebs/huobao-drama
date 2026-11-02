@@ -14,7 +14,7 @@ import net from 'node:net'
 import { spawn, execFile, type ChildProcess } from 'node:child_process'
 import { promisify } from 'node:util'
 import { db, schema } from '../db/index.js'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, and, inArray, isNull } from 'drizzle-orm'
 import { vastClient, VAST_GPU_CATALOGUE } from './vast-client.js'
 import { getVastPricingConfig } from './app-settings.js'
 import { DATA_ROOT, STORAGE_ROOT } from '../utils/paths.js'
@@ -69,6 +69,9 @@ export interface VastBatchJob {
   localTunnelPort?: number
   comfyUrl?: string
   shots: VastShotStatus[]
+  /** ระดับ scope ของงาน: episode | drama */
+  scope: 'episode' | 'drama'
+  sharedPool?: boolean
   totalShots: number
   completedShots: number
   activeShotIndex: number
@@ -98,6 +101,15 @@ class VastRenderRunner {
     return null
   }
 
+  getActiveJobForDrama(dramaId: number): VastBatchJob | null {
+    for (const job of this.jobs.values()) {
+      if (job.dramaId === dramaId && ['provisioning', 'booting', 'ready', 'rendering'].includes(job.status)) {
+        return job
+      }
+    }
+    return null
+  }
+
   /**
    * เริ่มต้นคิวงานเรนเดอร์หลายช็อต / ข้ามตอน
    */
@@ -111,6 +123,10 @@ class VastRenderRunner {
     templateHashId?: string
     directComfyUrl?: string
     directSshCommand?: string
+    scope?: 'episode' | 'drama'
+    sharedPool?: boolean
+    reuseInstanceId?: number
+    reuseComfyUrl?: string
   }): Promise<VastBatchJob> {
     const {
       shotIds,
@@ -122,6 +138,10 @@ class VastRenderRunner {
       templateHashId,
       directComfyUrl,
       directSshCommand,
+      scope = 'episode',
+      sharedPool = false,
+      reuseInstanceId,
+      reuseComfyUrl,
     } = params
 
     if (!shotIds || shotIds.length === 0) {
@@ -235,6 +255,8 @@ class VastRenderRunner {
       renderElapsedSeconds: 0,
       autoStopCountdown: 180,
       shots: shotStatuses,
+      scope,
+      sharedPool,
       totalShots: shotStatuses.length,
       completedShots: 0,
       activeShotIndex: 0,
@@ -245,6 +267,13 @@ class VastRenderRunner {
         `[${new Date().toLocaleTimeString()}] โมเดล: ${modelMode.toUpperCase()} | GPU เป้าหมาย: ${gpuSpec.name} (${gpuSpec.tflops} TFLOPS)`,
       ],
       startedAt: now(),
+    }
+
+    if (reuseInstanceId) {
+      job.instanceId = reuseInstanceId
+      job.contractId = reuseInstanceId
+      job.comfyUrl = reuseComfyUrl
+      job.logs.push(`[${new Date().toLocaleTimeString()}] ♻️ ใช้ Shared MiniMax H3 container เดิม #${reuseInstanceId}`)
     }
 
     this.jobs.set(jobId, job)
@@ -344,8 +373,10 @@ class VastRenderRunner {
         job.bootSubStep = 4
       } else if (isLiveKey) {
         // โหมด Vast.ai API จริง: ตรวจสอบก่อนว่ามี Instance ที่กำลังรันอยู่ในบัญชีหรือไม่
-        const existingInstances = await vastClient.listActiveInstances()
-        const runningInst = existingInstances.find((i: any) => i.actual_status === 'running' && i.ssh_host)
+        const existingInstances = job.instanceId ? [] : await vastClient.listActiveInstances()
+        const runningInst = job.instanceId
+          ? await vastClient.getInstance(job.instanceId)
+          : existingInstances.find((i: any) => i.actual_status === 'running' && i.ssh_host)
 
         if (runningInst) {
           job.instanceId = Number(runningInst.id)
@@ -541,9 +572,10 @@ class VastRenderRunner {
           model: `vast:${job.modelMode}:${job.gpuId}`,
           localPath: renderResult.videoUrl,
           resultUrl: `/${renderResult.videoUrl.replace(/^\/+/, '')}`,
-          duration: shot.duration,
+          params: JSON.stringify({ duration: shot.duration }),
           createdAt: now(),
           updatedAt: now(),
+          completedAt: now(),
         })
 
         job.logs.push(
@@ -559,7 +591,7 @@ class VastRenderRunner {
         job.logs.push(`[${new Date().toLocaleTimeString()}] 🏆 เรนเดอร์ครบทุกช็อต (${job.completedShots}/${job.totalShots}) เรียบร้อยแล้ว!`)
         job.logs.push(`[${new Date().toLocaleTimeString()}] 🛡️ ระบบตัดวงจรอัตโนมัติ (Auto-Stop Watchdog 180s) เริ่มนับถอยหลัง...`)
 
-        this.startAutoStopWatchdog(job)
+        if (!job.sharedPool) this.startAutoStopWatchdog(job)
       }
     } catch (err: any) {
       clearInterval(bootInterval)
@@ -569,7 +601,7 @@ class VastRenderRunner {
       job.error = err.message
       job.logs.push(`[${new Date().toLocaleTimeString()}] ❌ เกิดข้อผิดพลาด: ${err.message}`)
 
-      if (job.instanceId && job.executionMode === 'vast_cloud_gpu') {
+      if (job.instanceId && job.executionMode === 'vast_cloud_gpu' && !job.sharedPool) {
         vastClient.destroyInstance(job.instanceId).catch(() => {})
       }
     }
@@ -1000,7 +1032,7 @@ class VastRenderRunner {
       } else {
         clearInterval(watchdogTimer)
         this.cleanupJobResources(job.id)
-        if (job.instanceId && job.executionMode === 'vast_cloud_gpu') {
+        if (job.instanceId && job.executionMode === 'vast_cloud_gpu' && !job.sharedPool) {
           try {
             await vastClient.destroyInstance(job.instanceId)
             job.logs.push(`[${new Date().toLocaleTimeString()}] 🛡️ ปิดและทำลายเซิร์ฟเวอร์ Instance #${job.instanceId} อัตโนมัติเรียบร้อย (ครบกำหนด 3 นาที)`)

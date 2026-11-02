@@ -1048,6 +1048,8 @@ function getStepClass(stepNum) {
 
 const currentJobId = ref(null)
 const currentJob = ref(null)
+const currentShotIds = ref([])
+const lastQueueNotice = ref('')
 let pollTimer = null
 
 async function startProvisioning() {
@@ -1063,24 +1065,13 @@ async function startProvisioning() {
     isAllDone.value = false
 
     const shotIds = selectedShots.value.map(s => s.id)
-    const shotOverrides = selectedShots.value.map(s => ({
-      id: s.id,
-      duration: Number(s.duration || 10),
-      video_prompt: s.video_prompt || s.videoPrompt || undefined,
-    }))
-    const val = directSshInput.value.trim()
-    const isHttp = val.startsWith('http://') || val.startsWith('https://')
-
-    const res = await vastAPI.startRenderBatch({
-      shotIds,
-      shotOverrides,
-      dramaId: props.dramaId,
-      episodeId: props.episodeId,
-      gpuId: selectedGpuId.value,
-      modelMode: selectedModelMode.value,
-      templateHashId: selectedTemplate.value === 'custom' ? customTemplateHash.value : undefined,
-      directComfyUrl: isHttp ? val : undefined,
-      directSshCommand: (!isHttp && val) ? val : undefined,
+    if (selectedModelMode.value !== 'minimax_h3') {
+      throw new Error('ขณะนี้ Shared Vast รองรับเฉพาะ MiniMax H3')
+    }
+    const res = await vastAPI.enqueueSharedRender({
+      drama_id: props.dramaId,
+      episode_id: props.episodeId,
+      storyboard_ids: shotIds,
     })
 
     const job = res?.job || res?.data?.job
@@ -1090,6 +1081,7 @@ async function startProvisioning() {
 
     currentJobId.value = job.id
     currentJob.value = job
+    currentShotIds.value = shotIds
 
     // เริ่มดึงข้อมูลสถานะแบบ Real-time
     startJobPolling(job.id)
@@ -1103,17 +1095,28 @@ function startJobPolling(jobId) {
   clearInterval(pollTimer)
   pollTimer = setInterval(async () => {
     try {
-      const res = await vastAPI.getRenderBatchStatus(jobId)
-      const job = res?.job || res?.data?.job
+      const res = await vastAPI.getSharedRenderJob(jobId)
+      const shared = res?.job || res?.data?.job || res
+      const job = shared?.runner_job || shared?.runnerJob || shared
       if (!job) return
 
-      currentJob.value = job
-      step.value = job.stepNumber || 2
+      currentJob.value = { ...job, sharedStatus: shared.status, queuePosition: shared.queue_position, poolStatus: shared.pool_status }
+      step.value = shared.status === 'queued' ? 1 : (job.stepNumber || 2)
       bootSubStep.value = job.bootSubStep || 1
       bootElapsedSeconds.value = job.bootElapsedSeconds || 0
       renderElapsedSeconds.value = job.renderElapsedSeconds || 0
       autoStopCountdown.value = job.autoStopCountdown !== undefined ? job.autoStopCountdown : 180
       activeShotIndex.value = job.activeShotIndex || 0
+
+      if (shared.status === 'queued') {
+        const notice = `${shared.status}:${shared.queue_position || 0}`
+        if (lastQueueNotice.value !== notice) {
+          lastQueueNotice.value = notice
+          toast.info(`เข้าคิว Shared MiniMax H3 แล้ว${shared.queue_position ? ` — ลำดับที่ ${shared.queue_position}` : ''}`, { timeout: 2500 })
+        }
+      } else if (shared.status === 'starting') {
+        step.value = 2
+      }
 
       // อัปเดตสถานะช็อตในตารางจากหลังบ้าน
       if (job.shots && Array.isArray(job.shots)) {
@@ -1129,14 +1132,13 @@ function startJobPolling(jobId) {
         })
       }
 
-      if (job.status === 'completed') {
+      if (['completed', 'failed', 'cancelled'].includes(shared.status)) {
         isAllDone.value = true
         clearInterval(pollTimer)
-        toast.success(`เรนเดอร์ครบทุกช็อตแล้ว (${job.completedShots}/${job.totalShots})!`)
-      } else if (job.status === 'failed' || job.status === 'cancelled') {
-        clearInterval(pollTimer)
-        if (job.status === 'failed') {
-          toast.error(job.error || 'การเรนเดอร์ล้มเหลว')
+        if (shared.status === 'completed') {
+          toast.success(`เรนเดอร์ครบทุกช็อตแล้ว (${job.completedShots || 0}/${job.totalShots || currentShotIds.value.length})!`)
+        } else if (shared.status === 'failed') {
+          toast.error(shared.errorMsg || job.error || 'การเรนเดอร์ล้มเหลว')
         }
       }
     } catch (e) {
@@ -1153,13 +1155,13 @@ async function stopImmediately() {
 
   if (currentJobId.value) {
     try {
-      await vastAPI.cancelRenderBatch(currentJobId.value)
+      await vastAPI.cancelSharedRender(currentJobId.value)
     } catch (e) {
       console.warn('Cancel job error:', e)
     }
   }
 
-  toast.warning('ยกเลิกงานและส่งคำสั่งทำลาย GPU Instance เรียบร้อยแล้ว (หยุดคิดเงิน)')
+  toast.warning('ยกเลิกงานแล้ว ระบบจะคืนเครดิตที่สำรองไว้และเก็บ Shared GPU ตาม idle policy')
   handleClose()
 }
 
@@ -1169,7 +1171,7 @@ async function terminateImmediately() {
 
   if (currentJobId.value) {
     try {
-      await vastAPI.cancelRenderBatch(currentJobId.value)
+      await vastAPI.cancelSharedRender(currentJobId.value)
     } catch (e) {
       console.warn('Terminate job error:', e)
     }

@@ -75,6 +75,8 @@ export interface VastPricingConfig {
   usdToThbRate: number // อัตราแลกเปลี่ยน THB/USD เช่น 36.0
   minShotPriceThb: number // ราคาขั้นต่ำต่อช็อต 10s เช่น 1.50
   r2OveragePricePerGb: number // ค่าบริการ R2 ส่วนเกิน 5GB เช่น 5.00
+  sharedQuotaPerSecond: number // เครดิตที่คิดกับลูกค้าต่อวินาทีของ Shared MiniMax H3
+  sharedIdleTimeoutSeconds: number // เวลาที่ไม่มีงานก่อน terminate shared container
 }
 
 const VAST_PRICING_KEY = 'vast_pricing_config'
@@ -84,6 +86,8 @@ export const DEFAULT_VAST_PRICING: VastPricingConfig = {
   usdToThbRate: 36.0,
   minShotPriceThb: 1.5,
   r2OveragePricePerGb: 5.0,
+  sharedQuotaPerSecond: 2000,
+  sharedIdleTimeoutSeconds: 300,
 }
 
 /** ดึงการตั้งค่าราคาและมาร์กอัป Vast.ai ปัจจุบัน */
@@ -99,6 +103,8 @@ export function getVastPricingConfig(): VastPricingConfig {
       usdToThbRate: typeof parsed.usdToThbRate === 'number' && parsed.usdToThbRate > 0 ? parsed.usdToThbRate : DEFAULT_VAST_PRICING.usdToThbRate,
       minShotPriceThb: typeof parsed.minShotPriceThb === 'number' && parsed.minShotPriceThb >= 0 ? parsed.minShotPriceThb : DEFAULT_VAST_PRICING.minShotPriceThb,
       r2OveragePricePerGb: typeof parsed.r2OveragePricePerGb === 'number' && parsed.r2OveragePricePerGb >= 0 ? parsed.r2OveragePricePerGb : DEFAULT_VAST_PRICING.r2OveragePricePerGb,
+      sharedQuotaPerSecond: typeof parsed.sharedQuotaPerSecond === 'number' && parsed.sharedQuotaPerSecond > 0 ? parsed.sharedQuotaPerSecond : DEFAULT_VAST_PRICING.sharedQuotaPerSecond,
+      sharedIdleTimeoutSeconds: typeof parsed.sharedIdleTimeoutSeconds === 'number' && parsed.sharedIdleTimeoutSeconds >= 60 ? parsed.sharedIdleTimeoutSeconds : DEFAULT_VAST_PRICING.sharedIdleTimeoutSeconds,
     }
   } catch {
     return { ...DEFAULT_VAST_PRICING }
@@ -113,6 +119,8 @@ export function setVastPricingConfig(config: Partial<VastPricingConfig>): VastPr
     usdToThbRate: typeof config.usdToThbRate === 'number' && config.usdToThbRate > 0 ? config.usdToThbRate : current.usdToThbRate,
     minShotPriceThb: typeof config.minShotPriceThb === 'number' && config.minShotPriceThb >= 0 ? config.minShotPriceThb : current.minShotPriceThb,
     r2OveragePricePerGb: typeof config.r2OveragePricePerGb === 'number' && config.r2OveragePricePerGb >= 0 ? config.r2OveragePricePerGb : current.r2OveragePricePerGb,
+    sharedQuotaPerSecond: typeof config.sharedQuotaPerSecond === 'number' && config.sharedQuotaPerSecond > 0 ? config.sharedQuotaPerSecond : current.sharedQuotaPerSecond,
+    sharedIdleTimeoutSeconds: typeof config.sharedIdleTimeoutSeconds === 'number' && config.sharedIdleTimeoutSeconds >= 60 ? config.sharedIdleTimeoutSeconds : current.sharedIdleTimeoutSeconds,
   }
   const value = JSON.stringify(updated)
   db.insert(schema.appSettings)
