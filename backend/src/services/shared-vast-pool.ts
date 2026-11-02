@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lt, or } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
 import { getUserToraApiKey, reserveToraVideo, settleToraVideo } from './tora-client.js'
 import { vastClient } from './vast-client.js'
@@ -9,11 +9,16 @@ import { getVastPricingConfig } from './app-settings.js'
 const POOL_KEY = 'minimax_h3'
 const MODEL = 'minimax_h3'
 const TICK_MS = 2000
+const LEASE_SECONDS = 120
 
 export function isSharedPoolIdleExpired(idleSince: string | null | undefined, timeoutSeconds: number, at = Date.now()) {
   if (!idleSince || !Number.isFinite(timeoutSeconds) || timeoutSeconds < 0) return false
   const idleAt = Date.parse(idleSince)
   return Number.isFinite(idleAt) && at - idleAt >= timeoutSeconds * 1000
+}
+
+export function isSharedPoolLeaseActive(leaseUntil: string | null | undefined, at = Date.now()) {
+  return Boolean(leaseUntil && Date.parse(leaseUntil) > at)
 }
 
 type PoolStatus = 'stopped' | 'starting' | 'ready' | 'busy' | 'idle' | 'terminating' | 'failed'
@@ -22,17 +27,23 @@ class SharedVastPool {
   private started = false
   private ticking = false
   private timer?: NodeJS.Timeout
+  private readonly workerId = `shared-vast-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
 
   start() {
     if (this.started) return
     this.started = true
     this.timer = setInterval(() => { void this.tick() }, TICK_MS)
     this.timer.unref?.()
-    void this.recoverInterruptedJobs()
-    void this.tick()
+    void this.startup()
   }
 
-  private async recoverInterruptedJobs() {
+  private async startup() {
+    const pool = await this.getPool()
+    if (await this.acquireLease(pool.id)) await this.recoverInterruptedJobs(pool.id)
+    await this.tick()
+  }
+
+  private async recoverInterruptedJobs(poolId: number) {
     const interrupted = await db.select().from(schema.vastRenderQueue)
       .where(and(eq(schema.vastRenderQueue.poolKey, POOL_KEY), inArray(schema.vastRenderQueue.status, ['starting', 'rendering'])))
     for (const job of interrupted) {
@@ -69,7 +80,7 @@ class SharedVastPool {
         status: pool.instanceId ? 'idle' : 'stopped',
         idleSince: pool.instanceId ? now() : null,
         updatedAt: now(),
-      }).where(eq(schema.vastRenderPools.id, pool.id))
+      }).where(and(eq(schema.vastRenderPools.id, poolId), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
     }
   }
 
@@ -129,7 +140,7 @@ class SharedVastPool {
       .where(and(eq(schema.vastRenderQueue.ownerUserId, ownerUserId), inArray(schema.vastRenderQueue.status, ['queued', 'starting', 'rendering'])))
       .orderBy(asc(schema.vastRenderQueue.createdAt), asc(schema.vastRenderQueue.id))
     const pool = await this.getPool()
-    return { pool, items: await Promise.all(jobs.map(j => this.getJobView(j.id, ownerUserId))) }
+    return { pool: this.toPublicPool(pool), items: await Promise.all(jobs.map(j => this.getJobView(j.id, ownerUserId))) }
   }
 
   async cancel(id: number, ownerUserId: number) {
@@ -161,7 +172,21 @@ class SharedVastPool {
   async status() {
     const pool = await this.getPool()
     const queued = await db.select({ id: schema.vastRenderQueue.id }).from(schema.vastRenderQueue).where(and(eq(schema.vastRenderQueue.poolKey, POOL_KEY), inArray(schema.vastRenderQueue.status, ['queued', 'starting', 'rendering'])))
-    return { ...pool, queueLength: queued.length, model: MODEL }
+    return { ...this.toPublicPool(pool), queueLength: queued.length, model: MODEL }
+  }
+
+  private toPublicPool(pool: typeof schema.vastRenderPools.$inferSelect) {
+    return {
+      poolKey: pool.poolKey,
+      model: pool.model,
+      status: pool.status,
+      gpuId: pool.gpuId,
+      gpuName: pool.gpuName,
+      idleSince: pool.idleSince,
+      lastUsedAt: pool.lastUsedAt,
+      hasInstance: Boolean(pool.instanceId),
+      updatedAt: pool.updatedAt,
+    }
   }
 
   private async getPool() {
@@ -178,18 +203,20 @@ class SharedVastPool {
     this.ticking = true
     try {
       const pool = await this.getPool()
+      if (!(await this.acquireLease(pool.id))) return
+      const leasedPool = await this.getPool()
       const active = await db.select().from(schema.vastRenderQueue)
         .where(and(eq(schema.vastRenderQueue.poolKey, POOL_KEY), inArray(schema.vastRenderQueue.status, ['starting', 'rendering'])))
       if (active.length) {
         const activeRunner = active[0].runnerJobId ? vastRenderRunner.getJob(active[0].runnerJobId) : null
         if (activeRunner && (activeRunner.instanceId || activeRunner.comfyUrl)) {
           await db.update(schema.vastRenderPools).set({
-            instanceId: activeRunner.instanceId || pool.instanceId,
-            contractId: activeRunner.contractId || pool.contractId,
-            comfyUrl: activeRunner.comfyUrl || pool.comfyUrl,
+            instanceId: activeRunner.instanceId || leasedPool.instanceId,
+            contractId: activeRunner.contractId || leasedPool.contractId,
+            comfyUrl: activeRunner.comfyUrl || leasedPool.comfyUrl,
             status: activeRunner.status === 'rendering' ? 'busy' : 'starting',
             updatedAt: now(),
-          }).where(eq(schema.vastRenderPools.id, pool.id))
+          }).where(and(eq(schema.vastRenderPools.id, pool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
         }
         await this.reconcileActive(active[0])
         return
@@ -198,22 +225,40 @@ class SharedVastPool {
         .where(and(eq(schema.vastRenderQueue.poolKey, POOL_KEY), eq(schema.vastRenderQueue.status, 'queued')))
         .orderBy(asc(schema.vastRenderQueue.createdAt), asc(schema.vastRenderQueue.id)).limit(1)
       if (next) {
-        await this.runNext(next, pool)
+        await this.runNext(next, leasedPool)
         return
       }
       const pricing = getVastPricingConfig()
-      if (pool.instanceId && isSharedPoolIdleExpired(pool.idleSince, pricing.sharedIdleTimeoutSeconds)) {
-        await db.update(schema.vastRenderPools).set({ status: 'terminating', updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
-        await vastClient.destroyInstance(pool.instanceId)
-        await db.update(schema.vastRenderPools).set({ status: 'stopped', instanceId: null, contractId: null, comfyUrl: null, idleSince: null, updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
-      } else if (pool.status !== 'idle') {
-        await db.update(schema.vastRenderPools).set({ status: pool.instanceId ? 'idle' : 'stopped', updatedAt: now(), idleSince: pool.instanceId ? (pool.idleSince || now()) : null }).where(eq(schema.vastRenderPools.id, pool.id))
+      if (leasedPool.instanceId && isSharedPoolIdleExpired(leasedPool.idleSince, pricing.sharedIdleTimeoutSeconds)) {
+        await db.update(schema.vastRenderPools).set({ status: 'terminating', updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, leasedPool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
+        await vastClient.destroyInstance(leasedPool.instanceId)
+        await db.update(schema.vastRenderPools).set({ status: 'stopped', instanceId: null, contractId: null, comfyUrl: null, idleSince: null, leaseOwner: null, leaseUntil: null, updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, leasedPool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
+      } else if (leasedPool.status !== 'idle') {
+        await db.update(schema.vastRenderPools).set({ status: leasedPool.instanceId ? 'idle' : 'stopped', updatedAt: now(), idleSince: leasedPool.instanceId ? (leasedPool.idleSince || now()) : null }).where(and(eq(schema.vastRenderPools.id, leasedPool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
       }
     } catch (err: any) {
       console.error('[shared-vast-pool]', err?.message || err)
     } finally {
       this.ticking = false
     }
+  }
+
+  private async acquireLease(poolId: number) {
+    const until = new Date(Date.now() + LEASE_SECONDS * 1000).toISOString()
+    const current = new Date().toISOString()
+    const claimed = await db.update(schema.vastRenderPools)
+      .set({ leaseOwner: this.workerId, leaseUntil: until, updatedAt: current })
+      .where(and(
+        eq(schema.vastRenderPools.id, poolId),
+        or(
+          isNull(schema.vastRenderPools.leaseOwner),
+          eq(schema.vastRenderPools.leaseOwner, this.workerId),
+          lt(schema.vastRenderPools.leaseUntil, current),
+          isNull(schema.vastRenderPools.leaseUntil),
+        ),
+      ))
+      .returning({ id: schema.vastRenderPools.id })
+    return Boolean(claimed.length)
   }
 
   private async runNext(queueJob: typeof schema.vastRenderQueue.$inferSelect, pool: typeof schema.vastRenderPools.$inferSelect) {
@@ -231,6 +276,8 @@ class SharedVastPool {
     const requestId = `hb-shared-${queueJob.id}`
     const pricing = getVastPricingConfig()
     let reserved = false
+    const leaseHeartbeat = setInterval(() => { void this.renewLease(pool.id) }, 30000)
+    leaseHeartbeat.unref?.()
     try {
       const reservation = await reserveToraVideo(apiKey, { requestId, model: MODEL, resolution: '720P', maxDurationSeconds: Math.max(queueJob.estimatedSeconds || 10, 10) })
       reserved = true
@@ -244,7 +291,7 @@ class SharedVastPool {
         await this.refundReservation(apiKey, queueJob, requestId, 'Shared render cancelled before worker startup')
         return
       }
-      await db.update(schema.vastRenderPools).set({ status: 'starting', gpuId: pool.gpuId || 'rtx4090', updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
+      await db.update(schema.vastRenderPools).set({ status: 'starting', gpuId: pool.gpuId || 'rtx4090', updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, pool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
       const runnerJob = await vastRenderRunner.startBatchJob({
         shotIds: ids,
         dramaId: queueJob.dramaId,
@@ -264,12 +311,21 @@ class SharedVastPool {
         await vastRenderRunner.cancelJob(runnerJob.id)
         return
       }
-      await db.update(schema.vastRenderPools).set({ status: 'busy', lastUsedAt: now(), idleSince: null, instanceId: runnerJob.instanceId || pool.instanceId, contractId: runnerJob.contractId || pool.contractId, comfyUrl: runnerJob.comfyUrl || pool.comfyUrl, updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
+      await db.update(schema.vastRenderPools).set({ status: 'busy', lastUsedAt: now(), idleSince: null, instanceId: runnerJob.instanceId || pool.instanceId, contractId: runnerJob.contractId || pool.contractId, comfyUrl: runnerJob.comfyUrl || pool.comfyUrl, updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, pool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
     } catch (err: any) {
       if (reserved) await this.refundReservation(apiKey, queueJob, requestId, err?.message || 'Shared worker startup failed')
       await db.update(schema.vastRenderQueue).set({ status: 'failed', errorMsg: err?.message || 'Shared worker startup failed', completedAt: now(), updatedAt: now() }).where(and(eq(schema.vastRenderQueue.id, queueJob.id), inArray(schema.vastRenderQueue.status, ['starting', 'rendering'])))
-      await db.update(schema.vastRenderPools).set({ status: 'failed', lastError: err?.message || 'Shared worker startup failed', updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
+      await db.update(schema.vastRenderPools).set({ status: 'failed', lastError: err?.message || 'Shared worker startup failed', updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, pool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
+    } finally {
+      clearInterval(leaseHeartbeat)
     }
+  }
+
+  private async renewLease(poolId: number) {
+    const leaseUntil = new Date(Date.now() + LEASE_SECONDS * 1000).toISOString()
+    await db.update(schema.vastRenderPools)
+      .set({ leaseUntil, updatedAt: now() })
+      .where(and(eq(schema.vastRenderPools.id, poolId), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
   }
 
   private async refundReservation(apiKey: string, queueJob: typeof schema.vastRenderQueue.$inferSelect, requestId: string, errorMessage: string) {
@@ -298,7 +354,7 @@ class SharedVastPool {
     if (!terminal.length) return
     await db.insert(schema.vastUsageLedger).values({ idempotencyKey: `queue:${queueJob.id}:${runnerJob.status === 'completed' ? 'settle' : 'refund'}`, queueId: queueJob.id, ownerUserId: queueJob.ownerUserId, eventType: runnerJob.status === 'completed' ? 'settle' : 'refund', durationSeconds: actualSeconds, quotaPerSecond, quotaAmount: runnerJob.status === 'completed' ? actualSeconds * quotaPerSecond : 0, toraRequestId: queueJob.toraRequestId, createdAt: now() }).onConflictDoNothing()
     const pool = await this.getPool()
-    await db.update(schema.vastRenderPools).set({ status: 'idle', idleSince: now(), lastUsedAt: now(), updatedAt: now() }).where(eq(schema.vastRenderPools.id, pool.id))
+    await db.update(schema.vastRenderPools).set({ status: 'idle', idleSince: now(), lastUsedAt: now(), updatedAt: now() }).where(and(eq(schema.vastRenderPools.id, pool.id), eq(schema.vastRenderPools.leaseOwner, this.workerId)))
   }
 }
 

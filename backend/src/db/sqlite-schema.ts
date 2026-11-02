@@ -438,6 +438,8 @@ export function initSqliteSchema(sqlite: Database.Database) {
     idle_since TEXT,
     last_used_at TEXT,
     last_error TEXT,
+    lease_owner TEXT,
+    lease_until TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`)
@@ -476,6 +478,18 @@ export function initSqliteSchema(sqlite: Database.Database) {
   sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_queue_status ON vast_render_queue (pool_key, status, created_at)')
   sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_queue_owner ON vast_render_queue (owner_user_id, created_at)')
   sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_ledger_queue ON vast_usage_ledger (queue_id, event_type)')
+  try {
+    const poolCols = sqlite.prepare('PRAGMA table_info(vast_render_pools)').all() as Array<{ name: string }>
+    if (poolCols.length > 0 && !poolCols.some(c => c.name === 'lease_owner')) {
+      sqlite.exec('ALTER TABLE vast_render_pools ADD COLUMN lease_owner TEXT')
+    }
+    if (poolCols.length > 0 && !poolCols.some(c => c.name === 'lease_until')) {
+      sqlite.exec('ALTER TABLE vast_render_pools ADD COLUMN lease_until TEXT')
+    }
+    sqlite.exec('CREATE INDEX IF NOT EXISTS idx_vast_pool_lease ON vast_render_pools (pool_key, lease_until)')
+  } catch (e: any) {
+    console.warn('Could not migrate vast_render_pools lease columns:', e?.message)
+  }
   try {
     const ledgerCols = sqlite.prepare('PRAGMA table_info(vast_usage_ledger)').all() as Array<{ name: string }>
     if (ledgerCols.length > 0 && !ledgerCols.some(c => c.name === 'idempotency_key')) {

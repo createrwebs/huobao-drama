@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import Database from 'better-sqlite3'
 import { initSqliteSchema } from '../src/db/sqlite-schema.js'
-import { isSharedPoolIdleExpired } from '../src/services/shared-vast-pool.js'
+import { isSharedPoolIdleExpired, isSharedPoolLeaseActive } from '../src/services/shared-vast-pool.js'
 
 function createDatabase() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'huobao-shared-vast-'))
@@ -118,4 +118,23 @@ test('a cancelled job cannot attach a late reservation', (t) => {
     WHERE id = 1 AND status = 'starting'`).run()
   assert.equal(attach.changes, 0)
   assert.deepEqual(sqlite.prepare('SELECT reserved_quota, tora_request_id FROM vast_render_queue WHERE id = 1').get(), { reserved_quota: 0, tora_request_id: null })
+})
+
+test('pool lease allows one worker and can be reclaimed after expiry', (t) => {
+  const { sqlite, dir } = createDatabase()
+  t.after(() => {
+    sqlite.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+
+  sqlite.prepare(`INSERT INTO vast_render_pools
+    (pool_key, model, status, lease_owner, lease_until, created_at, updated_at)
+    VALUES ('minimax_h3', 'minimax_h3', 'stopped', NULL, NULL, ?, ?)`).run('2026-11-02T10:00:00.000Z', '2026-11-02T10:00:00.000Z')
+  const claim = sqlite.prepare(`UPDATE vast_render_pools SET lease_owner = ?, lease_until = ?
+    WHERE id = 1 AND (lease_owner IS NULL OR lease_until IS NULL OR lease_until < ?)`)
+  assert.equal(claim.run('worker-a', '2026-11-02T10:02:00.000Z', '2026-11-02T10:00:00.000Z').changes, 1)
+  assert.equal(claim.run('worker-b', '2026-11-02T10:04:00.000Z', '2026-11-02T10:01:00.000Z').changes, 0)
+  assert.equal(isSharedPoolLeaseActive('2026-11-02T10:02:00.000Z', Date.parse('2026-11-02T10:01:59.000Z')), true)
+  assert.equal(isSharedPoolLeaseActive('2026-11-02T10:02:00.000Z', Date.parse('2026-11-02T10:02:00.000Z')), false)
+  assert.equal(claim.run('worker-b', '2026-11-02T10:04:00.000Z', '2026-11-02T10:03:00.000Z').changes, 1)
 })

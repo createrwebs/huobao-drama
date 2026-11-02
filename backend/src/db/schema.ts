@@ -331,6 +331,8 @@ export const vastRenderPools = sqliteTable('vast_render_pools', {
   idleSince: text('idle_since'),
   lastUsedAt: text('last_used_at'),
   lastError: text('last_error'),
+  leaseOwner: text('lease_owner'),
+  leaseUntil: text('lease_until'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 })
