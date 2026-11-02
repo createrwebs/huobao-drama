@@ -1,0 +1,252 @@
+{
+  "timestamp": "2026-10-15T09:11:24+0700",
+  "temp_dir": "/var/folders/ph/bkl9clvj0wj4jk3r6p15w_yw0000gn/T/huobao_qa_local_xcr73nv1",
+  "synthetic_fixture_port": 54811,
+  "typecheck": {
+    "status": "PASS",
+    "exit_code": 0,
+    "duration_ms": 3101.7,
+    "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/backend_typecheck.log"
+  },
+  "individual_tests": [
+    {
+      "file": "backend/tests/auth-a1.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 826.47,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_auth-a1.log"
+    },
+    {
+      "file": "backend/tests/ownership-a3.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 1524.2,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_ownership-a3.log"
+    },
+    {
+      "file": "backend/tests/media-a4.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 478.53,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_media-a4.log"
+    },
+    {
+      "file": "backend/tests/migration-a2.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 474.94,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_migration-a2.log"
+    },
+    {
+      "file": "backend/tests/billing-a5.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 1159.48,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_billing-a5.log"
+    },
+    {
+      "file": "backend/tests/request-logger.test.ts",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 241.97,
+      "test_counts": {
+        "tests": "unknown",
+        "pass": "unknown",
+        "fail": "unknown"
+      },
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/test_request-logger.log"
+    }
+  ],
+  "runtime": {
+    "fixture_tora": {
+      "pid": 4236,
+      "port": 54811,
+      "ready": true
+    },
+    "backend": {
+      "pid": 4574,
+      "port": 5679,
+      "ready": true,
+      "alive": true,
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/runtime_backend.log"
+    },
+    "frontend": {
+      "pid": 4575,
+      "port": 3013,
+      "ready": true,
+      "alive": true,
+      "log": "/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/logs/runtime_frontend.log"
+    }
+  },
+  "api_assertions": [
+    {
+      "check_id": "API-01",
+      "description": "Unauthenticated request rejected with 401",
+      "status": "PASS",
+      "detail": "Returned HTTP 401"
+    },
+    {
+      "check_id": "API-02",
+      "description": "Invalid login key rejected with 401",
+      "status": "PASS",
+      "detail": "Returned HTTP 401"
+    },
+    {
+      "check_id": "API-03",
+      "description": "User A login with Key A1",
+      "status": "PASS",
+      "detail": "User ID: 1"
+    },
+    {
+      "check_id": "API-04",
+      "description": "User A creates drama project",
+      "status": "PASS",
+      "detail": "Drama A ID: 1"
+    },
+    {
+      "check_id": "API-05",
+      "description": "User B login with Key B",
+      "status": "PASS",
+      "detail": "User ID: 2"
+    },
+    {
+      "check_id": "API-06",
+      "description": "User B creates drama project",
+      "status": "PASS",
+      "detail": "Drama B ID: 2"
+    },
+    {
+      "check_id": "API-07",
+      "description": "User A list includes Drama A and excludes Drama B",
+      "status": "PASS",
+      "detail": "Returned IDs: [1]"
+    },
+    {
+      "check_id": "API-08",
+      "description": "User B list includes Drama B and excludes Drama A",
+      "status": "PASS",
+      "detail": "Returned IDs: [2]"
+    },
+    {
+      "check_id": "API-09",
+      "description": "User B GET Drama A returns 404",
+      "status": "PASS",
+      "detail": "HTTP 404"
+    },
+    {
+      "check_id": "API-10",
+      "description": "User B PUT Drama A returns 404",
+      "status": "PASS",
+      "detail": "HTTP 404"
+    },
+    {
+      "check_id": "API-11",
+      "description": "User B DELETE Drama A returns 404",
+      "status": "PASS",
+      "detail": "HTTP 404"
+    },
+    {
+      "check_id": "API-12",
+      "description": "Secondary Key A2 sees existing Drama A",
+      "status": "PASS",
+      "detail": "User ID: 1"
+    },
+    {
+      "check_id": "API-13",
+      "description": "Zero-credit user logs in successfully",
+      "status": "PASS",
+      "detail": "Spendable credits: 0"
+    },
+    {
+      "check_id": "API-14",
+      "description": "Logged out session invalidated (401)",
+      "status": "PASS",
+      "detail": "Returned HTTP 401"
+    },
+    {
+      "check_id": "API-15",
+      "description": "Fabricated session token rejected with 401",
+      "status": "PASS",
+      "detail": "HTTP 401"
+    },
+    {
+      "check_id": "API-16",
+      "description": "Nuxt Vite proxy correctly forwards API to backend",
+      "status": "PASS",
+      "detail": "Proxy response: {'status': 'ok', 'timestamp': '2026-10-15T02:11:36.998Z'}"
+    }
+  ],
+  "browser_checks": {
+    "launched": true,
+    "mode": "bundled-chromium (headless=false)",
+    "steps": [
+      {
+        "name": "anon_view",
+        "status": "PASS",
+        "screenshot": "screenshot_01_anon_login_dialog.png",
+        "details": "#tora-api-key visible: true"
+      },
+      {
+        "name": "user_a_login",
+        "status": "PASS",
+        "userName": "Test User A",
+        "screenshot": "screenshot_02_user_a_dashboard.png",
+        "details": "User: Test User A, Drama A present: true, Drama B absent: true"
+      },
+      {
+        "name": "user_b_login",
+        "status": "PASS",
+        "userName": "Test User B",
+        "screenshot": "screenshot_03_user_b_dashboard.png",
+        "details": "User: Test User B, Drama B present: true, Drama A absent: true"
+      },
+      {
+        "name": "cross_tenant_browser_denied",
+        "status": "PASS",
+        "screenshot": "screenshot_04_cross_tenant_denied.png",
+        "details": "API 404 returned: true (status 404), Drama A title absent: true"
+      },
+      {
+        "name": "logout_flow",
+        "status": "PASS",
+        "screenshot": "screenshot_05_logged_out.png",
+        "details": "#tora-api-key visible: true, /auth/me status: 401"
+      }
+    ],
+    "page_errors": [],
+    "failed_requests": []
+  },
+  "verdict": "PASS",
+  "not_run": [
+    "Production Tora upstream authentication",
+    "Real payment / credit billing transactions",
+    "Paid video rendering via external Colab / R2 workers",
+    "Real MySQL schema migration on production data"
+  ],
+  "defects": []
+}

@@ -2,7 +2,16 @@
  * 应用设置路由 — 全局配置的读写入口（当前：AI 内容语言）
  */
 import { Hono } from 'hono'
-import { getContentLanguage, setContentLanguage, getToursSeen, setToursSeen, CONTENT_LANGUAGES, type ContentLanguage } from '../services/app-settings.js'
+import {
+  getContentLanguage,
+  setContentLanguage,
+  getToursSeen,
+  setToursSeen,
+  getVastPricingConfig,
+  setVastPricingConfig,
+  CONTENT_LANGUAGES,
+  type ContentLanguage,
+} from '../services/app-settings.js'
 import { success, badRequest } from '../utils/response.js'
 
 const app = new Hono()
@@ -35,6 +44,21 @@ app.put('/tours-seen', async (c) => {
     return badRequest(c, 'seen 必须是字符串数组')
   }
   return success(c, { seen: await setToursSeen(body.seen) })
+})
+
+// GET /vast-pricing — ดึงการตั้งค่าราคา Vast.ai และมาร์กอัปกำไร (+40%)
+app.get('/vast-pricing', async (c) => {
+  return success(c, getVastPricingConfig())
+})
+
+// PUT /vast-pricing — อัปเดตการตั้งค่าราคา Vast.ai หลังบ้าน
+app.put('/vast-pricing', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return badRequest(c, 'Invalid pricing config payload')
+  }
+  const updated = setVastPricingConfig(body)
+  return success(c, updated)
 })
 
 export default app

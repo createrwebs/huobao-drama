@@ -20,11 +20,13 @@ import agent from './routes/agent.js'
 import merge from './routes/merge.js'
 import skills from './routes/skills.js'
 import props from './routes/props.js'
-import settings from './routes/settings.js'
 import storage from './routes/storage.js'
+import settings from './routes/settings.js'
 import serverUpdate from './routes/serverUpdate.js'
 import { flowBridge } from './routes/flowBridge.js'
 import auth from './routes/auth.js'
+import worker from './routes/worker.js'
+import vast from './routes/vast.js'
 import { requestLogger, errorHandler } from './middleware/logger.js'
 import { authMiddleware } from './middleware/auth.js'
 import { handleAuthenticatedMedia } from './utils/media-auth.js'
@@ -76,6 +78,8 @@ api.route('/settings', settings)
 api.route('/server-update', serverUpdate)
 api.route('/flow-bridge', flowBridge)
 api.route('/auth', auth)
+api.route('/worker', worker)
+api.route('/vast', vast)
 
 app.route('/api/v1', api)
 

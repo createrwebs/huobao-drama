@@ -1,0 +1,10 @@
+{
+  "removed_rules": [
+    "write_file(/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/qa_local.py)",
+    "write_file(/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/QA_LOCAL.md)",
+    "command(rtk proxy python3 /Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/qa_local.py)"
+  ],
+  "count": 3,
+  "preserved_unrelated_rules": true,
+  "product_write_grants_added": false
+}

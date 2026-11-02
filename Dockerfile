@@ -27,6 +27,7 @@ COPY backend/src ./backend/src
 COPY backend/tsconfig.json ./backend/tsconfig.json
 COPY backend/workspace ./workspace-template
 COPY frontend/dist ./frontend-dist
+COPY worker ./worker
 COPY docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh && mkdir -p /app/data
 

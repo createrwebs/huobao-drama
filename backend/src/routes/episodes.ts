@@ -270,19 +270,42 @@ app.get('/:episode_id/storyboards', async (c) => {
       .where(eq(schema.props.dramaId, authorized.drama.id))
   ).filter((p) => episodePropIds.includes(p.id) && !p.deletedAt)
 
+  const allScenes = (
+    await db
+      .select()
+      .from(schema.scenes)
+      .where(eq(schema.scenes.dramaId, authorized.drama.id))
+  ).filter((sc) => !sc.deletedAt)
+  const sceneById = new Map(allScenes.map((sc) => [sc.id, sc]))
+
   return success(
     c,
-    rows.map((row) => ({
-      ...toSnakeCase(row),
-      character_ids: charIdsByStoryboard.get(row.id) || [],
-      prop_ids: propIdsByStoryboard.get(row.id) || [],
-      characters: allChars
+    rows.map((row) => {
+      const matchedScene = row.sceneId ? sceneById.get(row.sceneId) : undefined
+      const rowChars = allChars
         .filter((ch) => (charIdsByStoryboard.get(row.id) || []).includes(ch.id))
-        .map((ch) => toSnakeCase(ch)),
-      props: allProps
+        .map((ch) => toSnakeCase(ch))
+      const rowProps = allProps
         .filter((p) => (propIdsByStoryboard.get(row.id) || []).includes(p.id))
-        .map((p) => toSnakeCase(p)),
-    }))
+        .map((p) => toSnakeCase(p))
+      const primaryImage =
+        row.firstFrameImage ||
+        row.composedImage ||
+        matchedScene?.imageUrl ||
+        (rowChars[0] as any)?.image_url ||
+        ''
+
+      return {
+        ...toSnakeCase(row),
+        scene: matchedScene ? toSnakeCase(matchedScene) : null,
+        scene_image_url: matchedScene?.imageUrl || '',
+        primary_image_url: primaryImage,
+        character_ids: charIdsByStoryboard.get(row.id) || [],
+        prop_ids: propIdsByStoryboard.get(row.id) || [],
+        characters: rowChars,
+        props: rowProps,
+      }
+    })
   )
 })
 

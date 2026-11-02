@@ -176,7 +176,7 @@ export async function handleAuthenticatedMedia(c: Context): Promise<Response> {
   const mimeType = MIME_TYPES[ext] || 'application/octet-stream'
 
   if (['.mp4', '.mov', '.webm', '.m4v'].includes(ext)) {
-    const response = await videoFileResponse(filePath, c.req.header('range'))
+    const response = await videoFileResponse(filePath, c.req.header('range'), c.req.method)
     const newHeaders = new Headers(response.headers)
     newHeaders.set('Cache-Control', 'private, max-age=3600')
     return new Response(response.body, {

@@ -1,0 +1,8 @@
+{
+  "pid": 91425,
+  "port": 5689,
+  "directory": "/var/folders/ph/bkl9clvj0wj4jk3r6p15w_yw0000gn/T/huobao-local-startup-d47_z5d8",
+  "log": "/var/folders/ph/bkl9clvj0wj4jk3r6p15w_yw0000gn/T/huobao-local-startup-d47_z5d8/backend.log",
+  "purpose": "PO isolated startup only; independent QA separately owned by Antigravity",
+  "stopped_by_po": true
+}

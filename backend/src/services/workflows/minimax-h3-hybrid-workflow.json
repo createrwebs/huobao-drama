@@ -1,0 +1,81 @@
+{
+  "name": "Cobijada_MiniMax_H3_Hybrid_ComfyUI_Workflow",
+  "version": "1.0.0",
+  "huggingface_repo": "Winnougan/Cobijada_Minimax-H3_Hybrid_Pruned_ComfyUI",
+  "description": "Joint Audio-and-Video DiT merging First/Last Keyframe (FL) and Reference-driven (REF) for hyper-realistic facial acting and Foley sound",
+  "model_specs": {
+    "model_name": "Cobijada_H3_Hybrid_Uncensored_pruned_hybrid_int8_convrot_pruned.safetensors",
+    "quantization": "int8_convrot",
+    "filesize_gb": 19.5,
+    "recommended_vram_gb": 24,
+    "recommended_gpus": ["RTX_4090", "RTX_3090", "L40S", "A100"],
+    "joint_audio": true,
+    "native_fps": 24,
+    "default_resolution": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "nodes": {
+    "1": {
+      "class_type": "MiniMaxModelLoader",
+      "inputs": {
+        "model_name": "Cobijada_H3_Hybrid_Uncensored_pruned_hybrid_int8_convrot_pruned.safetensors",
+        "precision": "int8",
+        "device": "cuda"
+      }
+    },
+    "2": {
+      "class_type": "MiniMaxAudioDecoder",
+      "inputs": {
+        "model": ["1", 0],
+        "sample_rate": 44100
+      }
+    },
+    "3": {
+      "class_type": "LoadImageFromURL",
+      "inputs": {
+        "image_url": "{{KEYFRAME_IMAGE_URL}}"
+      }
+    },
+    "4": {
+      "class_type": "MiniMaxHybridConditioning",
+      "inputs": {
+        "first_frame": ["3", 0],
+        "positive_prompt": "{{POSITIVE_PROMPT}}",
+        "negative_prompt": "{{NEGATIVE_PROMPT}}",
+        "character_ref_image": "{{CHARACTER_REF_IMAGE_URL}}",
+        "audio_prompt": "Cinematic ambient sound, Foley footsteps and clear atmosphere"
+      }
+    },
+    "5": {
+      "class_type": "MiniMaxSampler",
+      "inputs": {
+        "model": ["1", 0],
+        "conditioning": ["4", 0],
+        "steps": 25,
+        "cfg": 6.5,
+        "seed": "{{RANDOM_SEED}}",
+        "duration_sec": "{{DURATION_SECONDS}}"
+      }
+    },
+    "6": {
+      "class_type": "VHS_VideoAudioCombine",
+      "inputs": {
+        "images": ["5", 0],
+        "audio": ["5", 1],
+        "frame_rate": 24,
+        "filename_prefix": "tora_minimax_h3_{{SHOT_ID}}",
+        "format": "video/h264-mp4"
+      }
+    },
+    "7": {
+      "class_type": "CloudflareR2DirectUpload",
+      "inputs": {
+        "video": ["6", 0],
+        "r2_bucket": "{{R2_BUCKET}}",
+        "r2_key": "dramas/{{DRAMA_ID}}/episodes/{{EPISODE_ID}}/shots/shot_{{SHOT_ID}}_with_audio.mp4"
+      }
+    }
+  }
+}

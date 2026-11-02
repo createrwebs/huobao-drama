@@ -1,0 +1,11 @@
+{
+  "settings_path": "/Users/noppanan/.gemini/antigravity-cli/settings.json",
+  "added_rules": [
+    "write_file(/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/qa_local.py)",
+    "write_file(/Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/QA_LOCAL.md)",
+    "command(rtk proxy python3 /Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/qa_local.py)"
+  ],
+  "purpose": "Exact QA-only artifact write scopes; no product edits or broad command approval",
+  "cleanup_required": true,
+  "reviewed_script_sha256": "a465ddb3d71ad5530814021f91dd0fd7b95a42ebacf18c535861900bf1e914ef"
+}

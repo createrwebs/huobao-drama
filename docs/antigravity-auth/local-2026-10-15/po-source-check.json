@@ -1,0 +1,5 @@
+{
+  "changed_product_files": [],
+  "baseline_files": 157,
+  "scope": "Existing product source files under backend/src, frontend/app plus manifests/Nuxt config; QA artifacts excluded"
+}

@@ -203,6 +203,8 @@ export const storageAPI = {
 export const settingsAPI = {
   contentLanguage: () => api.get<{ language: string }>('/settings/content-language'),
   setContentLanguage: (language: string) => api.put('/settings/content-language', { language }),
+  vastPricing: () => api.get<{ markupPercent: number; usdToThbRate: number; minShotPriceThb: number; r2OveragePricePerGb: number }>('/settings/vast-pricing'),
+  setVastPricing: (config: { markupPercent?: number; usdToThbRate?: number; minShotPriceThb?: number; r2OveragePricePerGb?: number }) => api.put('/settings/vast-pricing', config),
 }
 
 // 服务器/Docker 部署的版本检查与更新（桌面版走 useDesktopBridge，不用此 API）
@@ -216,5 +218,30 @@ export const authAPI = {
   login: (apiKey: string) => api.post<{ user: any; token: any; credits: any; sessionToken?: string }>('/auth/login', { apiKey }),
   me: () => api.get<{ user: any; token: any; credits: any; isAuthenticated: boolean; isServerMode: boolean }>('/auth/me'),
   logout: () => api.post<{ message: string }>('/auth/logout'),
+}
+
+export const vastAPI = {
+  getConfig: () => api.get<any>('/vast/config'),
+  saveConfig: (params: { apiKey?: string; directComfyUrl?: string; directSshCommand?: string }) => api.put<any>('/vast/config', params),
+  balance: () => api.get<{ hasKey: boolean; balance: number; credit: number; email: string; isReserveSufficient: boolean; minReserveRequired: number; shortageUsd: number; mode?: string; hasSshKey?: boolean; sshPublicKeyPath?: string }>('/vast/balance'),
+  gpus: () => api.get<{ catalogue: any[]; pricingConfig: any }>('/vast/gpus'),
+  search: (params: any) => api.post<{ offers: any[] }>('/vast/search', params),
+  estimateBatch: (params: { shots: any[]; gpuId?: string; modelMode?: string }) => api.post<any>('/vast/estimate-batch', params),
+  createInstance: (params: any) => api.post<{ contractId: number; message: string }>('/vast/create-instance', params),
+  destroyInstance: (id: number) => api.del<{ success: boolean }>(`/vast/instances/${id}`),
+  startRenderBatch: (params: {
+    shotIds: number[]
+    shotOverrides?: Array<{ id: number; duration?: number; video_prompt?: string }>
+    dramaId: number | string
+    episodeId: number | string
+    gpuId?: string
+    modelMode?: string
+    templateHashId?: string
+    directComfyUrl?: string
+    directSshCommand?: string
+  }) => api.post<{ job: any }>('/vast/render-batch', params),
+  getRenderBatchStatus: (jobId: string) => api.get<{ job: any }>(`/vast/render-batch/${jobId}`),
+  cancelRenderBatch: (jobId: string) => api.post<{ success: boolean }>(`/vast/render-batch/${jobId}/cancel`),
+  getActiveBatch: (episodeId: number | string) => api.get<{ job: any }>(`/vast/active-batch/${episodeId}`),
 }
 

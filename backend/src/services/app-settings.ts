@@ -69,3 +69,58 @@ export function setToursSeen(ids: unknown): string[] {
     .run()
   return clean
 }
+
+export interface VastPricingConfig {
+  markupPercent: number // ค่าเริ่มต้น 40 (%)
+  usdToThbRate: number // อัตราแลกเปลี่ยน THB/USD เช่น 36.0
+  minShotPriceThb: number // ราคาขั้นต่ำต่อช็อต 10s เช่น 1.50
+  r2OveragePricePerGb: number // ค่าบริการ R2 ส่วนเกิน 5GB เช่น 5.00
+}
+
+const VAST_PRICING_KEY = 'vast_pricing_config'
+
+export const DEFAULT_VAST_PRICING: VastPricingConfig = {
+  markupPercent: 40,
+  usdToThbRate: 36.0,
+  minShotPriceThb: 1.5,
+  r2OveragePricePerGb: 5.0,
+}
+
+/** ดึงการตั้งค่าราคาและมาร์กอัป Vast.ai ปัจจุบัน */
+export function getVastPricingConfig(): VastPricingConfig {
+  const row = db.select().from(schema.appSettings)
+    .where(eq(schema.appSettings.key, VAST_PRICING_KEY))
+    .get()
+  if (!row?.value) return { ...DEFAULT_VAST_PRICING }
+  try {
+    const parsed = JSON.parse(row.value)
+    return {
+      markupPercent: typeof parsed.markupPercent === 'number' && parsed.markupPercent >= 0 ? parsed.markupPercent : DEFAULT_VAST_PRICING.markupPercent,
+      usdToThbRate: typeof parsed.usdToThbRate === 'number' && parsed.usdToThbRate > 0 ? parsed.usdToThbRate : DEFAULT_VAST_PRICING.usdToThbRate,
+      minShotPriceThb: typeof parsed.minShotPriceThb === 'number' && parsed.minShotPriceThb >= 0 ? parsed.minShotPriceThb : DEFAULT_VAST_PRICING.minShotPriceThb,
+      r2OveragePricePerGb: typeof parsed.r2OveragePricePerGb === 'number' && parsed.r2OveragePricePerGb >= 0 ? parsed.r2OveragePricePerGb : DEFAULT_VAST_PRICING.r2OveragePricePerGb,
+    }
+  } catch {
+    return { ...DEFAULT_VAST_PRICING }
+  }
+}
+
+/** อัปเดตการตั้งค่าราคาและมาร์กอัป Vast.ai (หลังบ้าน) */
+export function setVastPricingConfig(config: Partial<VastPricingConfig>): VastPricingConfig {
+  const current = getVastPricingConfig()
+  const updated: VastPricingConfig = {
+    markupPercent: typeof config.markupPercent === 'number' && config.markupPercent >= 0 ? config.markupPercent : current.markupPercent,
+    usdToThbRate: typeof config.usdToThbRate === 'number' && config.usdToThbRate > 0 ? config.usdToThbRate : current.usdToThbRate,
+    minShotPriceThb: typeof config.minShotPriceThb === 'number' && config.minShotPriceThb >= 0 ? config.minShotPriceThb : current.minShotPriceThb,
+    r2OveragePricePerGb: typeof config.r2OveragePricePerGb === 'number' && config.r2OveragePricePerGb >= 0 ? config.r2OveragePricePerGb : current.r2OveragePricePerGb,
+  }
+  const value = JSON.stringify(updated)
+  db.insert(schema.appSettings)
+    .values({ key: VAST_PRICING_KEY, value, updatedAt: now() })
+    .onConflictDoUpdate({
+      target: schema.appSettings.key,
+      set: { value, updatedAt: now() },
+    })
+    .run()
+  return updated
+}

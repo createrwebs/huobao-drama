@@ -1,0 +1,40 @@
+{
+  "launched": true,
+  "mode": "bundled-chromium (headless=false)",
+  "steps": [
+    {
+      "name": "anon_view",
+      "status": "PASS",
+      "screenshot": "screenshot_01_anon_login_dialog.png",
+      "details": "#tora-api-key visible: true"
+    },
+    {
+      "name": "user_a_login",
+      "status": "PASS",
+      "userName": "Test User A",
+      "screenshot": "screenshot_02_user_a_dashboard.png",
+      "details": "User: Test User A, Drama A present: true, Drama B absent: true"
+    },
+    {
+      "name": "user_b_login",
+      "status": "PASS",
+      "userName": "Test User B",
+      "screenshot": "screenshot_03_user_b_dashboard.png",
+      "details": "User: Test User B, Drama B present: true, Drama A absent: true"
+    },
+    {
+      "name": "cross_tenant_browser_denied",
+      "status": "PASS",
+      "screenshot": "screenshot_04_cross_tenant_denied.png",
+      "details": "API 404 returned: true (status 404), Drama A title absent: true"
+    },
+    {
+      "name": "logout_flow",
+      "status": "PASS",
+      "screenshot": "screenshot_05_logged_out.png",
+      "details": "#tora-api-key visible: true, /auth/me status: 401"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": []
+}

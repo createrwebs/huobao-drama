@@ -115,6 +115,9 @@ export const PUBLIC_ROUTES = [
   '/api/v1/auth/login',
   '/api/v1/auth/me',
   '/api/v1/auth/logout',
+  '/api/v1/worker/r2-stream',
+  '/api/v1/worker/script',
+  '/api/v1/worker/notebook',
   '/static',
   '/storyvdo/static',
 ]
@@ -126,7 +129,8 @@ export const PUBLIC_ROUTES = [
  * - In local mode, allows unauthenticated requests to proceed with null actor.
  */
 export const authMiddleware: MiddlewareHandler = async (c, next) => {
-  const path = c.req.path
+  const rawPath = c.req.path
+  const path = rawPath.replace(/^\/storyvdo/, '') || '/'
 
   // Try resolving actor
   const actor = await resolveActor(c)
@@ -134,8 +138,18 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
     c.set('actor', actor)
   }
 
+  // Check worker token exemption
+  const workerSecret = process.env.WORKER_SECRET_KEY || 'tora_colab_worker_secret_2026'
+  const isWorkerAuth =
+    (c.req.header('X-Worker-Token') === workerSecret ||
+     c.req.query('token') === workerSecret) &&
+    (path.includes('/api/v1/worker/') || path.includes('/worker/'))
+
   // Check if route is public
-  const isPublic = PUBLIC_ROUTES.some(p => path === p || path.startsWith(`${p}/`))
+  const isPublicRoute = PUBLIC_ROUTES.some(p => path === p || path.startsWith(`${p}/`) || rawPath === p || rawPath.startsWith(`${p}/`))
+  const isFrontendRoute = !path.startsWith('/api/') && !path.startsWith('/static/')
+
+  const isPublic = isWorkerAuth || isPublicRoute || isFrontendRoute
 
   if (isServerMode() && !isPublic && !actor) {
     return c.json({ code: 401, message: 'Unauthorized. Please login with your Tora account.' }, 401)

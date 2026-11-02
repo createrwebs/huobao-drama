@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Tora StoryVDO - คู่มือโบรชัวร์การใช้งาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Prompt', 'Sukhumvit Set', 'Thonburi', -apple-system, sans-serif;
+    background-color: #0b0f19;
+    color: #f1f5f9;
+    -webkit-font-smoothing: antialiased;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .page {
+    width: 210mm;
+    height: 297mm;
+    padding: 16mm 16mm 14mm 16mm;
+    page-break-after: always;
+    position: relative;
+    background: radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(129, 140, 248, 0.07) 0%, transparent 45%),
+                #0b0f19;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Header Bar */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-badge {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+  .brand-title {
+    font-family: 'Kanit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .page-tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+
+  /* Footer Bar */
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 6px;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: auto;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4 {
+    font-family: 'Kanit', sans-serif;
+  }
+  .hero-title {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .hero-desc {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  /* Badge Row */
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .pill {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pill-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+  .pill-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .pill-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .pill-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+  /* Cards & Layout */
+  .card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .step-num {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: #0f172a;
+    font-family: 'Kanit', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+  .card-desc {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  /* Grid 2 Columns */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .flex-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Screenshot Images */
+  .img-frame {
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    background: #020617;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    margin-top: 6px;
+  }
+  .img-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+  .img-caption {
+    font-size: 10px;
+    color: #64748b;
+    text-align: center;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* Highlight Box */
+  .highlight-box {
+    background: rgba(14, 165, 233, 0.08);
+    border-left: 3px solid #38bdf8;
+    padding: 8px 10px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 6px;
+  }
+  .highlight-title {
+    font-weight: 600;
+    color: #38bdf8;
+    font-size: 11.5px;
+    margin-bottom: 2px;
+  }
+  .highlight-text {
+    font-size: 11px;
+    color: #cbd5e1;
+    line-height: 1.45;
+  }
+
+  /* Workflow Steps Bar */
+  .flow-bar {
+    display: flex;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+  .flow-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38bdf8;
+  }
+  .flow-arrow {
+    color: #475569;
+    font-size: 11px;
+  }
+
+  /* Feature List */
+  .check-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .check-list li {
+    font-size: 11px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.4;
+  }
+  .check-icon {
+    color: #34d399;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ==================== PAGE 1 ==================== -->
+  <div class="page">
+    <div>
+      <div class="page-header">
+        <div class="brand">
+          <div class="brand-badge">PRO</div>
+          <span class="brand-title">TORA STORYVDO</span>
+          <span class="brand-sub">| แพลตฟอร์มผลิตละครสั้น AI อัตโนมัติ</span>
+        </div>
+        <div class="page-tag">PART 1 : SETUP &amp; OVERVIEW</div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <h1 class="hero-title">สร้างละครสั้นและมังงะวิดีโอด้วย AI ครบวงจร</h1>
+        <p class="hero-desc">
+          เปลี่ยนพล็อตเรื่องสั้นๆ ให้เป็นซีรีส์ละครระดับโปรดักชันในคลิกเดียว: ร่างบทละคร, สกัดตัวละคร, เจนภาพ Character Sheet, ผลิตวิดีโอหลายโมเดล และตัดต่อรวมคลิปด้วย FFmpeg
+        </p>
+        <div class="pill-row">
+          <span class="pill pill-blue">✨ AI Script Rewriter</span>
+          <span class="pill pill-green">🎭 Face Consistency LCK</span>
+          <span class="pill pill-purple">🎬 Multi-Video Models</span>
+          <span class="pill pill-amber">⚡ Zero-Install SQLite &amp; FFmpeg</span>
+        </div>
+      </div>
+
+      <!-- Overview Pipeline -->
+      <div class="flow-bar">
+        <div class="flow-step"><div class="flow-dot"></div>1. สมัคร Tora Token</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step"><div class="flow-dot"></div>2. สร้างโปรเจกต์</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step"><div class="flow-dot"></div>3. AI เขียนบท</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step"><div class="flow-dot"></div>4. สกัดสินทรัพย์</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step"><div class="flow-dot"></div>5. เจนวิดีโอ</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step"><div class="flow-dot"></div>6. รวมคลิป</div>
+      </div>
+
+      <!-- Step 1 Cards -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="step-num">1</div>
+            <div class="card-title">สมัครและออก Token จาก toraapi.com</div>
+          </div>
+          <div class="card-desc">
+            ระบบใช้ <strong>Tora API (toraapi.com)</strong> เป็นตัวกลางจัดการเครดิตแบบจ่ายตามจริง ช่วยให้คุณใช้ API Key เดียวเชื่อมต่อโมเดลชั้นนำได้ครบทั้งหมด
+          </div>
+          <ul class="check-list" style="margin-bottom: 8px;">
+            <li><span class="check-icon">✓</span> เข้าสู่เว็บไซต์ <strong>toraapi.com</strong> และสมัครสมาชิก</li>
+            <li><span class="check-icon">✓</span> ไปที่เมนู <strong>"โทเค็น" (令牌管理 / API Keys)</strong></li>
+            <li><span class="check-icon">✓</span> กด <strong>"สร้างโทเค็นใหม่"</strong> ตั้งชื่อ และคัดลอกรหัส <code style="color:#38bdf8; background:#0f172a; padding:1px 4px; border-radius:4px;">sk-...</code></li>
+          </ul>
+          <div class="img-frame">
+            <img src="live-guide-screens/02-tora-login-modal.png" alt="หน้าต่างเชื่อมต่อ Tora API">
+          </div>
+          <div class="img-caption">ภาพที่ 1.1: หน้าต่างกรอก Tora API Key บนระบบ Tora StoryVDO</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="step-num">1.2</div>
+            <div class="card-title">ตั้งค่า AI Services &amp; Google Flow ฟรี</div>
+          </div>
+          <div class="card-desc">
+            คลิก <strong>"ตั้งค่า" (Settings)</strong> เพื่อตรวจสอบการเชื่อมต่อ หรือใช้ฟรีเครดิตจาก Google Flow โดยตรง
+          </div>
+          <div class="highlight-box">
+            <div class="highlight-title">💡 จุดเด่น Google Flow Bridge</div>
+            <div class="highlight-text">
+              เชื่อมต่อกับบัญชี Google เพื่อดึงเครดิตฟรีมาใช้สร้างภาพ (Imagen 3) และวิดีโอ (Veo 2) ได้ทันทีโดยไม่ต้องเสียค่า API Key!
+            </div>
+          </div>
+          <div class="img-frame">
+            <img src="live-guide-screens/01-settings-page.png" alt="หน้าตั้งค่า AI Services">
+          </div>
+          <div class="img-caption">ภาพที่ 1.2: ตรวจสอบสถานะบัญชีและเครดิตคงเหลือในหน้า Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Tora StoryVDO Production Workflow Manual (Thai Edition)</span>
+      <span>หน้า 1 จาก 4</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2 ==================== -->
+  <div class="page">
+    <div>
+      <div class="page-header">
+        <div class="brand">
+          <div class="brand-badge">PRO</div>
+          <span class="brand-title">TORA STORYVDO</span>
+          <span class="brand-sub">| ขั้นตอนโปรเจกต์ &amp; เขียนบทด้วย AI</span>
+        </div>
+        <div class="page-tag">PART 2 : PROJECT &amp; SCRIPT</div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 12px;">
+        <!-- Step 2 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="step-num">2</div>
+            <div class="card-title">สร้างโปรเจกต์ &amp; เลือกสไตล์ภาพยนตร์</div>
+          </div>
+          <div class="card-desc">
+            กำหนดทิศทางภาพและสัดส่วนของซีรีส์ โดยสไตล์ที่เลือกจะถูกฝังเป็นแกนกลางของ Prompt ทุกรูปและทุกวิดีโอ
+          </div>
+          <ul class="check-list" style="margin-bottom: 6px;">
+            <li><span class="check-icon">✓</span> <strong>อัตราส่วน</strong>: 9:16 (แนวตั้งมือถือ) หรือ 16:9 (แนวนอนภาพยนตร์)</li>
+            <li><span class="check-icon">✓</span> <strong>สไตล์ภาพ</strong>: เช่น <em>ภาพยนตร์คนจริงสมจริง 35mm/IMAX</em> หรือ <em>3D Anime</em></li>
+          </ul>
+          <div class="img-frame">
+            <img src="live-guide-screens/04-create-project-modal.png" alt="หน้าต่างสร้างโปรเจกต์ใหม่">
+          </div>
+          <div class="img-caption">ภาพที่ 2.1: หน้าต่างสร้างโปรเจกต์และกำหนดสไตล์ภาพ</div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="step-num">3</div>
+            <div class="card-title">จัดการตอน &amp; เข้าสู่สตูดิโอผลิต</div>
+          </div>
+          <div class="card-desc">
+            ในหน้ารายการตอน คุณสามารถดูสถานะ ความยาว และความละเอียดของแต่ละตอน แล้วคลิก <strong>"เปิดสตูดิโอ"</strong>
+          </div>
+          <div class="highlight-box">
+            <div class="highlight-title">📺 สตูดิโอครบวงจร (Episode Studio)</div>
+            <div class="highlight-text">
+              รวบรวมแถบเครื่องมือทั้งหมด: บทละคร ➔ แอสเซท ➔ วิดีโอสตอรี่บอร์ด ➔ ส่งออก ไว้ในหน้าจอเดียว
+            </div>
+          </div>
+          <div class="img-frame">
+            <img src="live-guide-screens/05-episodes-list.png" alt="หน้ารายการตอน">
+          </div>
+          <div class="img-caption">ภาพที่ 2.2: หน้ารายการตอนและปุ่มเปิดสตูดิโอทำงาน</div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-num">4</div>
+          <div class="card-title">ใส่พล็อตสั้นๆ ➜ ปล่อยให้ AI Rewrite เจนบทถ่ายทำเต็ม</div>
+        </div>
+        <div class="card-desc">
+          คุณ<strong>ไม่จำเป็นต้องเขียนบทยาวด้วยตัวเอง</strong> เพียงป้อนโครงเรื่องย่อหรือไอเดีย 2-3 บรรทัด แล้วกดปุ่ม <strong>"เริ่มเขียนบท"</strong> AI Agent จะแปลงเป็นบทละครโทรทัศน์มาตรฐานภาษาไทย แยกฉาก (S01, S02), ตัวละคร, แอ็กชัน, อารมณ์ และบทสนทนาให้อย่างละเอียด
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div class="img-frame">
+              <img src="live-guide-screens/06-script-stage.png" alt="หน้าจอใส่พล็อตต้นฉบับ">
+            </div>
+            <div class="img-caption">ภาพที่ 2.3: ป้อนพล็อตสั้นๆ ในแท็บเนื้อหาต้นฉบับ</div>
+          </div>
+          <div>
+            <div class="img-frame">
+              <img src="live-guide-screens/07-script-rewritten.png" alt="บทละครที่ AI เจนออกมาสมบูรณ์">
+            </div>
+            <div class="img-caption">ภาพที่ 2.4: ผลลัพธ์บทละครมาตรฐาน 3,092 ตัวอักษรพร้อมถ่ายทำ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Tora StoryVDO Production Workflow Manual (Thai Edition)</span>
+      <span>หน้า 2 จาก 4</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 3 ==================== -->
+  <div class="page">
+    <div>
+      <div class="page-header">
+        <div class="brand">
+          <div class="brand-badge">PRO</div>
+          <span class="brand-title">TORA STORYVDO</span>
+          <span class="brand-sub">| สกัดสินทรัพย์ &amp; การผลิตวิดีโอสตอรี่บอร์ด</span>
+        </div>
+        <div class="page-tag">PART 3 : ASSETS &amp; VIDEO</div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="card" style="margin-bottom: 12px;">
+        <div class="card-header">
+          <div class="step-num">5</div>
+          <div class="card-title">สกัดสินทรัพย์ &amp; สร้างภาพ Character Turnaround เพื่อล็อกหน้า</div>
+        </div>
+        <div class="card-desc">
+          คลิกปุ่ม <strong>"สกัดตัวละคร / ฉาก / อุปกรณ์"</strong> ระบบจะดึงรายชื่อสิ่งที่ต้องใช้ในตอนนี้ออกมา พร้อมสร้าง <strong>Character Reference Sheet</strong> แบบ 3 มุมมอง (หน้า, ข้าง 90 องศา, หลัง) เพื่อล็อกเสื้อผ้าและใบหน้าให้ตรงกันตลอดทั้งเรื่อง
+        </div>
+        <div class="img-frame" style="max-height: 230px; overflow:hidden;">
+          <img src="live-guide-screens/08-assets-stage.png" alt="หน้าจอการผลิตแอสเซท">
+        </div>
+        <div class="img-caption">ภาพที่ 3.1: หน้าคลังสินทรัพย์ พร้อมปุ่มส่ง Reference ไป Google Flow และปุ่มอัปโหลดรูปภาพ</div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-num">6</div>
+          <div class="card-title">แตกสตอรี่บอร์ด เลือก Model วิดีโอด้านบน &amp; สั่งเรนเดอร์</div>
+        </div>
+        <div class="card-desc">
+          ในแท็บ <strong>"การผลิตวิดีโอ"</strong> AI จะแตกบทเป็นมุมกล้องรายช็อต พร้อมระบุความยาว (เช่น 10s) และจับคู่แท็กตัวละคร <code style="color:#38bdf8;">@Character</code> ให้อัตโนมัติ
+        </div>
+
+        <div class="grid-2" style="margin-top: 6px;">
+          <div class="flex-col">
+            <div class="highlight-box">
+              <div class="highlight-title">🎯 เมนูเลือกโมเดลวิดีโอ (แถบด้านบน)</div>
+              <div class="highlight-text">
+                สลับโมเดลได้ทันทีตามต้องการ:
+                <br>• <strong>Google Flow Veo 2</strong>: ฟรีเครดิต คุณภาพสูง คมชัด
+                <br>• <strong>Seedance 2.0</strong>: ภาพยนตร์สมจริง เคลื่อนไหวมิติสูง
+                <br>• <strong>Wan 3.0 / MiniMax H3</strong>: อารมณ์และการแสดงยอดเยี่ยม
+              </div>
+            </div>
+            <ul class="check-list">
+              <li><span class="check-icon">✓</span> คลิก <strong>"สร้างวิดีโอทั้งหมด"</strong> เพื่อเรนเดอร์ทั้งชุดในคลิกเดียว</li>
+              <li><span class="check-icon">✓</span> สามารถกด <strong>"สร้างใหม่"</strong> เฉพาะช็อตที่ไม่ถูกใจได้ทันที</li>
+            </ul>
+          </div>
+          <div>
+            <div class="img-frame">
+              <img src="live-guide-screens/09-storyboard-videos.png" alt="หน้าจอสร้างวิดีโอและตัวเลือกโมเดล">
+            </div>
+            <div class="img-caption">ภาพที่ 3.2: หน้าจอสตอรี่บอร์ดพร้อม Dropdown สลับโมเดลวิดีโอด้านบน</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Tora StoryVDO Production Workflow Manual (Thai Edition)</span>
+      <span>หน้า 3 จาก 4</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 4 ==================== -->
+  <div class="page">
+    <div>
+      <div class="page-header">
+        <div class="brand">
+          <div class="brand-badge">PRO</div>
+          <span class="brand-title">TORA STORYVDO</span>
+          <span class="brand-sub">| รวมวิดีโอ &amp; เคล็ดลับเซียนล็อกตัวละคร</span>
+        </div>
+        <div class="page-tag">PART 4 : EXPORT &amp; PRO TIPS</div>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="card" style="margin-bottom: 12px;">
+        <div class="card-header">
+          <div class="step-num">7</div>
+          <div class="card-title">ตรวจสอบไทม์ไลน์ รวมคลิปด้วย FFmpeg และดาวน์โหลด</div>
+        </div>
+        <div class="card-desc">
+          ในแท็บ <strong>"รวมวิดีโอและส่งออก"</strong> คุณสามารถพรีวิวคลิปทุกช็อตในไทม์ไลน์ แล้วคลิกปุ่ม <strong>"รวมวิดีโอที่เลือก"</strong> เครื่องยนต์ FFmpeg ในโปรแกรมจะทำการปรับขนาดความละเอียด เฟรมเรต และเชื่อมต่อคลิปทั้งหมดเป็นไฟล์ .mp4 พร้อมเสียงและซับไตเติล
+        </div>
+        <div class="img-frame" style="max-height: 220px; overflow:hidden;">
+          <img src="live-guide-screens/10-export-merge.png" alt="หน้าจอรวมวิดีโอและส่งออก">
+        </div>
+        <div class="img-caption">ภาพที่ 4.1: หน้าต่างรวมคลิปทั้งตอน มีปุ่ม "ดาวน์โหลด" และปุ่ม "นำเข้า/เปลี่ยนวิดีโอ"</div>
+      </div>
+
+      <!-- Pro Tips -->
+      <div class="card" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3);">
+        <div class="card-header">
+          <span style="font-size: 18px;">💡</span>
+          <div class="card-title" style="color: #38bdf8;">เคล็ดลับขั้นเซียน: ล็อกตัวละครให้นิ่ง 100% &amp; ประหยัดค่าใช้จ่าย API</div>
+        </div>
+        <div class="card-desc" style="color: #cbd5e1;">
+          หากคุณต้องการคุมหน้าตาตัวละครให้สวยเป๊ะตามใจสั่ง 100% หรือไม่อยากเสียเครดิต API เยอะ สามารถใช้เทคนิค <strong>Manual Hybrid Workflow</strong>:
+        </div>
+
+        <div class="grid-2" style="margin-top: 8px;">
+          <div class="highlight-box" style="background: rgba(16, 185, 129, 0.08); border-left-color: #10b981;">
+            <div class="highlight-title" style="color: #34d399;">1. คัดลอก Prompt ไปสร้างรูปข้างนอก</div>
+            <div class="highlight-text">
+              คัดลอก Prompt ตัวละครจากแท็บ Assets ไปเจนใน <strong>Midjourney, Fooocus หรือ ComfyUI</strong> แล้วกดปุ่ม <strong>"อัปโหลด"</strong> ที่การ์ดตัวละครเพื่อนำรูปกลับเข้ามาแทนที่ ใบหน้าและชุดจะนิ่งสนิท 100%!
+            </div>
+          </div>
+
+          <div class="highlight-box" style="background: rgba(168, 85, 247, 0.08); border-left-color: #a855f7;">
+            <div class="highlight-title" style="color: #c084fc;">2. เจนวิดีโอภายนอกแล้วนำเข้า</div>
+            <div class="highlight-text">
+              สำหรับช็อตสำคัญ สามารถนำ Prompt และ Reference ไปสร้างในแพลตฟอร์มที่คุณมีบุฟเฟต์ แล้วกดปุ่ม <strong>"เปลี่ยนวิดีโอ / นำเข้าวิดีโอ"</strong> ในหน้า Export เพื่อให้ FFmpeg ช่วยรวมคลิปให้โดยไม่เสียเครดิตเพิ่ม!
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 11px; color: #94a3b8; display:flex; justify-content:space-between; align-items:center;">
+          <span>⚡ สรุป: ใช้ Tora StoryVDO คิดบท + แบ่งช็อต + ต่อคลิป | ใช้ AI ภายนอกคุมหน้าตา = <strong>ประหยัดเงิน &amp; ผลงานเป๊ะ 100%</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Tora StoryVDO Production Workflow Manual (Thai Edition)</span>
+      <span>หน้า 4 จาก 4</span>
+    </div>
+  </div>
+
+</body>
+</html>

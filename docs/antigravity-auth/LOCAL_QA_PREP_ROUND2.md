@@ -1,0 +1,18 @@
+# QA round 2: prepare executable evidence script, do not execute yet
+
+Continue the original task in the same QA conversation. Prior command was denied and no tests ran. PO has recorded git baseline; skip additional commands for now. This round <=5min. Use write_to_file only for the exact allowed QA files below. DO NOT run commands or product-edit. Prepare one self-contained Python script qa_local.py that PO can review before you execute it next round.
+
+Allowed script path: /Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/qa_local.py
+Allowed short report path: /Users/noppanan/huobao-drama/docs/antigravity-auth/local-2026-10-15/QA_LOCAL.md
+
+Known runtime: node v26.8.1, backend/node_modules/tsx installed; bundled Node Playwright at /Users/noppanan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright; Python /Users/noppanan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 may also have playwright. You can use Python stdlib HTTPServer + subprocess, then Node Playwright require by absolute path via a generated .cjs artifact. No package installs. All subprocess commands must begin rtk.
+
+Script requirements minimal focused run: fresh tempfile directory, explicit env MYSQL_AUTO_IMPORT=false, SQLITE_PATH under temp, HUOBAO_DATA_DIR temp/data, STORAGE_PATH temp/data/static, HUOBAO_SECRET_KEY random synthetic, NODE_ENV=development, HUOBAO_SERVER_MODE=true, TORA_API_BASE_URL fixture loopback. Bind fixture HTTP server 127.0.0.1 with synthetic A1/A2 same external ID, B separate ID and credit balance; endpoints /api/huobao/identity and /api/huobao/credits shapes per tora-client.ts. No actual keys. Start real backend (rtk proxy env ... ./node_modules/.bin/tsx src/index.ts) cwd backend 5679 and real frontend (rtk npm run dev -- --host 127.0.0.1) cwd frontend 3013, probe readiness. Default /storyvdo/. Keep servers alive if successful for user demonstration using detached fixture helper if needed; otherwise clean up only processes started by this script. Log PID/path carefully no credentials in output.
+
+Run focused tests auth-a1/ownership-a3/media-a4/migration-a2/billing-a5/request-logger individually with node --import tsx --test using isolated temp env, plus backend typecheck. Store stdout/stderr per command and statuses in summary.json. Source tests set temp DB individually; still prevent default DATA_ROOT/secret file touches.
+
+API assertions hit real backend/proxy: no auth 401, invalid login rejected, login A1 creates A project via real POST, B creates B, lists only own, B cannot read/update/delete A's drama (negative requests only!), A2 sees same project, zero-credit user can login, logout old session forbidden. Distinguish authResponse sessionToken synthetic in memory only; never log it. Do not run generation/provider/worker calls.
+
+Browser: Node Playwright executable from bundled runtime; Chrome executable if Chromium unavailable. Headed browser if usable, otherwise explicitly headless. Two separate contexts: login through actual UI (#tora-api-key form), inspect visible user/list, screenshots, trace. At least unauth/login view and logged in project view if feasible. Use actual UI selectors from source. Capture JS/network errors; don't declare passing merely HTTP200. API setup may create fixture projects; browser must read real backend not intercept routes.
+
+Write QA summary/report at runtime with PASS/FAIL/PARTIAL/BLOCKED and NOT RUN live Tora/payment/render/real migration. Do not claim provider media playback from fake MP4 bytes. End this prep round with script path and what will execute. No unrelated source audits or extra features. PO will review script then authorize exact execution command next round.

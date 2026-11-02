@@ -551,6 +551,17 @@
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   {{ videoSelectMode && selectedVideoSbIds.length ? t('episode.vid.batchSelected', { n: selectedVideoSbIds.length }) : t('episode.vid.batchVideos') }}
                 </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; font-weight: 600; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);"
+                  :disabled="!sbs.length"
+                  title="เรนเดอร์ทุกวิดีโอในตอนนี้ด้วย Vast.ai GPU คลาวด์"
+                  @click="openVastBatchModal"
+                >
+                  <Sparkles :size="11" />
+                  🚀 เรนเดอร์ทุกวิดีโอด้วย Vast.ai ({{ sbs.length }})
+                </button>
               </div>
             </div>
 
@@ -898,6 +909,26 @@
                   {{ t('episode.vid.importVideo') }}
                 </button>
                 <button
+                  type="button"
+                  class="btn btn-sm"
+                  style="border-color: #f59e0b; color: #fbbf24;"
+                  title="สร้างด้วย Colab / Kaggle Worker"
+                  @click="openColabModal(selectedSb)"
+                >
+                  <Sparkles :size="11" class="text-amber-400" />
+                  Colab / Kaggle
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  style="border-color: #8b5cf6; color: #c084fc;"
+                  title="เรนเดอร์ช็อตนี้ด้วย Vast.ai GPU"
+                  @click="openVastModalForSingle(selectedSb)"
+                >
+                  <Sparkles :size="11" class="text-purple-400" />
+                  Vast GPU
+                </button>
+                <button
                   v-if="previewVideoUrl"
                   class="btn btn-sm btn-primary"
                   @click="setAsMainVideo"
@@ -962,6 +993,15 @@
                     >
                       <Upload :size="12" />
                       {{ t('episode.vid.importVideo') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm video-player-empty-action"
+                      style="border-color: #f59e0b; color: #fbbf24;"
+                      @click="openColabModal(selectedSb)"
+                    >
+                      <Sparkles :size="12" class="text-amber-400" />
+                      สร้างด้วย Colab / Kaggle
                     </button>
                   </div>
                 </div>
@@ -1868,6 +1908,22 @@
         @confirm="confirmDeleteAsset"
         @cancel="assetDelete.open = false"
       />
+
+      <ColabVideoModal
+        v-model:isOpen="showColabModal"
+        :storyboard="colabTargetSb"
+        :dramaId="dramaId"
+        :characters="chars"
+        @completed="handleColabVideoCompleted"
+      />
+
+      <VastRenderModal
+        v-model:isOpen="showVastModal"
+        :storyboards="vastModalStoryboards"
+        :dramaId="dramaId"
+        :episodeId="episodeId"
+        @completed="handleVastBatchCompleted"
+      />
     </main>
     </div>
   </div>
@@ -1885,6 +1941,8 @@ import { startTour, autoTour } from '~/composables/useTour'
 import { useAgent } from '~/composables/useAgent'
 import { toastError, mapError, MODERATION_RE } from '~/composables/useToast'
 import LocaleSwitcher from '~/components/LocaleSwitcher.vue'
+import ColabVideoModal from '~/components/ColabVideoModal.vue'
+import VastRenderModal from '~/components/VastRenderModal.vue'
 
 definePageMeta({ layout: 'studio' })
 
@@ -3685,6 +3743,60 @@ async function removeHistoryVideo(t) {
     if (previewVideoUrl.value === taskVideoPath(t)) previewVideoUrl.value = ''
     toast.success(t('episode.vid.historyDeleted'))
   } catch (e) { toastError(e, { fallback: 'common.deleteFailed' }) }
+}
+
+// ===== Colab / Kaggle AI Video Studio =====
+const showColabModal = ref(false)
+const colabTargetSb = ref(null)
+
+function openColabModal(sb) {
+  let target = sb
+  if (!target) {
+    if (selectedSb.value) target = selectedSb.value
+    else if (sbs.value.length) target = sbs.value[0]
+    else return
+  }
+  colabTargetSb.value = target
+  showColabModal.value = true
+}
+
+async function handleColabVideoCompleted(videoUrl) {
+  if (colabTargetSb.value) {
+    colabTargetSb.value.video_url = videoUrl
+    colabTargetSb.value.videoUrl = videoUrl
+    toast.success('วิดีโอจาก Colab เรนเดอร์เสร็จแล้ว!')
+    await refresh()
+  }
+}
+
+// ===== Vast.ai Cloud GPU Video Studio =====
+const showVastModal = ref(false)
+const vastTargetSb = ref(null)
+
+const vastModalStoryboards = computed(() => {
+  if (vastTargetSb.value) return [vastTargetSb.value]
+  return sbs.value || []
+})
+
+function openVastBatchModal() {
+  vastTargetSb.value = null
+  showVastModal.value = true
+}
+
+function openVastModalForSingle(sb) {
+  let target = sb
+  if (!target) {
+    if (selectedSb.value) target = selectedSb.value
+    else if (sbs.value.length) target = sbs.value[0]
+    else return
+  }
+  vastTargetSb.value = target
+  showVastModal.value = true
+}
+
+async function handleVastBatchCompleted(results) {
+  toast.success(`วิดีโอผ่าน Vast.ai เรนเดอร์สำเร็จทั้งหมด ${results.length} ช็อต!`)
+  await refresh()
 }
 
 // ===== 导入/上传视频到分镜 =====

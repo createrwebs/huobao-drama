@@ -1,0 +1,50 @@
+{
+  "source": "Raw Antigravity-owned test command logs; PO extraction only, no tests rerun",
+  "tests": [
+    {
+      "file": "backend/tests/auth-a1.test.ts",
+      "exit_code": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "file": "backend/tests/ownership-a3.test.ts",
+      "exit_code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "backend/tests/media-a4.test.ts",
+      "exit_code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "backend/tests/migration-a2.test.ts",
+      "exit_code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "backend/tests/billing-a5.test.ts",
+      "exit_code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "file": "backend/tests/request-logger.test.ts",
+      "exit_code": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    }
+  ],
+  "total_tests": 12,
+  "pass": 12,
+  "fail": 0
+}

@@ -165,3 +165,10 @@ Workspace:
   6. Centralized credit billing (atomic reservation, successful output seconds only, 0 fee on failure, duplicate idempotency).
   7. Credential security (no raw API keys in responses, logs, or browser storage).
 
+
+
+## Local runtime recheck — 2026-10-15
+
+Bounded independent Antigravity local check completed using isolated SQLite/data and synthetic Tora upstream: backend typecheck exit0; six focused test files, 12 tests pass; HTTP API 16/16; headed Chromium journeys 5/5, five screenshots/two traces. Product source 157-file baseline unchanged. Web remains at http://localhost:3013/storyvdo/ for fixture-only demo; original user DB untouched.
+
+See [PO_ACCEPTANCE_LOCAL](local-2026-10-15/PO_ACCEPTANCE_LOCAL.md), [QA report](local-2026-10-15/QA_LOCAL.md), [local demo guide](local-2026-10-15/README_LOCAL_TH.md) and [actual test counts](local-2026-10-15/po-test-counts.json). Live Tora/real credit charging/paid rendering/real-data migration NOT RUN. This recheck does not establish full A0–A5 production acceptance. Minor observed UI issue: unresolved common.title header translation.

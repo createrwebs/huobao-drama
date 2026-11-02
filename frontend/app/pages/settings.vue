@@ -72,6 +72,143 @@
           </section>
         </div>
 
+        <!-- ===== Vast.ai Pricing & GPU Margin (+40%) ===== -->
+        <div v-if="tab === 'pricing'" class="settings-scroll">
+          <div class="settings-head">
+            <h2 class="settings-title">{{ locale === 'th' ? 'การตั้งค่าราคาเรนเดอร์ GPU คลาวด์ (Vast.ai)' : 'Cloud GPU Pricing & Margin' }}</h2>
+            <p class="settings-desc">{{ locale === 'th' ? 'กำหนดอัตรามาร์กอัปกำไรและความเสี่ยง (+40%) อัตราแลกเปลี่ยน และราคาต่อช็อตสำหรับการเรนเดอร์วิดีโอ' : 'Configure platform profit markup, exchange rate, and per-shot pricing for cloud rendering.' }}</p>
+          </div>
+
+          <!-- กำไรและความเสี่ยง -->
+          <section class="card svc-group">
+            <div class="svc-group-head">
+              <div class="svc-group-heading">
+                <span class="svc-group-title">{{ locale === 'th' ? 'มาร์กอัปกำไรและความเสี่ยง (Profit & Risk Markup)' : 'Profit & Risk Markup' }}</span>
+                <div class="svc-group-sub">{{ locale === 'th' ? 'บวกเพิ่มจากต้นทุนจริงของ Vast.ai ก่อนแสดงราคาให้ลูกค้าจองเครื่อง' : 'Added to base Vast.ai GPU cost before customer booking.' }}</div>
+              </div>
+            </div>
+            <div class="config-row">
+              <div class="provider-badge" style="background:var(--accent-bg);color:var(--accent)"><Sparkles :size="15" /></div>
+              <div class="config-main">
+                <div class="config-line"><span class="config-name">{{ locale === 'th' ? 'เปอร์เซ็นต์มาร์กอัป (+%)' : 'Markup Percentage (+%)' }}</span></div>
+                <div class="config-sub">{{ locale === 'th' ? 'ปัจจุบันตั้งไว้ที่ +' + vastPricing.markupPercent + '% ของต้นทุน GPU จริง' : 'Currently set to +' + vastPricing.markupPercent + '% of base cost.' }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input v-model.number="vastPricing.markupPercent" class="input" type="number" min="0" max="300" style="width:90px;text-align:right;" />
+                <span style="font-weight:600;font-size:14px;">%</span>
+              </div>
+            </div>
+            <!-- Quick preset buttons -->
+            <div style="padding: 10px 16px; display:flex; gap:8px; align-items:center; border-top: 1px solid var(--border);">
+              <span style="font-size:12px;color:var(--text-muted);">{{ locale === 'th' ? 'ทางลัด:' : 'Presets:' }}</span>
+              <button type="button" class="btn btn-sm" :class="{ 'btn-primary': vastPricing.markupPercent === 30 }" @click="vastPricing.markupPercent = 30">+30%</button>
+              <button type="button" class="btn btn-sm" :class="{ 'btn-primary': vastPricing.markupPercent === 40 }" @click="vastPricing.markupPercent = 40">+40% (แนะนำ)</button>
+              <button type="button" class="btn btn-sm" :class="{ 'btn-primary': vastPricing.markupPercent === 50 }" @click="vastPricing.markupPercent = 50">+50%</button>
+              <button type="button" class="btn btn-sm" :class="{ 'btn-primary': vastPricing.markupPercent === 100 }" @click="vastPricing.markupPercent = 100">+100%</button>
+            </div>
+          </section>
+
+          <!-- อัตราแลกเปลี่ยนและราคาต่อช็อต -->
+          <section class="card svc-group">
+            <div class="svc-group-head">
+              <div class="svc-group-heading">
+                <span class="svc-group-title">{{ locale === 'th' ? 'อัตราแลกเปลี่ยนและราคาพื้นฐาน' : 'Exchange Rate & Base Pricing' }}</span>
+                <div class="svc-group-sub">{{ locale === 'th' ? 'กำหนดอัตราแปลงเงิน USD เป็น THB และราคาขั้นต่ำต่อช็อตวิดีโอ' : 'USD to THB rate and minimum per-shot price floor.' }}</div>
+              </div>
+            </div>
+            <div class="config-row">
+              <div class="provider-badge style-badge"><Coins :size="15" /></div>
+              <div class="config-main">
+                <div class="config-line"><span class="config-name">{{ locale === 'th' ? 'อัตราแลกเปลี่ยน (1 USD = กี่บาท)' : 'Exchange Rate (USD to THB)' }}</span></div>
+                <div class="config-sub">{{ locale === 'th' ? 'ใช้สำหรับแปลงต้นทุนสกุล USD จาก Vast.ai' : 'Used to convert Vast.ai USD pricing.' }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input v-model.number="vastPricing.usdToThbRate" class="input" type="number" step="0.1" min="1" style="width:110px;text-align:right;" />
+                <span style="font-size:13px;color:var(--text-muted);">บาท</span>
+              </div>
+            </div>
+            <div class="config-row">
+              <div class="provider-badge style-badge"><Layers :size="15" /></div>
+              <div class="config-main">
+                <div class="config-line"><span class="config-name">{{ locale === 'th' ? 'ราคาขั้นต่ำต่อช็อตวิดีโอ (10 วินาที)' : 'Minimum Per-Shot Price' }}</span></div>
+                <div class="config-sub">{{ locale === 'th' ? 'ราคาต่ำสุดที่จะคิดต่อ 1 ช็อตวิดีโอสำเร็จ' : 'Floor price per rendered video shot.' }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input v-model.number="vastPricing.minShotPriceThb" class="input" type="number" step="0.1" min="0" style="width:110px;text-align:right;" />
+                <span style="font-size:13px;color:var(--text-muted);">บาท</span>
+              </div>
+            </div>
+            <div class="config-row">
+              <div class="provider-badge style-badge"><HardDrive :size="15" /></div>
+              <div class="config-main">
+                <div class="config-line"><span class="config-name">{{ locale === 'th' ? 'ค่าบริการพื้นที่ R2 ส่วนเกิน 5 GB' : 'Cloudflare R2 Overage (>5GB)' }}</span></div>
+                <div class="config-sub">{{ locale === 'th' ? 'คิดเมื่อพื้นที่จัดเก็บบนคลาวด์ของผู้ใช้เกินโควตาฟรี 5 GB' : 'Price per GB past the 5GB free quota.' }}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input v-model.number="vastPricing.r2OveragePricePerGb" class="input" type="number" step="0.5" min="0" style="width:110px;text-align:right;" />
+                <span style="font-size:13px;color:var(--text-muted);">บาท/GB/เดือน</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ตารางพรีวิวราคาขายจริงตาม Tier -->
+          <section class="card svc-group">
+            <div class="svc-group-head">
+              <div class="svc-group-heading">
+                <span class="svc-group-title">{{ locale === 'th' ? 'ตัวอย่างราคาและกำไรที่ลูกค้าจะเห็นก่อนจอง (Live Price Preview)' : 'Live Price Preview & Margin' }}</span>
+                <div class="svc-group-sub">{{ locale === 'th' ? 'คำนวณจากเปอร์เซ็นต์มาร์กอัปปัจจุบัน +' + vastPricing.markupPercent + '%' : 'Calculated live from current markup.' }}</div>
+              </div>
+            </div>
+            <div style="padding: 16px; overflow-x: auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border); text-align:left; color:var(--text-muted);">
+                    <th style="padding: 8px;">สเปก GPU</th>
+                    <th style="padding: 8px;">ต้นทุน Vast.ai</th>
+                    <th style="padding: 8px;">ราคาขาย (+{{ vastPricing.markupPercent }}%)</th>
+                    <th style="padding: 8px;">ราคาต่อชั่วโมง (บาท)</th>
+                    <th style="padding: 8px;">ประมาณการต่อช็อต (10s)</th>
+                    <th style="padding: 8px;">กำไรของคุณ / ช็อต</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 8px; font-weight:600;">👑 RTX 3090 (24GB)</td>
+                    <td style="padding: 10px 8px; color:var(--text-muted);">$0.18/ชม.</td>
+                    <td style="padding: 10px 8px; color:var(--accent); font-weight:600;">${{ (0.18 * (1 + vastPricing.markupPercent / 100)).toFixed(3) }}/ชม.</td>
+                    <td style="padding: 10px 8px;">~{{ (0.18 * (1 + vastPricing.markupPercent / 100) * vastPricing.usdToThbRate).toFixed(1) }} บาท</td>
+                    <td style="padding: 10px 8px; font-weight:600;">~1.50 บาท</td>
+                    <td style="padding: 10px 8px; color:#10b981; font-weight:600;">+{{ (1.50 * (vastPricing.markupPercent / (100 + vastPricing.markupPercent))).toFixed(2) }} บาท</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--border); background:rgba(var(--accent-rgb, 99, 102, 241), 0.05);">
+                    <td style="padding: 10px 8px; font-weight:600;">⭐ RTX 4090 (24GB) [แนะนำ]</td>
+                    <td style="padding: 10px 8px; color:var(--text-muted);">$0.35/ชม.</td>
+                    <td style="padding: 10px 8px; color:var(--accent); font-weight:600;">${{ (0.35 * (1 + vastPricing.markupPercent / 100)).toFixed(3) }}/ชม.</td>
+                    <td style="padding: 10px 8px;">~{{ (0.35 * (1 + vastPricing.markupPercent / 100) * vastPricing.usdToThbRate).toFixed(1) }} บาท</td>
+                    <td style="padding: 10px 8px; font-weight:600;">~2.50 บาท</td>
+                    <td style="padding: 10px 8px; color:#10b981; font-weight:600;">+{{ (2.50 * (vastPricing.markupPercent / (100 + vastPricing.markupPercent))).toFixed(2) }} บาท</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 8px; font-weight:600;">🚀 L40S / 6000 Ada (48GB)</td>
+                    <td style="padding: 10px 8px; color:var(--text-muted);">$0.55/ชม.</td>
+                    <td style="padding: 10px 8px; color:var(--accent); font-weight:600;">${{ (0.55 * (1 + vastPricing.markupPercent / 100)).toFixed(3) }}/ชม.</td>
+                    <td style="padding: 10px 8px;">~{{ (0.55 * (1 + vastPricing.markupPercent / 100) * vastPricing.usdToThbRate).toFixed(1) }} บาท</td>
+                    <td style="padding: 10px 8px; font-weight:600;">~3.50 บาท</td>
+                    <td style="padding: 10px 8px; color:#10b981; font-weight:600;">+{{ (3.50 * (vastPricing.markupPercent / (100 + vastPricing.markupPercent))).toFixed(2) }} บาท</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding: 14px 16px; display:flex; justify-content:flex-end; border-top: 1px solid var(--border);">
+              <button class="btn btn-primary" :disabled="vastPricingSaving" @click="saveVastPricing">
+                <Loader2 v-if="vastPricingSaving" :size="13" class="animate-spin" />
+                <Sparkles v-else :size="13" />
+                {{ locale === 'th' ? 'บันทึกการตั้งค่าราคาหลังบ้าน' : 'Save Pricing Settings' }}
+              </button>
+            </div>
+          </section>
+        </div>
+
         <!-- ===== AI 服务配置 ===== -->
         <div v-if="tab === 'ai'" class="settings-scroll">
           <div class="settings-head">
@@ -1028,7 +1165,7 @@
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X, Layers } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X, Layers, Coins } from 'lucide-vue-next'
 import BaseSelect from '~/components/BaseSelect.vue'
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
@@ -1047,12 +1184,52 @@ const showBrandImage = ref(true)
 const tab = ref('ai')
 const baseTabs = computed(() => [
   { id: 'ai', label: t('settings.tabs.ai'), icon: Cpu },
+  { id: 'pricing', label: locale.value === 'th' ? 'ราคาเรนเดอร์ GPU (+40%)' : 'Cloud GPU Pricing', icon: Coins },
   { id: 'general', label: t('settings.tabs.general'), icon: Languages },
   { id: 'styles', label: t('settings.tabs.styles'), icon: Palette },
   { id: 'agents', label: t('settings.tabs.agents'), icon: Bot },
   { id: 'storage', label: t('settings.tabs.storage'), icon: HardDrive },
   { id: 'about', label: t('settings.tabs.about'), icon: RefreshCw },
 ])
+
+// ===== Vast.ai Pricing Configs (+40% Markup) =====
+const vastPricing = ref({
+  markupPercent: 40,
+  usdToThbRate: 36.0,
+  minShotPriceThb: 1.5,
+  r2OveragePricePerGb: 5.0,
+})
+const vastPricingLoading = ref(false)
+const vastPricingSaving = ref(false)
+
+async function loadVastPricing() {
+  try {
+    vastPricingLoading.value = true
+    const res = await settingsAPI.vastPricing()
+    if (res?.data) {
+      vastPricing.value = { ...res.data }
+    }
+  } catch (err) {
+    console.error('Failed to load vast pricing:', err)
+  } finally {
+    vastPricingLoading.value = false
+  }
+}
+
+async function saveVastPricing() {
+  try {
+    vastPricingSaving.value = true
+    const res = await settingsAPI.setVastPricing(vastPricing.value)
+    if (res?.data) {
+      vastPricing.value = { ...res.data }
+      toast.success(locale.value === 'th' ? 'บันทึกการตั้งค่าราคาและมาร์กอัปสำเร็จ' : 'Pricing settings saved successfully')
+    }
+  } catch (err) {
+    toastError(err, 'Failed to save pricing')
+  } finally {
+    vastPricingSaving.value = false
+  }
+}
 
 // ===== AI Service Configs =====
 const cfgs = ref([])
@@ -1828,7 +2005,7 @@ async function saveStyle() {
   } catch (e) { toastError(e) }
 }
 
-onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets(); refreshFlowStatus(); refreshAntigravityStatus() })
+onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets(); refreshFlowStatus(); refreshAntigravityStatus(); loadVastPricing() })
 
 // Read cached bridge account data only; never trigger live balance probes on a timer.
 let flowAccountPoll = null
