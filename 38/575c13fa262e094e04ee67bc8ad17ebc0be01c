@@ -1,0 +1,20 @@
+backend/src/routes/aiConfigs.ts
+  h_f97827f62b0fea 2,145,147-154,164
+backend/src/routes/tasks.ts
+  h_f97827f62b0fea 2,125-127,164-165,233-236,272-279
+backend/src/routes/upload.ts
+  h_f97827f62b0fea 6,20-24,77-81
+backend/src/routes/worker.ts
+  h_f97827f62b0fea 125-128,154-157,160-161,194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "38575c13fa262e094e04ee67bc8ad17ebc0be01c",
+  "prompts": {},
+  "humans": {
+    "h_f97827f62b0fea": {
+      "author": "NOPPANAN THEERACHARTE <noppanan.the@axonstech.com>"
+    }
+  }
+}
