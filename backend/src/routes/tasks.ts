@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull, or } from 'drizzle-orm'
 import { db, schema } from '../db/index.js'
 import { success, created, badRequest, notFound } from '../utils/response.js'
 import { generateImage, generateVideo } from '../services/generation.js'
@@ -122,6 +122,9 @@ app.post('/', async (c) => {
   }
 
   const actor = getActor(c)
+  if (isServerMode() && !actor) {
+    return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  }
 
   // Verify ownership of referenced drama
   if (body.drama_id) {
@@ -158,8 +161,8 @@ app.post('/', async (c) => {
 
     if (type === 'video' && videoBody) {
       const effectiveConfig = configId
-        ? (await getConfigById(configId)) ?? (await getActiveConfig('video'))
-        : await getActiveConfig('video')
+        ? (await getConfigById(configId, actor?.userId)) ?? (await getActiveConfig('video', actor?.userId))
+        : await getActiveConfig('video', actor?.userId)
       const validationError = validateVideoRequest(videoBody, effectiveConfig?.provider)
       if (validationError) return badRequest(c, validationError)
     }
@@ -227,7 +230,10 @@ app.post('/', async (c) => {
             configId,
           })
 
-    const [record] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
+    const [record] = await db
+      .select()
+      .from(schema.sysTask)
+      .where(and(eq(schema.sysTask.id, id), ...(isServerMode() && actor ? [eq(schema.sysTask.ownerUserId, actor.userId)] : [])))
     logTaskSuccess('TaskAPI', 'generate', { taskId: id, type, provider: record?.provider })
     return created(c, record)
   } catch (err: any) {
@@ -263,14 +269,14 @@ app.get('/', async (c) => {
   const dramaId = c.req.query('drama_id')
 
   const actor = getActor(c)
-  let rows = await db.select().from(schema.sysTask)
+  if (isServerMode() && !actor) return success(c, [])
 
-  if (isServerMode()) {
-    if (!actor) return success(c, [])
-    rows = rows.filter((r) => r.ownerUserId === actor.userId)
-  } else if (actor) {
-    rows = rows.filter((r) => r.ownerUserId === actor.userId || r.ownerUserId === null)
-  }
+  const ownerCondition = isServerMode() && actor
+    ? eq(schema.sysTask.ownerUserId, actor.userId)
+    : actor
+      ? or(eq(schema.sysTask.ownerUserId, actor.userId), isNull(schema.sysTask.ownerUserId))
+      : isNull(schema.sysTask.ownerUserId)
+  let rows = await db.select().from(schema.sysTask).where(ownerCondition)
 
   if (type) rows = rows.filter((r) => r.type === type)
   if (storyboardId) rows = rows.filter((r) => r.storyboardId === Number(storyboardId))

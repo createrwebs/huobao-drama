@@ -3,7 +3,7 @@ import { success, badRequest, now } from '../utils/response.js'
 import { saveUploadedFile, generateImageThumb } from '../utils/storage.js'
 import { extractVideoPoster } from '../utils/video-poster.js'
 import { db, schema } from '../db/index.js'
-import { getActor } from '../middleware/auth.js'
+import { getActor, isServerMode } from '../middleware/auth.js'
 
 const app = new Hono()
 
@@ -17,11 +17,14 @@ app.post('/image', async (c) => {
   }
 
   const buffer = await file.arrayBuffer()
-  const path = await saveUploadedFile(buffer, 'uploads', file.name)
+  const actor = getActor(c)
+  if (isServerMode() && !actor) {
+    return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  }
+  const path = await saveUploadedFile(buffer, 'uploads', file.name, actor?.userId)
   // 同步生成列表页缩略图，上传图与生图走同一套展示链路（失败不影响上传结果）
   await generateImageThumb(path)
 
-  const actor = getActor(c)
   await db.insert(schema.assets).values({
     ownerUserId: actor?.userId ?? null,
     name: file.name,
@@ -71,7 +74,11 @@ async function saveMediaUpload(
   if (buffer.byteLength > maxBytes) {
     return badRequest(c, `${label}文件大小不能超过 ${Math.round(maxBytes / 1024 / 1024)}MB`)
   }
-  const path = await saveUploadedFile(buffer, 'uploads', file.name)
+  const actor = getActor(c)
+  if (isServerMode() && !actor) {
+    return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  }
+  const path = await saveUploadedFile(buffer, 'uploads', file.name, actor?.userId)
   if (kind === 'video') {
     try {
       await extractVideoPoster(path)
@@ -80,7 +87,6 @@ async function saveMediaUpload(
     }
   }
 
-  const actor = getActor(c)
   await db.insert(schema.assets).values({
     ownerUserId: actor?.userId ?? null,
     name: file.name,

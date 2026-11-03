@@ -122,6 +122,10 @@ app.post('/screenshot', async (c) => {
  */
 app.post('/jobs', async (c) => {
   const actor = getActor(c)
+  const isWorker = isWorkerAuthorized(c)
+  if (!isWorker && isServerMode() && !actor) {
+    return c.json({ code: 401, message: 'Unauthorized' }, 401)
+  }
   const body = await c.req.json().catch(() => ({}))
   const {
     storyboard_id,
@@ -147,9 +151,14 @@ app.post('/jobs', async (c) => {
     return notFound(c, 'Storyboard not found')
   }
   const sb = sbResult.storyboard
+  const ownerUserId = sbResult.drama.ownerUserId
+  if (isServerMode() && ownerUserId === null) {
+    return notFound(c, 'Storyboard owner not found')
+  }
 
   const timestamp = Date.now()
-  const r2Key = `storyvdo/videos/${drama_id}/${storyboard_id}_${timestamp}.mp4`
+  const ownerPrefix = ownerUserId ? `users/${ownerUserId}/` : 'legacy/'
+  const r2Key = `${ownerPrefix}dramas/${drama_id}/videos/${storyboard_id}_${timestamp}.mp4`
 
   // Get pre-signed upload URL for Cloudflare R2
   let presignedUploadUrl = ''
@@ -182,7 +191,7 @@ app.post('/jobs', async (c) => {
       storyboardId: Number(storyboard_id),
       dramaId: Number(drama_id),
       prompt: jobParams.prompt,
-      ownerUserId: actor?.userId ?? null,
+      ownerUserId: ownerUserId ?? actor?.userId ?? null,
       params: JSON.stringify(jobParams),
       createdAt: now(),
       updatedAt: now(),

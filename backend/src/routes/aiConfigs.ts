@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull, or } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
 import { success, notFound, created, badRequest, now } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
@@ -142,16 +142,16 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
 app.get('/', async (c) => {
   const serviceType = c.req.query('service_type')
   const actor = getActor(c)
-  let rows = await db.select().from(schema.aiServiceConfigs)
+  if (isServerMode() && !actor) return success(c, [])
 
-  if (isServerMode()) {
-    if (!actor) return success(c, [])
-    rows = rows.filter(r => r.ownerUserId === actor.userId)
-  } else if (actor) {
-    rows = rows.filter(r => r.ownerUserId === actor.userId || r.ownerUserId === null)
-  }
-
-  if (serviceType) rows = rows.filter(r => r.serviceType === serviceType)
+  const ownerCondition = isServerMode() && actor
+    ? eq(schema.aiServiceConfigs.ownerUserId, actor.userId)
+    : actor
+      ? or(eq(schema.aiServiceConfigs.ownerUserId, actor.userId), isNull(schema.aiServiceConfigs.ownerUserId))
+      : isNull(schema.aiServiceConfigs.ownerUserId)
+  const conditions = [ownerCondition]
+  if (serviceType) conditions.push(eq(schema.aiServiceConfigs.serviceType, serviceType))
+  const rows = await db.select().from(schema.aiServiceConfigs).where(and(...conditions))
 
   const parsed = rows.map(withParsedFields)
   return success(c, parsed)
@@ -161,7 +161,7 @@ app.get('/', async (c) => {
 app.post('/', async (c) => {
   const actor = getActor(c)
   if (isServerMode() && !actor) {
-    return badRequest(c, '未授权')
+    return c.json({ code: 401, message: 'Unauthorized' }, 401)
   }
 
   const body = await c.req.json()
