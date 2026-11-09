@@ -10,8 +10,13 @@ import { STORAGE_ROOT } from './paths.js'
 /**
  * 下载远程文件到本地存储
  */
-export async function downloadFile(url: string, subDir: string): Promise<string> {
-  const dir = path.join(STORAGE_ROOT, subDir)
+function scopedSubDir(subDir: string, ownerUserId?: number | null): string {
+  return ownerUserId ? path.posix.join('users', String(ownerUserId), subDir) : subDir
+}
+
+export async function downloadFile(url: string, subDir: string, ownerUserId?: number | null): Promise<string> {
+  const scopedDir = scopedSubDir(subDir, ownerUserId)
+  const dir = path.join(STORAGE_ROOT, scopedDir)
   fs.mkdirSync(dir, { recursive: true })
 
   const ext = getExtFromUrl(url)
@@ -25,14 +30,15 @@ export async function downloadFile(url: string, subDir: string): Promise<string>
   fs.writeFileSync(filePath, buffer)
 
   // 返回相对路径（供 API 返回给前端）
-  return `static/${subDir}/${filename}`
+  return `static/${scopedDir}/${filename}`
 }
 
 /**
  * 保存上传的文件
  */
-export async function saveUploadedFile(data: ArrayBuffer, subDir: string, originalName: string): Promise<string> {
-  const dir = path.join(STORAGE_ROOT, subDir)
+export async function saveUploadedFile(data: ArrayBuffer, subDir: string, originalName: string, ownerUserId?: number | null): Promise<string> {
+  const scopedDir = scopedSubDir(subDir, ownerUserId)
+  const dir = path.join(STORAGE_ROOT, scopedDir)
   fs.mkdirSync(dir, { recursive: true })
 
   const ext = path.extname(originalName) || '.bin'
@@ -40,7 +46,7 @@ export async function saveUploadedFile(data: ArrayBuffer, subDir: string, origin
   const filePath = path.join(dir, filename)
 
   fs.writeFileSync(filePath, Buffer.from(data))
-  return `static/${subDir}/${filename}`
+  return `static/${scopedDir}/${filename}`
 }
 
 function getExtFromUrl(url: string): string {
@@ -66,8 +72,9 @@ export function getAbsolutePath(relativePath: string): string {
  * 保存 Base64 编码的图片数据到本地存储
  * 用于 Gemini 等只返回 base64 数据的厂商
  */
-export async function saveBase64Image(base64Data: string, mimeType: string, subDir: string): Promise<string> {
-  const dir = path.join(STORAGE_ROOT, subDir)
+export async function saveBase64Image(base64Data: string, mimeType: string, subDir: string, ownerUserId?: number | null): Promise<string> {
+  const scopedDir = scopedSubDir(subDir, ownerUserId)
+  const dir = path.join(STORAGE_ROOT, scopedDir)
   fs.mkdirSync(dir, { recursive: true })
 
   // 从 mimeType 推断文件扩展名
@@ -78,7 +85,7 @@ export async function saveBase64Image(base64Data: string, mimeType: string, subD
   const buffer = Buffer.from(base64Data, 'base64')
   fs.writeFileSync(filePath, buffer)
 
-  return `static/${subDir}/${filename}`
+  return `static/${scopedDir}/${filename}`
 }
 
 /** 由图片相对路径推导缩略图路径：static/images/x.png → static/images/x_thumb.webp */

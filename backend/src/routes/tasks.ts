@@ -146,16 +146,13 @@ app.post('/', async (c) => {
     let storyboardDramaId: number | undefined
 
     if (body.storyboard_id) {
-      const [sb] = await db
-        .select()
-        .from(schema.storyboards)
-        .where(eq(schema.storyboards.id, Number(body.storyboard_id)))
-      if (sb) {
-        const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, sb.episodeId))
-        const locked = type === 'image' ? ep?.imageConfigId : ep?.videoConfigId
+      const sbAuth = await getStoryboardIfAuthorized(c, Number(body.storyboard_id))
+      if (sbAuth) {
+        const { episode: ep } = sbAuth
+        const locked = type === 'image' ? ep.imageConfigId : ep.videoConfigId
         if (locked != null && configId == null) configId = locked
-        if (type === 'video' && ep?.resolution) episodeResolution = ep.resolution
-        storyboardDramaId = ep?.dramaId ?? undefined
+        if (type === 'video' && ep.resolution) episodeResolution = ep.resolution
+        storyboardDramaId = ep.dramaId
       }
     }
 
@@ -245,19 +242,15 @@ app.post('/', async (c) => {
 // GET /tasks/:id — 轮询任务状态 (guarded by owner)
 app.get('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [row] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
-  if (!row) return notFound(c, '任务不存在')
-
   const actor = getActor(c)
-  if (isServerMode()) {
-    if (!actor || row.ownerUserId !== actor.userId) {
-      return notFound(c, '任务不存在')
-    }
-  } else if (actor) {
-    if (row.ownerUserId !== null && row.ownerUserId !== actor.userId) {
-      return notFound(c, '任务不存在')
-    }
-  }
+  const ownerCondition = isServerMode()
+    ? actor ? eq(schema.sysTask.ownerUserId, actor.userId) : eq(schema.sysTask.id, -1)
+    : actor
+      ? or(eq(schema.sysTask.ownerUserId, actor.userId), isNull(schema.sysTask.ownerUserId))
+      : isNull(schema.sysTask.ownerUserId)
+  const [row] = await db.select().from(schema.sysTask)
+    .where(and(eq(schema.sysTask.id, id), ownerCondition))
+  if (!row) return notFound(c, '任务不存在')
 
   return success(c, row)
 })
@@ -288,17 +281,17 @@ app.get('/', async (c) => {
 // DELETE /tasks/:id (guarded by owner)
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [row] = await db.select().from(schema.sysTask).where(eq(schema.sysTask.id, id))
+  const actor = getActor(c)
+  const ownerCondition = isServerMode()
+    ? actor ? eq(schema.sysTask.ownerUserId, actor.userId) : eq(schema.sysTask.id, -1)
+    : actor
+      ? or(eq(schema.sysTask.ownerUserId, actor.userId), isNull(schema.sysTask.ownerUserId))
+      : isNull(schema.sysTask.ownerUserId)
+  const [row] = await db.select().from(schema.sysTask)
+    .where(and(eq(schema.sysTask.id, id), ownerCondition))
   if (!row) return notFound(c, '任务不存在')
 
-  const actor = getActor(c)
-  if (isServerMode()) {
-    if (!actor || row.ownerUserId !== actor.userId) {
-      return notFound(c, '任务不存在')
-    }
-  }
-
-  await db.delete(schema.sysTask).where(eq(schema.sysTask.id, id))
+  await db.delete(schema.sysTask).where(and(eq(schema.sysTask.id, id), ownerCondition))
   return success(c)
 })
 

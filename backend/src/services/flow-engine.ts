@@ -759,6 +759,28 @@ export async function generateFlowVideo(options: GenerateFlowVideoOptions): Prom
         if (sbRow && (sbRow.first_frame_image || sbRow.composed_image)) {
           resolvedStartImage = resolveToLocalFilePath(sbRow.first_frame_image || sbRow.composed_image)
         }
+
+        // หากตั้งใจใช้ภาพท้ายซีนก่อนหน้า หรือโหมด first_frame แต่ยังไม่มีภาพ ให้ดึงภาพท้ายซีนก่อนหน้าอัตโนมัติ
+        if ((options.startImage === 'previous' || !resolvedStartImage) && options.referenceMode === 'first_frame') {
+          const currentSb = appDb.prepare(`SELECT episode_id, storyboard_number FROM storyboards WHERE id = ?`).get(options.storyboardId) as any
+          if (currentSb) {
+            const prevSb = appDb.prepare(`
+              SELECT id, storyboard_number, video_url, composed_video_url
+              FROM storyboards
+              WHERE episode_id = ? AND storyboard_number < ? AND (video_url IS NOT NULL OR composed_video_url IS NOT NULL)
+              ORDER BY storyboard_number DESC LIMIT 1
+            `).get(currentSb.episode_id, currentSb.storyboard_number) as any
+
+            if (prevSb && (prevSb.video_url || prevSb.composed_video_url)) {
+              const { extractVideoLastFrame } = await import('../utils/video-poster.js')
+              const lastFrameRel = await extractVideoLastFrame(prevSb.video_url || prevSb.composed_video_url)
+              if (lastFrameRel) {
+                resolvedStartImage = resolveToLocalFilePath(lastFrameRel)
+                console.log(`[FlowEngine] Using last frame from previous shot #${prevSb.storyboard_number} as start image: ${resolvedStartImage}`)
+              }
+            }
+          }
+        }
         appDb.close()
       }
     } catch (err) {

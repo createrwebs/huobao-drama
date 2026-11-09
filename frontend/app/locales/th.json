@@ -140,6 +140,12 @@
       "aspectRatio": "อัตราส่วนภาพ",
       "aspectRatioPlaceholder": "เลือกอัตราส่วนภาพ",
       "aspectRatioHint": "ไม่สามารถเปลี่ยนแปลงได้หลังสร้าง วิดีโอทั้งหมดจะใช้อัตราส่วนนี้",
+      "totalEpisodes": "จำนวนตอนวางแผน",
+      "totalEpisodesPlaceholder": "เช่น 6",
+      "totalEpisodesHint": "AI จะแตกเนื้อเรื่องออกเป็นจำนวนตอนตามที่ระบุ",
+      "synopsis": "เรื่องย่อ / Synopsis",
+      "synopsisPlaceholder": "เขียนเรื่องย่อสั้น ๆ ของซีรีส์ เช่น นางเอกย้อนเวลากลับไปแก้ไขอดีต...",
+      "synopsisHint": "AI จะใช้เรื่องย่อนี้ในการแตกเนื้อหาแต่ละตอน",
       "submit": "สร้างโปรเจกต์"
     },
     "deleteDialog": {
@@ -159,7 +165,8 @@
       "sceneCount": "{n} ฉาก",
       "epCount": "{n} ตอน",
       "storyMode": "โหมดเนื้อเรื่อง",
-      "addEpisode": "เพิ่มตอน"
+      "addEpisode": "เพิ่มตอน",
+      "generateEpisodes": "แตกเนื้อเรื่อง"
     },
     "tabs": {
       "episodes": "ตอนทั้งหมด",
@@ -180,6 +187,18 @@
       "res720": "720p · HD",
       "res480": "480p · ลื่นไหล",
       "resSwitched": "เปลี่ยนความละเอียดวิดีโอเป็น {res}"
+    },
+    "planDialog": {
+      "title": "AI แตกเนื้อเรื่องเป็นตอน",
+      "synopsis": "เรื่องย่อ / Synopsis",
+      "synopsisPlaceholder": "เขียนเรื่องย่อของซีรีส์ หรือปล่อยให้ AI ต่อเติมจากชื่อและแนวทาง",
+      "synopsisHint": "AI จะอ่านเรื่องย่อนี้แล้วแตกเป็นตอน พร้อมบทพูดคร่าว",
+      "totalEpisodes": "จำนวนตอน",
+      "totalEpisodesHint": "ระบุจำนวนตอนที่ต้องการให้ AI แตกออกมา",
+      "footCopy": "ตอนทั้งหมดจะถูกบันทึกลงโปรเจกต์นี้",
+      "generating": "กำลังสร้างตอน...",
+      "confirm": "ยืนยันแตกเนื้อเรื่อง",
+      "success": "สร้าง {n} ตอนเรียบร้อยแล้ว"
     },
     "epCreate": {
       "title": "สร้างตอนใหม่",

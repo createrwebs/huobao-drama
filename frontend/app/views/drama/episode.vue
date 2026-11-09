@@ -551,7 +551,7 @@
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                   {{ videoSelectMode && selectedVideoSbIds.length ? t('episode.vid.batchSelected', { n: selectedVideoSbIds.length }) : t('episode.vid.batchVideos') }}
                 </button>
-                <button
+                <!-- <button
                   type="button"
                   class="btn btn-sm"
                   style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; font-weight: 600; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);"
@@ -561,7 +561,7 @@
                 >
                   <Sparkles :size="11" />
                   🚀 เรนเดอร์ทุกวิดีโอด้วย Vast.ai ({{ sbs.length }})
-                </button>
+                </button> -->
               </div>
             </div>
 
@@ -772,9 +772,23 @@
                     <div class="video-inspector-prompt-head">
                       <div class="flex items-center gap-2">
                         <span class="video-inspector-label video-inspector-label-hero">ภาพสตอรี่บอร์ด (เฟรมแรกก่อนสร้างวิดีโอ)</span>
-                        <span v-if="hasSbImg(selectedSb)" class="tag mono is-ready">มีภาพแล้ว</span>
+                        <span v-if="hasSbImg(selectedSb) && isPrevFrameImg(selectedSb)" class="tag mono is-ready" style="color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);">ต่อจากท้ายซีน #{{ getPreviousSbNumber(selectedSb) }}</span>
+                        <span v-else-if="hasSbImg(selectedSb)" class="tag mono is-ready">มีภาพแล้ว</span>
                       </div>
                       <div class="flex items-center gap-1 flex-wrap">
+                        <button
+                          v-if="hasPreviousVideo(selectedSb)"
+                          type="button"
+                          class="btn btn-sm"
+                          style="border-color: #3b82f6; color: #60a5fa;"
+                          :disabled="extractingPrevFrameId === selectedSb?.id"
+                          :title="`ดึงภาพวินาทีสุดท้ายจากวิดีโอช็อตก่อนหน้า (#${getPreviousSbNumber(selectedSb)}) มาเป็นภาพต้นทางของช็อตนี้`"
+                          @click="extractPrevFrameAsStart(selectedSb)"
+                        >
+                          <Loader2 v-if="extractingPrevFrameId === selectedSb?.id" :size="11" class="animate-spin" />
+                          <Film v-else :size="11" />
+                          ดึงภาพท้ายซีนก่อนหน้า (#{{ getPreviousSbNumber(selectedSb) }})
+                        </button>
                         <button
                           type="button"
                           class="btn btn-sm"
@@ -802,7 +816,7 @@
                           @click="genSbImg(selectedSb)"
                         >
                           <Loader2 v-if="isPendingSbImage(selectedSb?.id)" :size="11" class="animate-spin" />
-                          <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                           {{ isPendingSbImage(selectedSb?.id) ? 'กำลังสร้างภาพ...' : (hasSbImg(selectedSb) ? 'สร้างภาพสตอรี่บอร์ดใหม่' : 'สร้างภาพสตอรี่บอร์ด') }}
                         </button>
                       </div>
@@ -837,11 +851,11 @@
                           placeholder="พรอมต์สำหรับสร้างภาพสตอรี่บอร์ด (ภาพนิ่งเฟรมแรก): [ขนาดภาพและมุมกล้อง] + [@ชื่อตัวละคร อิริยาบถ ท่าทาง สีหน้า และสภาพในฉากนี้ เช่น บาดเจ็บ/เปลี่ยนชุด โดยไม่ต้องคัดลอกจากไฟล์ตัวละครหากมี Ref แล้ว] + [ฉากหลัง แสง บรรยากาศ]"
                           @blur="updateField(selectedSb, 'image_prompt', $event.target.value)"
                         />
-                        <div v-if="hasSbImg(selectedSb)" class="sb-frame-mode-row">
+                        <div v-if="hasSbImg(selectedSb) || hasPreviousVideo(selectedSb)" class="sb-frame-mode-row">
                           <span class="sb-frame-mode-label">โหมดอ้างอิงตอนสร้างวิดีโอ:</span>
                           <label class="sb-frame-radio">
                             <input v-model="sbVideoRefMode" type="radio" value="first_frame" />
-                            <span>ใช้ภาพสตอรี่บอร์ดเป็นเฟรมแรก (Image-to-Video)</span>
+                            <span>{{ hasSbImg(selectedSb) ? (isPrevFrameImg(selectedSb) ? 'ใช้ภาพท้ายซีนก่อนหน้าเป็นเฟรมแรก (Image-to-Video)' : 'ใช้ภาพสตอรี่บอร์ดเป็นเฟรมแรก (Image-to-Video)') : 'ดึงภาพท้ายซีนก่อนหน้าเป็นเฟรมแรกอัตโนมัติ' }}</span>
                           </label>
                           <label class="sb-frame-radio">
                             <input v-model="sbVideoRefMode" type="radio" value="reference" />
@@ -908,7 +922,7 @@
                   <Upload :size="11" />
                   {{ t('episode.vid.importVideo') }}
                 </button>
-                <button
+                <!-- <button
                   type="button"
                   class="btn btn-sm"
                   style="border-color: #f59e0b; color: #fbbf24;"
@@ -917,8 +931,8 @@
                 >
                   <Sparkles :size="11" class="text-amber-400" />
                   Colab / Kaggle
-                </button>
-                <button
+                </button> -->
+                <!-- <button
                   type="button"
                   class="btn btn-sm"
                   style="border-color: #8b5cf6; color: #c084fc;"
@@ -927,7 +941,7 @@
                 >
                   <Sparkles :size="11" class="text-purple-400" />
                   Vast GPU
-                </button>
+                </button> -->
                 <button
                   v-if="previewVideoUrl"
                   class="btn btn-sm btn-primary"
@@ -1072,7 +1086,7 @@
                         <span class="video-param-unit">{{ t('episode.inspector.durationUnit') }}</span>
                       </span>
                     </div>
-                    <div class="video-param-hint">{{ t('episode.inspector.durationHint') }}</div>
+                    <!-- <div class="video-param-hint">{{ t('episode.inspector.durationHint') }}</div> -->
                   </section>
                   <div class="video-inspector-effective">
                     {{ t('episode.inspector.effective', { model: effectiveVideoModelLabel || t('episode.vid.defaultModel'), res: episodeResolutionShort, dur: effectiveVideoDuration }) }}
@@ -1934,7 +1948,7 @@ import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import {
   Users, FileText, FolderKanban, Clapperboard, Download, Loader2,
-  Plus, X, ListTodo, CircleHelp, Upload, Play, Sparkles, RefreshCw, Check,
+  Plus, X, ListTodo, CircleHelp, Upload, Play, Sparkles, RefreshCw, Check, Film,
 } from 'lucide-vue-next'
 import { api, dramaAPI, episodeAPI, storyboardAPI, characterAPI, sceneAPI, propAPI, taskAPI, mergeAPI, aiConfigAPI, uploadAPI, flowBridgeAPI } from '~/composables/useApi'
 import { startTour, autoTour } from '~/composables/useTour'
@@ -3506,6 +3520,47 @@ function getSbImgSrc(s) { const u = getSbImgUrl(s); return u ? genTaskPreviewSrc
 function hasSbImg(s) { return !!getSbImgUrl(s) }
 function isPendingSbImage(id) { return pendingSbImageIds.value.includes(id) }
 
+function getPreviousSb(sb) {
+  if (!sb || !sbs.value?.length) return null
+  const idx = sbs.value.findIndex(s => s.id === sb.id)
+  if (idx > 0) return sbs.value[idx - 1]
+  return null
+}
+function hasPreviousVideo(sb) {
+  const prev = getPreviousSb(sb)
+  return Boolean(prev && hasVid(prev))
+}
+function getPreviousSbNumber(sb) {
+  const prev = getPreviousSb(sb)
+  return prev ? (prev.storyboard_number || prev.storyboardNumber || (sbs.value.indexOf(prev) + 1)) : ''
+}
+function isPrevFrameImg(sb) {
+  const url = getSbImgUrl(sb) || ''
+  return url.includes('last_frame') || url.includes('prev_frame')
+}
+
+const extractingPrevFrameId = ref(null)
+async function extractPrevFrameAsStart(sb) {
+  if (!sb || extractingPrevFrameId.value) return
+  extractingPrevFrameId.value = sb.id
+  try {
+    const res = await storyboardAPI.extractPrevFrame(sb.id)
+    const prevNum = res?.data?.previous_storyboard_number || getPreviousSbNumber(sb)
+    toast.success(`ดึงภาพวินาทีสุดท้ายจากช็อต #${prevNum} เป็นภาพต้นทางเรียบร้อย`)
+    const framePath = res?.data?.first_frame_image
+    if (framePath) {
+      sb.first_frame_image = framePath
+      sb.firstFrameImage = framePath
+    }
+    sbVideoRefMode.value = 'first_frame'
+    await refresh()
+  } catch (e) {
+    toastError(e, { fallback: 'ไม่สามารถดึงภาพจากช็อตก่อนหน้าได้' })
+  } finally {
+    extractingPrevFrameId.value = null
+  }
+}
+
 function buildFallbackSbImagePrompt(sb) {
   if (!sb) return ''
   const shotType = sb.shot_type || sb.shotType || 'Medium Shot'
@@ -4225,7 +4280,22 @@ async function genVid(sb, opts = {}) {
   // Flow sends local reference files through the original engine/cookie path.
 
   const referenceImages = getShotReferenceImages(sb)
-  const frameImg = sb.first_frame_image || sb.firstFrameImage || sb.composed_image || sb.composedImage || sb.image_url || sb.imageUrl || null
+  let frameImg = sb.first_frame_image || sb.firstFrameImage || sb.composed_image || sb.composedImage || sb.image_url || sb.imageUrl || null
+
+  // หากอยู่ในโหมด first_frame แต่ยังไม่มีภาพ และซีนก่อนหน้ามีวิดีโอ ดึงภาพท้ายซีนก่อนหน้ามาเป็นภาพต้นทางอัตโนมัติ
+  if (!frameImg && sbVideoRefMode.value === 'first_frame' && hasPreviousVideo(sb)) {
+    try {
+      const res = await storyboardAPI.extractPrevFrame(sb.id)
+      if (res?.data?.first_frame_image) {
+        frameImg = res.data.first_frame_image
+        sb.first_frame_image = frameImg
+        sb.firstFrameImage = frameImg
+      }
+    } catch (e) {
+      console.warn('Auto-extract previous frame fallback error:', e)
+    }
+  }
+
   // 参考素材完全来自分镜绑定的角色/场景/道具图片
   const params = {
     storyboard_id: sb.id,
@@ -5756,6 +5826,8 @@ onMounted(() => setTimeout(() => autoTour('episode', EPISODE_TOUR, t), 900))
   align-items: center;
   justify-content: center;
   background: var(--media-surface);
+  overflow: hidden;
+  position: relative;
 }
 .video-player-video {
   width: 100%;
@@ -5768,14 +5840,18 @@ onMounted(() => setTimeout(() => autoTour('episode', EPISODE_TOUR, t), 900))
 /* 空态：保留 16:9 播放框，内容居中（图标 + 文案 + 生成按钮） */
 .video-player-empty {
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   gap: 6px;
-  padding: 14px 16px;
+  padding: 8px 12px;
   color: var(--text-3);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .video-player-empty-copy { display: flex; flex-direction: column; align-items: center; }
 .video-player-empty-title { color: var(--text-1); font-size: 12.5px; font-weight: 700; }
@@ -6117,6 +6193,7 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 /* MentionTextarea 内部元素需 :deep 穿透（scoped 样式默认到不了子组件内部） */
 :deep(.video-inspector-prompt) {
@@ -6132,9 +6209,9 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
 }
 .sb-frame-grid {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
   gap: 12px;
-  align-items: stretch;
+  align-items: start;
 }
 @media (max-width: 1100px) {
   .sb-frame-grid {
@@ -6143,6 +6220,8 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
 }
 .sb-frame-preview-box {
   position: relative;
+  width: 100%;
+  max-width: 220px;
   aspect-ratio: 16 / 9;
   border: 1px solid var(--surface-outline);
   border-radius: var(--radius);
@@ -6151,13 +6230,24 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: start;
+  contain: paint;
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .sb-frame-preview-box {
+    max-width: 320px;
+  }
 }
 .sb-frame-img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: cover;
   display: block;
   cursor: pointer;
+  border-radius: calc(var(--radius) - 1px);
 }
 .sb-frame-overlay-actions {
   position: absolute;
@@ -6214,12 +6304,15 @@ button.video-task-metric.on { box-shadow: 0 0 0 2px var(--accent); }
   cursor: pointer;
 }
 .video-player-sb-preview {
-  width: 100%;
-  max-height: 150px;
-  object-fit: cover;
+  width: auto;
+  max-width: 80%;
+  max-height: 110px;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
   border-radius: var(--radius);
   border: 1px solid var(--surface-outline);
   cursor: pointer;
+  background: rgba(0, 0, 0, 0.4);
 }
 .video-task-sb-badge {
   color: var(--accent-text, var(--accent));

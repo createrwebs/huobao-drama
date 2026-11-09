@@ -140,6 +140,12 @@
       "aspectRatio": "画面比例",
       "aspectRatioPlaceholder": "选择画面比例",
       "aspectRatioHint": "创建后固定，视频生成将统一使用该比例",
+      "totalEpisodes": "计划集数",
+      "totalEpisodesPlaceholder": "例如 6",
+      "totalEpisodesHint": "AI 将按此数量把故事拆分为多集",
+      "synopsis": "故事梗概 / Synopsis",
+      "synopsisPlaceholder": "输入整个短剧的故事梗概，例如女主意外穿越回过去改变命运…",
+      "synopsisHint": "AI 会根据梗概拆分为每一集的内容",
       "submit": "创建项目"
     },
     "deleteDialog": {
@@ -159,7 +165,8 @@
       "sceneCount": "{n} 场景",
       "epCount": "{n} 集",
       "storyMode": "故事模式",
-      "addEpisode": "添加集"
+      "addEpisode": "添加集",
+      "generateEpisodes": "拆分剧集"
     },
     "tabs": {
       "episodes": "剧集列表",
@@ -181,11 +188,23 @@
       "res480": "480p · 流畅",
       "resSwitched": "本集视频分辨率已切换为 {res}"
     },
+    "planDialog": {
+      "title": "AI 拆分为多集",
+      "synopsis": "故事梗概 / Synopsis",
+      "synopsisPlaceholder": "输入短剧故事梗概，AI 会根据它拆分为多集",
+      "synopsisHint": "AI 会读取梗概并生成分集大纲与关键对白",
+      "totalEpisodes": "集数",
+      "totalEpisodesHint": "指定希望 AI 拆分的集数",
+      "footCopy": "拆分结果会保存到本项目",
+      "generating": "正在拆分...",
+      "confirm": "确认拆分",
+      "success": "已生成 {n} 集"
+    },
     "epCreate": {
       "title": "创建新集",
       "titleField": "标题",
       "titlePlaceholder": "默认按集数自动命名",
-      "titleHint": "留空时会自动按集数命名，例如“{example}”。",
+      "titleHint": "留空时会自动按集数命名，例如“{example}”",
       "example": "第 {n} 集",
       "resolution": "视频分辨率",
       "resolutionPlaceholder": "选择分辨率",

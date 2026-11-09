@@ -35,6 +35,22 @@ function isWorkerAuthorized(c: any): boolean {
   return !!token && token === WORKER_SECRET_KEY
 }
 
+async function getWorkerTask(c: any, taskId: number) {
+  const isWorker = isWorkerAuthorized(c)
+  const actor = getActor(c)
+  const ownerCondition = isServerMode() && !isWorker
+    ? actor ? eq(schema.sysTask.ownerUserId, actor.userId) : eq(schema.sysTask.id, -1)
+    : undefined
+
+  const query = db.select().from(schema.sysTask).where(
+    ownerCondition
+      ? and(eq(schema.sysTask.id, taskId), ownerCondition)
+      : eq(schema.sysTask.id, taskId)
+  ).limit(1)
+  const [task] = await query
+  return { task, isWorker, actor }
+}
+
 /**
  * POST /api/v1/worker/screenshot
  * Generate or register keyframe screenshot from prompt + character reference
@@ -279,26 +295,13 @@ app.get('/jobs/poll', async (c) => {
  */
 app.post('/jobs/:id/complete', async (c) => {
   const taskId = Number(c.req.param('id'))
-  const isWorker = isWorkerAuthorized(c)
-  const actor = getActor(c)
-
-  const [task] = await db
-    .select()
-    .from(schema.sysTask)
-    .where(eq(schema.sysTask.id, taskId))
-    .limit(1)
+  const { task, isWorker } = await getWorkerTask(c, taskId)
 
   if (!task) {
     return notFound(c, 'Task not found')
   }
 
   // Check auth: either worker token or owner
-  if (!isWorker && isServerMode()) {
-    if (!actor || task.ownerUserId !== actor.userId) {
-      return notFound(c, 'Task not found')
-    }
-  }
-
   const body = await c.req.json().catch(() => ({}))
   let { video_url, r2_key, duration_seconds } = body
 
@@ -347,22 +350,9 @@ app.post('/jobs/:id/complete', async (c) => {
  */
 app.post('/jobs/:id/fail', async (c) => {
   const taskId = Number(c.req.param('id'))
-  const isWorker = isWorkerAuthorized(c)
-  const actor = getActor(c)
-
-  const [task] = await db
-    .select()
-    .from(schema.sysTask)
-    .where(eq(schema.sysTask.id, taskId))
-    .limit(1)
+  const { task } = await getWorkerTask(c, taskId)
 
   if (!task) return notFound(c, 'Task not found')
-
-  if (!isWorker && isServerMode()) {
-    if (!actor || task.ownerUserId !== actor.userId) {
-      return notFound(c, 'Task not found')
-    }
-  }
 
   const body = await c.req.json().catch(() => ({}))
   const errorMsg = body.error_message || 'Video render failed on worker'
@@ -385,21 +375,9 @@ app.post('/jobs/:id/fail', async (c) => {
  */
 app.get('/jobs/:id/status', async (c) => {
   const taskId = Number(c.req.param('id'))
-  const actor = getActor(c)
-
-  const [task] = await db
-    .select()
-    .from(schema.sysTask)
-    .where(eq(schema.sysTask.id, taskId))
-    .limit(1)
+  const { task } = await getWorkerTask(c, taskId)
 
   if (!task) return notFound(c, 'Task not found')
-
-  if (isServerMode() && !isWorkerAuthorized(c)) {
-    if (!actor || task.ownerUserId !== actor.userId) {
-      return notFound(c, 'Task not found')
-    }
-  }
 
   return success(c, {
     id: task.id,
@@ -416,21 +394,9 @@ app.get('/jobs/:id/status', async (c) => {
  */
 app.get('/jobs/:id/notebook', async (c) => {
   const taskId = Number(c.req.param('id'))
-  const actor = getActor(c)
-
-  const [task] = await db
-    .select()
-    .from(schema.sysTask)
-    .where(eq(schema.sysTask.id, taskId))
-    .limit(1)
+  const { task } = await getWorkerTask(c, taskId)
 
   if (!task) return notFound(c, 'Task not found')
-
-  if (isServerMode() && !isWorkerAuthorized(c)) {
-    if (!actor || task.ownerUserId !== actor.userId) {
-      return notFound(c, 'Task not found')
-    }
-  }
 
   let params: any = {}
   try {
@@ -548,6 +514,15 @@ app.get('/r2-stream', async (c) => {
   if (!key) return badRequest(c, 'key query parameter required')
 
   const cleanKey = key.replace(/^\/+/, '')
+  const actor = getActor(c)
+  const workerAuthorized = isWorkerAuthorized(c)
+  if (isServerMode() && !workerAuthorized) {
+    if (!actor) return c.json({ code: 401, message: 'Unauthorized' }, 401)
+    const ownerMatch = cleanKey.match(/^users\/(\d+)\//)
+    if (!ownerMatch || Number(ownerMatch[1]) !== actor.userId) {
+      return notFound(c, 'R2 object not found')
+    }
+  }
   const rangeHeader = c.req.header('range')
 
   try {

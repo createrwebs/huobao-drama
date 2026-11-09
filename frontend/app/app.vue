@@ -22,6 +22,14 @@ const { t } = useI18n()
 const { resolvedTheme } = useTheme()
 const { checkAuth } = useAuth()
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('huobao:insufficient-credit', (event) => {
+    const detail = (event as CustomEvent<{ message?: string }>).detail
+    const message = detail?.message || 'เครดิตไม่เพียงพอ กรุณาตรวจสอบบัญชี Tora API'
+    toast.error(message, { duration: 6000 })
+  })
+}
+
 // 响应式文档标题（nuxt.config.ts 的静态 title 仅作 SSR/兜底）
 useHead(() => ({ title: t('app.title') }))
 

@@ -297,15 +297,15 @@ app.post('/test', async (c) => {
 // GET /ai-configs/:id
 app.get('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [row] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
-  if (!row) return notFound(c)
-
   const actor = getActor(c)
-  if (isServerMode()) {
-    if (!actor || row.ownerUserId !== actor.userId) return notFound(c)
-  } else if (actor) {
-    if (row.ownerUserId !== null && row.ownerUserId !== actor.userId) return notFound(c)
-  }
+  const ownerCondition = isServerMode()
+    ? actor ? eq(schema.aiServiceConfigs.ownerUserId, actor.userId) : eq(schema.aiServiceConfigs.id, -1)
+    : actor
+      ? or(eq(schema.aiServiceConfigs.ownerUserId, actor.userId), isNull(schema.aiServiceConfigs.ownerUserId))
+      : isNull(schema.aiServiceConfigs.ownerUserId)
+  const [row] = await db.select().from(schema.aiServiceConfigs)
+    .where(and(eq(schema.aiServiceConfigs.id, id), ownerCondition))
+  if (!row) return notFound(c)
 
   return success(c, withParsedFields(row))
 })
@@ -313,15 +313,15 @@ app.get('/:id', async (c) => {
 // PUT /ai-configs/:id
 app.put('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [existing] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
-  if (!existing) return notFound(c)
-
   const actor = getActor(c)
-  if (isServerMode()) {
-    if (!actor || existing.ownerUserId !== actor.userId) return notFound(c)
-  } else if (actor) {
-    if (existing.ownerUserId !== null && existing.ownerUserId !== actor.userId) return notFound(c)
-  }
+  const ownerCondition = isServerMode()
+    ? actor ? eq(schema.aiServiceConfigs.ownerUserId, actor.userId) : eq(schema.aiServiceConfigs.id, -1)
+    : actor
+      ? or(eq(schema.aiServiceConfigs.ownerUserId, actor.userId), isNull(schema.aiServiceConfigs.ownerUserId))
+      : isNull(schema.aiServiceConfigs.ownerUserId)
+  const [existing] = await db.select().from(schema.aiServiceConfigs)
+    .where(and(eq(schema.aiServiceConfigs.id, id), ownerCondition))
+  if (!existing) return notFound(c)
 
   const body = await c.req.json()
   const serviceType = 'service_type' in body ? body.service_type : existing.serviceType
@@ -364,17 +364,17 @@ app.put('/:id', async (c) => {
 // DELETE /ai-configs/:id
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const [existing] = await db.select().from(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
+  const actor = getActor(c)
+  const ownerCondition = isServerMode()
+    ? actor ? eq(schema.aiServiceConfigs.ownerUserId, actor.userId) : eq(schema.aiServiceConfigs.id, -1)
+    : actor
+      ? or(eq(schema.aiServiceConfigs.ownerUserId, actor.userId), isNull(schema.aiServiceConfigs.ownerUserId))
+      : isNull(schema.aiServiceConfigs.ownerUserId)
+  const [existing] = await db.select().from(schema.aiServiceConfigs)
+    .where(and(eq(schema.aiServiceConfigs.id, id), ownerCondition))
   if (!existing) return notFound(c)
 
-  const actor = getActor(c)
-  if (isServerMode()) {
-    if (!actor || existing.ownerUserId !== actor.userId) return notFound(c)
-  } else if (actor) {
-    if (existing.ownerUserId !== null && existing.ownerUserId !== actor.userId) return notFound(c)
-  }
-
-  await db.delete(schema.aiServiceConfigs).where(eq(schema.aiServiceConfigs.id, id))
+  await db.delete(schema.aiServiceConfigs).where(and(eq(schema.aiServiceConfigs.id, id), ownerCondition))
   return success(c)
 })
 

@@ -19,8 +19,8 @@ app.post('/', async (c) => {
   if (!drama) return notFound(c, '剧本不存在')
 
   // 图片/视频配置：显式传入优先，缺省时自动锁定当前启用的最高优先级官方配置
-  const imageConfigId = body.image_config_id ?? (await getActiveConfigId('image')) ?? null
-  const videoConfigId = body.video_config_id ?? (await getActiveConfigId('video')) ?? null
+  const imageConfigId = body.image_config_id ?? (await getActiveConfigId('image', drama.ownerUserId)) ?? null
+  const videoConfigId = body.video_config_id ?? (await getActiveConfigId('video', drama.ownerUserId)) ?? null
   const ts = now()
 
   // Get next episode number

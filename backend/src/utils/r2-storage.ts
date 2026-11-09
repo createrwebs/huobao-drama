@@ -16,13 +16,18 @@ export interface R2Config {
 }
 
 export function getR2Config(): R2Config {
+  const accountId = process.env.B2_ACCOUNT_ID || process.env.R2_ACCOUNT_ID || ''
+  const accessKeyId = process.env.B2_KEY_ID || process.env.R2_ACCESS_KEY_ID || ''
+  const secretAccessKey = process.env.B2_APPLICATION_KEY || process.env.R2_SECRET_ACCESS_KEY || ''
+  const bucketName = process.env.B2_BUCKET_NAME || process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'vdo'
+  const endpoint = process.env.B2_ENDPOINT || process.env.R2_ENDPOINT || (accountId ? `https://${accountId}.r2.cloudflarestorage.com` : '')
   return {
-    accountId: process.env.R2_ACCOUNT_ID || '7b45cc55a0d93df72bdfdfe302f2eafd',
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '2d40908e43c49d68fca4437c0c8b5d17',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || 'ef786e8cbebf7081d49b670e6cadee789c6430be72a9ef713558cbfb08de1df2',
-    bucketName: process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'vdo',
-    endpoint: process.env.R2_ENDPOINT || 'https://7b45cc55a0d93df72bdfdfe302f2eafd.r2.cloudflarestorage.com',
-    publicDomain: process.env.R2_PUBLIC_DOMAIN || undefined,
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucketName,
+    endpoint,
+    publicDomain: process.env.B2_PUBLIC_DOMAIN || process.env.R2_PUBLIC_DOMAIN || undefined,
   }
 }
 
@@ -31,6 +36,9 @@ let _cachedS3Client: S3Client | null = null
 export function getR2Client(): S3Client {
   if (_cachedS3Client) return _cachedS3Client
   const config = getR2Config()
+  if (!config.endpoint || !config.accessKeyId || !config.secretAccessKey) {
+    throw new Error('Object storage is not configured. Set B2_* or R2_* credentials.')
+  }
   _cachedS3Client = new S3Client({
     region: 'auto',
     endpoint: config.endpoint,

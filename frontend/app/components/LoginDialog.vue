@@ -42,7 +42,17 @@
 
           <div class="login-notice">
             <Info :size="14" class="notice-icon" />
-            <span>{{ t('auth.zeroCreditsNotice') }}</span>
+            <div>
+              <span>{{ t('auth.zeroCreditsNotice') }}</span>
+              <a
+                class="tora-link"
+                href="https://www.toraapi.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                สร้าง API Key ที่ toraapi.com (เลือก group: media)
+              </a>
+            </div>
           </div>
 
           <div class="login-actions">
@@ -229,6 +239,14 @@ async function handleLogin() {
   font-size: 12px;
   line-height: 1.45;
   color: var(--text-2);
+}
+
+.tora-link {
+  display: block;
+  margin-top: 6px;
+  color: var(--accent, #eb5e28);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .notice-icon {

@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { and, desc, eq, lt } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
 import { success, created, now, badRequest, notFound } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
 import { logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 import { getEpisodeIfAuthorized, getStoryboardIfAuthorized } from '../utils/ownership.js'
+import { extractVideoLastFrame } from '../utils/video-poster.js'
 
 const app = new Hono()
 
@@ -209,6 +210,56 @@ app.delete('/:id', async (c) => {
   await db.delete(schema.storyboards).where(eq(schema.storyboards.id, id))
   logTaskSuccess('StoryboardAPI', 'delete', { storyboardId: id })
   return success(c)
+})
+
+// POST /storyboards/:id/extract-prev-frame - ดึงเฟรมสุดท้ายจากวิดีโอของช็อตก่อนหน้ามาเป็นภาพต้นทาง
+app.post('/:id/extract-prev-frame', async (c) => {
+  const id = Number(c.req.param('id'))
+  const authorized = await getStoryboardIfAuthorized(c, id)
+  if (!authorized) return notFound(c, '镜头不存在')
+
+  const { storyboard } = authorized
+  const [prevSb] = await db
+    .select()
+    .from(schema.storyboards)
+    .where(
+      and(
+        eq(schema.storyboards.episodeId, storyboard.episodeId),
+        lt(schema.storyboards.storyboardNumber, storyboard.storyboardNumber),
+      )
+    )
+    .orderBy(desc(schema.storyboards.storyboardNumber))
+    .limit(1)
+
+  if (!prevSb) {
+    return badRequest(c, 'ไม่มีช็อตก่อนหน้าในตอนนี้')
+  }
+
+  const prevVideoUrl = prevSb.videoUrl || prevSb.composedVideoUrl
+  if (!prevVideoUrl) {
+    return badRequest(c, `ช็อต #${prevSb.storyboardNumber} ก่อนหน้ายังไม่มีวิดีโอที่สร้างเสร็จ`)
+  }
+
+  const frameRelPath = await extractVideoLastFrame(prevVideoUrl)
+  if (!frameRelPath) {
+    return badRequest(c, 'ไม่สามารถดึงภาพจากวิดีโอของช็อตก่อนหน้าได้')
+  }
+
+  const ts = now()
+  await db
+    .update(schema.storyboards)
+    .set({
+      firstFrameImage: frameRelPath,
+      updatedAt: ts,
+    })
+    .where(eq(schema.storyboards.id, id))
+
+  return success(c, {
+    storyboard_id: id,
+    previous_storyboard_id: prevSb.id,
+    previous_storyboard_number: prevSb.storyboardNumber,
+    first_frame_image: frameRelPath,
+  })
 })
 
 export default app

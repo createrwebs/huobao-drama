@@ -6,7 +6,8 @@ import { RequestContext } from '@mastra/core/request-context'
 import { getContentLanguage, type ContentLanguage } from '../services/app-settings.js'
 
 export interface AgentRequestContextValues {
-  episodeId: number
+  /** 单集级 Agent 必填；剧集级规划 Agent 可省略 */
+  episodeId?: number
   dramaId: number
   modelOverride?: string
   textConfigId?: number
@@ -16,7 +17,7 @@ export interface AgentRequestContextValues {
 
 export function buildAgentRequestContext(values: AgentRequestContextValues): RequestContext<AgentRequestContextValues> {
   const rc = new RequestContext<AgentRequestContextValues>()
-  rc.set('episodeId', values.episodeId)
+  if (values.episodeId !== undefined) rc.set('episodeId', values.episodeId)
   rc.set('dramaId', values.dramaId)
   if (values.modelOverride) rc.set('modelOverride', values.modelOverride)
   if (values.textConfigId) rc.set('textConfigId', values.textConfigId)
@@ -24,6 +25,13 @@ export function buildAgentRequestContext(values: AgentRequestContextValues): Req
   // 全局设置一处生效；显式传入 values.language 可按请求覆盖
   rc.set('language', values.language ?? getContentLanguage())
   return rc
+}
+
+/** 专门为剧集规划 Agent (series_planner) 构建上下文：不需要 episodeId */
+export function buildSeriesPlannerRequestContext(
+  values: Omit<AgentRequestContextValues, 'episodeId'>
+): RequestContext<AgentRequestContextValues> {
+  return buildAgentRequestContext({ ...values, episodeId: undefined })
 }
 
 export function getEpisodeId(requestContext: RequestContext | undefined): number | null {

@@ -1,9 +1,11 @@
 /**
- * 视频海报帧提取 — 供 <video poster> 使用，避免列表页为显示首帧而缓冲整个视频
+ * 视频海报帧与关键帧提取
  */
+import fs from 'fs'
 import path from 'path'
+import { spawn } from 'child_process'
 import { getAbsolutePath } from './storage.js'
-import { ffmpeg, checkFfmpegSuite } from './ffmpeg.js'
+import { ffmpeg, checkFfmpegSuite, ffmpegPath } from './ffmpeg.js'
 
 /** 由视频相对路径推导海报帧路径：static/videos/x.mp4 → static/videos/x_poster.jpg */
 export function posterPathFor(relativePath: string): string {
@@ -37,6 +39,60 @@ export async function extractVideoPoster(relativePath: string): Promise<string |
     return posterRel
   } catch (err) {
     console.warn(`[video-poster] 海报帧提取失败 ${relativePath}:`, (err as Error).message)
+    return null
+  }
+}
+
+/**
+ * 抽取视频最后一秒画面（倒数 0.5s）作为下一镜头的首帧
+ * 保持原视频全分辨率输出，支持连续镜头拼接
+ */
+export async function extractVideoLastFrame(videoRelativePath: string): Promise<string | null> {
+  try {
+    const { ffmpeg: ffmpegOk } = await checkFfmpegSuite()
+    if (!ffmpegOk) return null
+
+    const videoAbs = getAbsolutePath(videoRelativePath)
+    if (!fs.existsSync(videoAbs)) return null
+
+    // 存到 static/keyframes/ 目录
+    const basename = path.basename(videoRelativePath).replace(/\.[^./]+$/, '')
+    const keyframeRel = `static/keyframes/${basename}_last_frame.jpg`
+    const keyframeAbs = getAbsolutePath(keyframeRel)
+
+    const keyframeDir = path.dirname(keyframeAbs)
+    if (!fs.existsSync(keyframeDir)) {
+      fs.mkdirSync(keyframeDir, { recursive: true })
+    }
+
+    // 若已提取过且比视频更新，直接复用
+    if (fs.existsSync(keyframeAbs)) {
+      const vidMtime = fs.statSync(videoAbs).mtimeMs
+      const imgMtime = fs.statSync(keyframeAbs).mtimeMs
+      if (imgMtime >= vidMtime) return keyframeRel
+    }
+
+    const bin = ffmpegPath || 'ffmpeg'
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(bin, [
+        '-y',
+        '-sseof', '-0.5',
+        '-i', videoAbs,
+        '-update', '1',
+        '-frames:v', '1',
+        '-q:v', '2',
+        keyframeAbs,
+      ])
+      proc.on('close', (code) => {
+        if (code === 0 && fs.existsSync(keyframeAbs)) resolve()
+        else reject(new Error(`ffmpeg exited with code ${code}`))
+      })
+      proc.on('error', reject)
+    })
+
+    return keyframeRel
+  } catch (err) {
+    console.warn(`[video-poster] ดึงภาพเฟรมท้ายสุดไม่สำเร็จ ${videoRelativePath}:`, (err as Error).message)
     return null
   }
 }

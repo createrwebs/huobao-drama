@@ -68,8 +68,8 @@ interface GenerateVideoParams {
 export async function generateImage(params: GenerateImageParams): Promise<number> {
   // 指定配置（集锁定）可能已停用/删除/厂商收敛，失效时回退到当前启用配置，避免生成被旧引用卡死
   const config = params.configId
-    ? (await getConfigById(params.configId)) ?? await getActiveConfig('image')
-    : await getActiveConfig('image')
+    ? (await getConfigById(params.configId, params.ownerUserId)) ?? await getActiveConfig('image', params.ownerUserId)
+    : await getActiveConfig('image', params.ownerUserId)
   if (!config) throw new Error('未配置图片模型，请先到「设置」页添加并启用 AI 服务')
 
   const id = await createTask('image', config, {
@@ -107,8 +107,8 @@ export async function generateImage(params: GenerateImageParams): Promise<number
 export async function generateVideo(params: GenerateVideoParams): Promise<number> {
   // 指定配置（集锁定）可能已停用/删除/厂商收敛，失效时回退到当前启用配置
   const config = params.configId
-    ? (await getConfigById(params.configId)) ?? await getActiveConfig('video')
-    : await getActiveConfig('video')
+    ? (await getConfigById(params.configId, params.ownerUserId)) ?? await getActiveConfig('video', params.ownerUserId)
+    : await getActiveConfig('video', params.ownerUserId)
   if (!config) throw new Error('未配置视频模型，请先到「设置」页添加并启用 AI 服务')
 
   const id = await createTask('video', config, {
@@ -479,7 +479,7 @@ async function pollTask(record: SysTaskRecord, config: AIConfig, taskId: string)
 }
 
 async function handleImageComplete(record: SysTaskRecord, imageUrl: string) {
-  const localPath = await downloadFile(imageUrl, 'images')
+  const localPath = await downloadFile(imageUrl, 'images', record.ownerUserId)
   // 列表页缩略图（前端按命名约定推导地址，失败不影响主流程）
   await generateImageThumb(localPath)
 
@@ -493,7 +493,7 @@ async function handleImageComplete(record: SysTaskRecord, imageUrl: string) {
 }
 
 async function handleImageCompleteBase64(record: SysTaskRecord, base64Data: string, mimeType: string) {
-  const localPath = await saveBase64Image(base64Data, mimeType, 'images')
+  const localPath = await saveBase64Image(base64Data, mimeType, 'images', record.ownerUserId)
   await generateImageThumb(localPath)
 
   await db.update(schema.sysTask)
@@ -527,7 +527,7 @@ async function writeBackImageAssets(record: SysTaskRecord, localPath: string) {
 }
 
 async function handleVideoComplete(record: SysTaskRecord, videoUrl: string, duration: number | null | undefined) {
-  const localPath = await downloadFile(videoUrl, 'videos')
+  const localPath = await downloadFile(videoUrl, 'videos', record.ownerUserId)
   // 海报帧供列表/封面展示，避免前端为显示首帧缓冲整个视频
   await extractVideoPoster(localPath)
   await db.update(schema.sysTask)

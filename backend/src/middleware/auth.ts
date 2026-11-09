@@ -115,7 +115,6 @@ export const PUBLIC_ROUTES = [
   '/api/v1/auth/login',
   '/api/v1/auth/me',
   '/api/v1/auth/logout',
-  '/api/v1/worker/r2-stream',
   '/api/v1/worker/script',
   '/api/v1/worker/notebook',
   '/static',

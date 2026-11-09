@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
 import { and, eq, isNull, desc } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
-import { success, notFound, created, now } from '../utils/response.js'
+import { success, notFound, created, badRequest, now } from '../utils/response.js'
 import { toSnakeCase, toSnakeCaseArray } from '../utils/transform.js'
 import { syncDramaAssetStylePrompts } from '../services/style-preset.js'
 import { getActor } from '../middleware/auth.js'
 import { getDramaIfAuthorized, getDramaOwnerCondition } from '../utils/ownership.js'
+import { mastra } from '../mastra/index.js'
+import { buildSeriesPlannerRequestContext } from '../agents/context.js'
+import { logTaskError, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
 const app = new Hono()
 
@@ -71,13 +74,20 @@ app.post('/', async (c) => {
   const actor = getActor(c)
   const ts = now()
 
+  const totalEpisodesRaw = body.total_episodes ?? body.total_episodes_plan ?? 1
+  const totalEpisodes = Number.isInteger(Number(totalEpisodesRaw)) && Number(totalEpisodesRaw) > 0
+    ? Number(totalEpisodesRaw)
+    : 1
+
   const res = await db.insert(schema.dramas).values({
     ownerUserId: actor?.userId ?? null,
     title: body.title,
     description: body.description,
+    synopsis: body.synopsis || null,
     genre: body.genre,
     style: body.style,
     aspectRatio: body.aspect_ratio || '16:9',
+    totalEpisodes,
     tags: body.tags ? JSON.stringify(body.tags) : null,
     metadata: body.metadata,
     status: 'draft',
@@ -156,12 +166,17 @@ app.put('/:id', async (c) => {
   const updates: Record<string, any> = { updatedAt: now() }
   if (body.title !== undefined) updates.title = body.title
   if (body.description !== undefined) updates.description = body.description
+  if (body.synopsis !== undefined) updates.synopsis = body.synopsis || null
   if (body.genre !== undefined) updates.genre = body.genre
   if (body.style !== undefined) updates.style = body.style
   if (body.aspect_ratio !== undefined) updates.aspectRatio = body.aspect_ratio
   if (body.status !== undefined) updates.status = body.status
   if (body.tags !== undefined) updates.tags = JSON.stringify(body.tags)
   if (body.metadata !== undefined) updates.metadata = body.metadata
+  if (body.total_episodes !== undefined) {
+    const n = Number(body.total_episodes)
+    updates.totalEpisodes = Number.isInteger(n) && n > 0 ? n : drama.totalEpisodes
+  }
 
   // Never allow overwriting ownerUserId from body
   delete updates.ownerUserId
@@ -182,6 +197,80 @@ app.delete('/:id', async (c) => {
 
   await db.update(schema.dramas).set({ deletedAt: now() }).where(eq(schema.dramas.id, id))
   return success(c)
+})
+
+function normalizeToolResult(entry: any) {
+  return entry?.payload?.result ?? entry?.result ?? entry?.payload?.output ?? entry?.output ?? entry?.data ?? null
+}
+
+// POST /dramas/:id/generate-episodes - AI 根据 synopsis 拆分为 episodes
+app.post('/:id/generate-episodes', async (c) => {
+  const id = Number(c.req.param('id'))
+  const drama = await getDramaIfAuthorized(c, id)
+  if (!drama) return notFound(c, '剧本不存在')
+
+  const body = await c.req.json().catch(() => ({}))
+  const totalEpisodes = Number.isInteger(body.total_episodes)
+    ? Number(body.total_episodes)
+    : Number(drama.totalEpisodes || 1)
+  const synopsis = String(body.synopsis ?? drama.synopsis ?? drama.description ?? '').trim()
+
+  if (!synopsis && !drama.title && !body.title) {
+    return badRequest(c, '需要有 synopsis 或 title 才能生成 episodes')
+  }
+
+  // 持久化用户确认后的 synopsis / total_episodes
+  const updates: any = { updatedAt: now() }
+  if (body.total_episodes !== undefined) updates.totalEpisodes = totalEpisodes
+  if (body.synopsis !== undefined) updates.synopsis = synopsis
+  if (Object.keys(updates).length > 1) {
+    await db.update(schema.dramas).set(updates).where(eq(schema.dramas.id, id))
+  }
+
+  const agent = mastra.getAgent('series_planner')
+  if (!agent) return badRequest(c, 'Series planner agent 未注册')
+
+  const requestContext = buildSeriesPlannerRequestContext({ dramaId: id })
+  const message = `请为短剧《${drama.title}》生成 ${totalEpisodes} 集的分集大纲。${synopsis ? '\n全剧 synopsis：\n' + synopsis : ''}\n风格：${drama.style || '未指定'}，画幅：${drama.aspectRatio || '16:9'}。`
+
+  logTaskStart('SeriesPlanner', 'generate-episodes', { dramaId: id, totalEpisodes })
+
+  try {
+    const result = await agent.generate(
+      [{ role: 'user', content: message }],
+      { maxSteps: 20, requestContext },
+    )
+
+    // 从 save_episodes_outline tool result 读取生成/更新数量
+    const saveResult = (result.toolResults || []).find((tr: any) => {
+      const name = tr?.payload?.toolName || tr?.toolName || tr?.tool?.toolName
+      return name === 'save_episodes_outline'
+    })
+    const savedResult: any = saveResult ? normalizeToolResult(saveResult) : null
+
+    const episodes = await db
+      .select()
+      .from(schema.episodes)
+      .where(and(eq(schema.episodes.dramaId, id), isNull(schema.episodes.deletedAt)))
+      .orderBy(schema.episodes.episodeNumber)
+
+    logTaskSuccess('SeriesPlanner', 'generate-episodes', {
+      dramaId: id,
+      created: savedResult?.created_count ?? 0,
+      updated: savedResult?.updated_count ?? 0,
+      totalEpisodes: episodes.length,
+    })
+
+    return success(c, {
+      created_count: savedResult?.created_count ?? 0,
+      updated_count: savedResult?.updated_count ?? 0,
+      episodes: toSnakeCaseArray(episodes),
+      text: result.text || '',
+    })
+  } catch (err: any) {
+    logTaskError('SeriesPlanner', 'generate-episodes', { dramaId: id, error: err.message })
+    return badRequest(c, err.message || 'AI 生成 episodes 失败')
+  }
 })
 
 // PUT /dramas/:id/characters - Save characters (ownership guarded)

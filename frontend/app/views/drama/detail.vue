@@ -50,6 +50,16 @@
         </svg>
         {{ t('detail.head.addEpisode') }}
       </button>
+      <button class="btn btn-secondary head-action" :disabled="seriesRendering || !drama?.episodes?.length" @click="renderWholeDrama">
+        <svg v-if="seriesRendering" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        {{ seriesRendering ? 'กำลังเริ่มเรนเดอร์ทั้งซีรีย์…' : 'เรนเดอร์ทั้งซีรีย์' }}
+      </button>
+      <button class="btn btn-accent head-action" :disabled="planning" @click="openPlanDialog">
+        <svg v-if="planning" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        {{ t('detail.head.generateEpisodes') }}
+      </button>
     </div>
 
     <!-- 主 Tab：剧集列表 / 素材库 -->
@@ -613,6 +623,38 @@
         </div>
       </div>
     </div>
+    <!-- AI 分集规划弹窗 -->
+    <div v-if="planDialog" class="dialog-mask" @click.self="planDialog = false">
+      <div class="dialog ep-dialog">
+        <div class="dialog-head">
+          <div class="dialog-title">{{ t('detail.planDialog.title') }}</div>
+          <button class="btn btn-icon btn-sm btn-ghost ml-auto dialog-close" @click="planDialog = false">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <label class="field">
+            <span class="field-label">{{ t('detail.planDialog.synopsis') }} <span class="required">*</span></span>
+            <textarea v-model="planForm.synopsis" rows="5" class="input" :placeholder="t('detail.planDialog.synopsisPlaceholder')" />
+            <span class="field-hint">{{ t('detail.planDialog.synopsisHint') }}</span>
+          </label>
+          <label class="field">
+            <span class="field-label">{{ t('detail.planDialog.totalEpisodes') }}</span>
+            <input v-model.number="planForm.total_episodes" type="number" min="1" max="100" class="input" />
+            <span class="field-hint">{{ t('detail.planDialog.totalEpisodesHint') }}</span>
+          </label>
+        </div>
+        <div class="dialog-foot">
+          <span class="dialog-foot-copy">{{ t('detail.planDialog.footCopy') }}</span>
+          <button class="btn" @click="planDialog = false">{{ t('common.cancel') }}</button>
+          <button class="btn btn-primary" :disabled="planning || !planForm.synopsis?.trim()" @click="generateEpisodes">
+            <span v-if="planning" class="ring-spinner sm"></span>
+            {{ planning ? t('detail.planDialog.generating') : t('detail.planDialog.confirm') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <ConfirmDialog
       :open="!!episodeToDelete"
       :title="t('detail.ep.deleteTitle')"
@@ -628,7 +670,7 @@
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { dramaAPI, episodeAPI, characterAPI, sceneAPI, propAPI, uploadAPI, stylePresetAPI, flowBridgeAPI } from '~/composables/useApi'
+import { dramaAPI, episodeAPI, characterAPI, sceneAPI, propAPI, uploadAPI, stylePresetAPI, flowBridgeAPI, vastAPI } from '~/composables/useApi'
 import BaseSelect from '~/components/BaseSelect.vue'
 
 const { t, te, locale } = useI18n()
@@ -708,6 +750,26 @@ const resolutionOptions = computed(() => ([
   { label: t('detail.ep.res720'), value: '720p' },
   { label: t('detail.ep.res480'), value: '480p' },
 ]))
+const planDialog = ref(false)
+const planning = ref(false)
+const seriesRendering = ref(false)
+const planForm = ref({ synopsis: '', total_episodes: 6 })
+
+async function renderWholeDrama() {
+  if (!drama.value?.episodes?.length || seriesRendering.value) return
+  if (!window.confirm('ยืนยันเริ่มเรนเดอร์ storyboard ของทุกตอนในซีรีย์นี้หรือไม่?')) return
+  seriesRendering.value = true
+  try {
+    const result = await vastAPI.startDramaRender({ dramaId })
+    const job = result?.job || result?.data?.job
+    toast.success(`เริ่มเรนเดอร์ทั้งซีรีย์แล้ว (${job?.totalShots || 0} ช็อต)`)
+  } catch (err) {
+    toastError(err)
+  } finally {
+    seriesRendering.value = false
+  }
+}
+
 const newEpisodeResolution = ref('720p')
 const epResMenuId = ref(null)
 
@@ -780,6 +842,30 @@ function openAddEpisode() {
   newEpisodeTitle.value = ''
   newEpisodeResolution.value = '720p'
   addDialog.value = true
+}
+
+function openPlanDialog() {
+  planForm.value.synopsis = drama.value?.synopsis || drama.value?.description || ''
+  planForm.value.total_episodes = drama.value?.total_episodes || drama.value?.totalEpisodes || 6
+  planDialog.value = true
+}
+
+async function generateEpisodes() {
+  if (!planForm.value.synopsis?.trim()) return
+  planning.value = true
+  try {
+    const res = await dramaAPI.generateEpisodes(dramaId, {
+      synopsis: planForm.value.synopsis.trim(),
+      total_episodes: planForm.value.total_episodes,
+    })
+    toast.success(t('detail.planDialog.success', { n: res.created_count || 0 }))
+    planDialog.value = false
+    await load()
+  } catch (e) {
+    toastError(e)
+  } finally {
+    planning.value = false
+  }
 }
 
 async function addEpisode() {

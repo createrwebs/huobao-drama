@@ -7,32 +7,56 @@
  * 直接崩掉整个 Node 进程。这里在业务调用前主动 spawn -version 探测，
  * 不可用时由业务侧优雅降级（海报帧跳过 / 拼接返回明确错误）。
  */
-import { spawn } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import fs from 'fs'
 import ffmpeg from 'fluent-ffmpeg'
 import { createRequire } from 'module'
 
 // ffmpeg-static / ffprobe-static 均为可选依赖：npm 安装时提供内置二进制；
-// 桌面版打包不携带这两个 npm 包（二进制随 resources/bin 分发），缺失时走 FFMPEG_BIN/FFPROBE_BIN
+// 缺失时优先查找系统已安装的 ffmpeg / ffprobe 或 FFMPEG_BIN/FFPROBE_BIN
 const req = createRequire(import.meta.url)
 
-function resolveStatic(moduleName: string): string | null {
-  try {
-    const mod = req(moduleName)
-    return (moduleName === 'ffprobe-static' ? mod?.path : mod) ?? null
-  } catch {
-    return null
+function findBinary(envVar: string, staticModuleName: string, binName: string): string | null {
+  // 1. 显式环境变量指定的二进制路径
+  if (process.env[envVar] && fs.existsSync(process.env[envVar]!)) {
+    return process.env[envVar]!
   }
+
+  // 2. npm static 模块自带二进制（必须文件真实存在）
+  try {
+    const mod = req(staticModuleName)
+    const p = (staticModuleName === 'ffprobe-static' ? mod?.path : mod) ?? null
+    if (p && fs.existsSync(p)) return p
+  } catch {}
+
+  // 3. 常见系统安装路径（macOS Homebrew / Linux standard paths）
+  const systemCandidates = [
+    `/opt/homebrew/bin/${binName}`,
+    `/usr/local/bin/${binName}`,
+    `/usr/bin/${binName}`,
+  ]
+  for (const candidate of systemCandidates) {
+    if (fs.existsSync(candidate)) return candidate
+  }
+
+  // 4. 从当前 PATH 中探测
+  try {
+    const whichCmd = process.platform === 'win32' ? `where ${binName}` : `which ${binName}`
+    const result = execSync(whichCmd, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim().split('\n')[0]
+    if (result && fs.existsSync(result)) return result
+  } catch {}
+
+  return null
 }
 
-const ffmpegPath = process.env.FFMPEG_BIN || resolveStatic('ffmpeg-static')
-const ffprobePath = process.env.FFPROBE_BIN || resolveStatic('ffprobe-static')
+const ffmpegPath = findBinary('FFMPEG_BIN', 'ffmpeg-static', 'ffmpeg')
+const ffprobePath = findBinary('FFPROBE_BIN', 'ffprobe-static', 'ffprobe')
 
-// 系统未安装 ffmpeg 时使用项目内置二进制
+// 配置 fluent-ffmpeg 二进制路径
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 if (ffprobePath) ffmpeg.setFfprobePath(ffprobePath)
 
-export { ffmpeg }
+export { ffmpeg, ffmpegPath, ffprobePath }
 
 /** spawn 一次 -version 验证二进制真实可执行（含同步 EFTYPE 兜底） */
 function probeBinary(binPath: string | null): Promise<boolean> {

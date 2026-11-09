@@ -173,6 +173,16 @@
               <BaseSelect v-model="form.aspect_ratio" :options="aspectRatioOptions" :placeholder="t('index.createDialog.aspectRatioPlaceholder')" />
               <span class="field-hint">{{ t('index.createDialog.aspectRatioHint') }}</span>
             </label>
+            <label class="field">
+              <span class="field-label">{{ t('index.createDialog.totalEpisodes') }}</span>
+              <input v-model.number="form.total_episodes" type="number" min="1" max="100" class="input" :placeholder="t('index.createDialog.totalEpisodesPlaceholder')" />
+              <span class="field-hint">{{ t('index.createDialog.totalEpisodesHint') }}</span>
+            </label>
+            <label class="field">
+              <span class="field-label">{{ t('index.createDialog.synopsis') }}</span>
+              <textarea v-model="form.synopsis" rows="4" class="input" :placeholder="t('index.createDialog.synopsisPlaceholder')" />
+              <span class="field-hint">{{ t('index.createDialog.synopsisHint') }}</span>
+            </label>
           </div>
           <div class="dialog-foot">
             <button type="button" class="btn" @click="showCreate = false">{{ t('common.cancel') }}</button>
@@ -221,7 +231,7 @@ const sortOptions = computed(() => ([
 const activeMenuId = ref(null)
 const dramaToDelete = ref(null)
 const deletingDrama = ref(false)
-const form = ref({ title: '', style: '', aspect_ratio: '16:9' })
+const form = ref({ title: '', style: '', aspect_ratio: '16:9', synopsis: '', total_episodes: 6 })
 const stylePresets = ref([])
 const styleSelectOptions = computed(() => stylePresets.value.map(p => ({
   label: (te && te(`settings.styles.presetNames.${p.value}`)) ? t(`settings.styles.presetNames.${p.value}`) : p.name,
